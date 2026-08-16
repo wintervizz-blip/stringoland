@@ -358,6 +358,9 @@ function selectRole(role){
       :"Dla kobiet i mężczyzn. Twoje dane kontaktowe pozostają prywatne.";
   document.getElementById("sellerWelcome").classList.toggle("show",role==="seller");
   document.getElementById("sellerRequirements").classList.toggle("show",role==="seller");
+  document.getElementById("signupFields").style.display="block";
+  document.getElementById("authSubmit").style.display="block";
+  document.getElementById("switchAuth").style.display="block";
   document.getElementById("verificationPanel").classList.remove("show");
   document.getElementById("signupFields").style.display="block";
   document.getElementById("authSubmit").style.display="block";
@@ -397,7 +400,7 @@ async function resendEmailCode(){
 async function submitAuth(){
   const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,msg=document.getElementById("msg");
   msg.textContent="";
-  if(!email||password.length<6){msg.textContent="Podaj e-mail i hasło (minimum 6 znaków).";return}
+  if(!email||password.length<12){msg.textContent="Podaj prawidłowy e-mail i hasło (minimum 12 znaków).";return}
   const result=mode==="signup"
     ?await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole}}})
     :await supabaseClient.auth.signInWithPassword({email,password});
