@@ -185,7 +185,8 @@
     <button class="close" onclick="closeProfile()">×</button>
     <div class="profile-avatar" id="avatarLetter">S</div>
     <h2>Mój profil</h2>
-    <p class="profile-sub" id="profileEmail"></p>
+    <p class="profile-sub">Twoje dane kontaktowe pozostają prywatne.</p>
+    
     <label>Ustaw pseudonim</label>
     <input class="field" id="profileName" type="text" placeholder="Np. Luna">
     <label>O mnie</label>
@@ -250,7 +251,6 @@ async function renderSession(user){
 }
 function fillProfile(user){
   const meta=user.user_metadata||{};
-  document.getElementById("profileEmail").textContent=user.email||"";
   document.getElementById("profileName").value=meta.display_name||"";
   document.getElementById("profileBio").value=meta.bio||"";
   const name=meta.display_name||user.email||"";
