@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root{
-      --ink:#191616;--muted:#756c68;--cream:#fbf8f5;--line:#e8dfda;
+      --ink:#191616;--muted:#5f5954;--cream:#f3eeea;--line:#d8d0cb;
       --accent:#8a1830;--accent2:#b51f48;--white:#fff;--green:#28a968
     }
     *{box-sizing:border-box}
@@ -105,7 +105,7 @@
 .verification-list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
 .verification-list li{display:flex;gap:9px;font-size:13px;line-height:1.4}
 .verification-list li::before{content:"✓";width:20px;height:20px;flex:0 0 20px;border-radius:50%;background:#31bf58;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
-.verification-private{margin-top:14px;padding:12px;border-radius:9px;background:#f7f1ef;font-size:12px;line-height:1.45;color:#5e514c}
+.verification-private{margin-top:14px;padding:12px;border-radius:9px;background:#e9e1dc;font-size:12px;line-height:1.45;color:#5e514c}
 
 .seller-welcome{display:none;margin:16px 0 18px}
 .seller-welcome.show{display:block}
@@ -114,7 +114,7 @@
 .seller-benefits{display:grid;gap:9px;margin:0 0 17px;padding:0;list-style:none}
 .seller-benefits li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.35}
 .seller-benefits li::before{content:"✓";flex:0 0 21px;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:#31bf58;color:#fff;font-weight:700;font-size:12px}
-.seller-privacy{padding:11px 12px;border-radius:9px;background:#f7f1ef;color:#5e514c;font-size:12px;line-height:1.4;margin-bottom:14px}
+.seller-privacy{padding:11px 12px;border-radius:9px;background:#e9e1dc;color:#5e514c;font-size:12px;line-height:1.4;margin-bottom:14px}
 .seller-continue{width:100%}
 .account-type{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 14px}
 .account-option{border:1px solid #d8d1ca;border-radius:10px;background:#fff;padding:14px 12px;text-align:left;cursor:pointer;transition:.15s}
@@ -141,7 +141,18 @@
       .steps{grid-template-columns:1fr 1fr;gap:20px 14px}.how-inner{padding:40px 24px}
       footer{grid-template-columns:1fr;padding:34px 24px}
     }
-  </style>
+  
+.form-label{display:block;font-weight:700;font-size:14px;margin:15px 0 6px}
+.form-label b{color:#d62020}
+.field-help{font-size:12px;color:var(--muted);margin:5px 0 8px}
+.password-wrap{position:relative}
+.password-wrap .field{padding-right:52px}
+.password-toggle{position:absolute;right:0;top:0;height:100%;width:48px;border:0;border-left:1px solid var(--line);background:#fff;color:var(--ink)}
+.age-check{display:flex;gap:10px;align-items:flex-start;margin:16px 0;font-size:13px;line-height:1.45}
+.age-check input{width:19px;height:19px;flex:0 0 19px;margin:1px 0 0}
+.age-check a{color:var(--accent);font-weight:600}
+
+</style>
 </head>
 <body>
 <header>
@@ -291,8 +302,22 @@
       </div>
     </div>
     <div id="signupFields">
-      <input class="field" id="email" type="email" placeholder="Adres e-mail">
-    <input class="field" id="password" type="password" placeholder="Hasło (min. 6 znaków)">
+      <label class="form-label" for="profileNameInput">Pseudonim <b>*</b></label>
+      <input class="field" id="profileNameInput" type="text" maxlength="30" placeholder="Np. Luna">
+      <p class="field-help">Będzie widoczny dla innych użytkowników.</p>
+      <label class="form-label" for="email">E-mail <b>*</b></label>
+      <input class="field" id="email" type="email" autocomplete="email" placeholder="Adres e-mail">
+      <p class="field-help">Wyślemy Ci kod weryfikacyjny.</p>
+      <label class="form-label" for="password">Hasło <b>*</b></label>
+      <div class="password-wrap">
+        <input class="field" id="password" type="password" autocomplete="new-password" placeholder="Hasło (min. 12 znaków)">
+        <button type="button" class="password-toggle" onclick="togglePassword()">◉</button>
+      </div>
+      <p class="field-help">Co najmniej 12 znaków.</p>
+      <label class="age-check">
+        <input type="checkbox" id="ageConsent">
+        <span>Mam ukończone 18 lat i akceptuję <a href="#" onclick="return false">Regulamin</a>.</span>
+      </label>
     </div>
     <div class="email-verify-panel" id="emailVerifyPanel">
       <h3>Sprawdź swój e-mail</h3>
@@ -329,7 +354,7 @@ let accountRole = "buyer";
 let sellerStep = false;
 let pendingVerificationEmail = "";
 
-function openAuth(m){mode=m;if(m==="signup")selectRole("buyer");updateAuth();document.getElementById("authModal").classList.add("show")}
+function openAuth(m){mode=m;if(m==="signup")selectRole("buyer");document.getElementById("emailVerifyPanel").classList.remove("show");document.getElementById("verificationPanel").classList.remove("show");updateAuth();document.getElementById("authModal").classList.add("show")}
 function closeAuth(){document.getElementById("authModal").classList.remove("show");document.getElementById("msg").textContent=""}
 function toggleAuth(){mode=mode==="signup"?"login":"signup";updateAuth()}
 function updateAuth(){
@@ -398,19 +423,50 @@ async function resendEmailCode(){
 }
 
 async function submitAuth(){
-  const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,msg=document.getElementById("msg");
+  const emailEl=document.getElementById("email");
+  const passwordEl=document.getElementById("password");
+  const nameEl=document.getElementById("profileNameInput");
+  const ageEl=document.getElementById("ageConsent");
+  const msg=document.getElementById("msg");
+  const button=document.getElementById("authSubmit");
+  const email=emailEl?.value.trim()||"";
+  const password=passwordEl?.value||"";
+  const display_name=nameEl?.value.trim()||"";
   msg.textContent="";
-  if(!email||password.length<12){msg.textContent="Podaj prawidłowy e-mail i hasło (minimum 12 znaków).";return}
-  const result=mode==="signup"
-    ?await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole}}})
-    :await supabaseClient.auth.signInWithPassword({email,password});
-  if(result.error){msg.textContent=result.error.message;return}
   if(mode==="signup"){
-    showEmailVerification(email);
-    msg.textContent="Wysłaliśmy kod weryfikacyjny na podany adres e-mail.";
-    return;
+    if(!display_name){msg.textContent="Wpisz pseudonim.";return}
+    if(!email||!email.includes("@")){msg.textContent="Wpisz prawidłowy adres e-mail.";return}
+    if(password.length<12){msg.textContent="Hasło musi mieć co najmniej 12 znaków.";return}
+    if(!ageEl?.checked){msg.textContent="Potwierdź, że masz ukończone 18 lat i akceptujesz Regulamin.";return}
+  }else if(!email||!password){
+    msg.textContent="Podaj e-mail i hasło.";return
   }
-  closeAuth();renderSession(result.data.session?.user)
+  button.disabled=true;
+  button.style.opacity=".65";
+  button.textContent="Chwila…";
+  try{
+    const result=mode==="signup"
+      ?await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole,display_name}}})
+      :await supabaseClient.auth.signInWithPassword({email,password});
+    if(result.error){msg.textContent=result.error.message;return}
+    if(mode==="signup"){
+      showEmailVerification(email);
+      msg.textContent="Wysłaliśmy kod weryfikacyjny na podany adres e-mail.";
+      return;
+    }
+    closeAuth();renderSession(result.data.session?.user);
+  }catch(err){
+    msg.textContent="Nie udało się połączyć z serwerem. Sprawdź internet i spróbuj ponownie.";
+    console.error(err);
+  }finally{
+    button.disabled=false;
+    button.style.opacity="";
+    button.textContent=mode==="signup"?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto"):"Zaloguj się";
+  }
+}
+function togglePassword(){
+  const el=document.getElementById("password");
+  el.type=el.type==="password"?"text":"password";
 }
 async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
