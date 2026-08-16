@@ -472,6 +472,10 @@ header .menu-btn.account-menu-visible,
   .seller-stats{gap:16px}
   .seller-stats div{min-width:75px}
 }
+
+.discover-page{display:none!important;min-height:calc(100vh - 72px);background:#fff;padding:48px 7% 80px}
+.discover-page.show{display:block!important}
+
 /* Dwa profile w jednym rzędzie */
 
 .discover-page .discover-grid{
@@ -550,6 +554,25 @@ header .menu-btn.account-menu-visible,
   color:#77716d;
   font-size:12px;
   text-align:center;
+}
+
+
+.seller-offers-section{max-width:760px;margin:34px auto 0}
+.seller-offers-heading h2{font-size:19px;font-weight:500;margin:0 0 14px}
+.seller-offers-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.seller-offer-card{border:1px solid #e4d9d2;border-radius:14px;overflow:hidden;background:#fff}
+.seller-offer-image{height:210px;background:#eee5df center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#8f1730;font:22px Georgia,serif}
+.seller-offer-body{padding:13px 14px 15px}
+.seller-offer-title{font-size:15px;font-weight:600;color:#292522}
+.seller-offer-description{font-size:11px;line-height:1.5;color:#77716d;margin-top:5px}
+.seller-offer-price{font-size:17px;font-weight:700;color:#8f1730;margin-top:10px}
+@media(max-width:600px){
+  .seller-offers-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .seller-offer-image{height:145px}
+  .seller-offer-body{padding:10px}
+  .seller-offer-title{font-size:13px}
+  .seller-offer-description{font-size:10px}
+  .seller-offer-price{font-size:15px}
 }
 
 </style>
@@ -1275,6 +1298,13 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
         <h2>O mnie</h2>
         <p id="publicProfileBio">Opis sprzedającej pojawi się tutaj.</p>
       </section>
+
+      <section class="seller-offers-section">
+        <div class="seller-offers-heading">
+          <h2>Oferty</h2>
+        </div>
+        <div class="seller-offers-grid" id="publicProfileOffers"></div>
+      </section>
     </main>
   </div>
 </div>
@@ -1349,6 +1379,40 @@ function openPublicProfile(seller){
   document.getElementById("publicProfileLikes").textContent=seller.likes||0;
   document.getElementById("publicProfileBio").textContent=seller.bio||"Opis sprzedającej pojawi się tutaj.";
 
+  const offerBox=document.getElementById("publicProfileOffers");
+  const offers=Array.isArray(seller.offers)?seller.offers:[];
+  offerBox.innerHTML="";
+  if(!offers.length){
+    offerBox.innerHTML='<div class="profile-empty-tab">Oferty tej sprzedającej pojawią się tutaj.</div>';
+  }else{
+    offers.forEach((offer)=>{
+      const card=document.createElement("article");
+      card.className="seller-offer-card";
+      const image=document.createElement("div");
+      image.className="seller-offer-image";
+      if(offer.image && /^data:image\\//.test(offer.image)){
+        image.style.backgroundImage='url("'+offer.image+'")';
+        image.textContent="";
+      }else{
+        image.textContent="STRINGOLAND";
+      }
+      const body=document.createElement("div");
+      body.className="seller-offer-body";
+      const title=document.createElement("div");
+      title.className="seller-offer-title";
+      title.textContent=offer.title||"Oferta";
+      const desc=document.createElement("div");
+      desc.className="seller-offer-description";
+      desc.textContent=offer.description||"";
+      const price=document.createElement("div");
+      price.className="seller-offer-price";
+      price.textContent=offer.price!=null ? offer.price+" zł" : "";
+      body.append(title,desc,price);
+      card.append(image,body);
+      offerBox.appendChild(card);
+    });
+  }
+
   const photos=Array.isArray(seller.photos)?seller.photos:[];
   const main=document.getElementById("publicProfileMainPhoto");
   const thumbs=document.getElementById("publicProfileThumbnails");
@@ -1387,6 +1451,8 @@ function openPublicProfile(seller){
 function closePublicProfile(){document.getElementById("publicProfileModal").classList.remove("show")}
 function showDiscover(){
   document.querySelector("main").style.display="none";
+  const footer=document.querySelector(".stringoland-footer");
+  if(footer) footer.style.display="none";
   document.getElementById("discoverPage").classList.add("show");
   window.scrollTo({top:0,behavior:"smooth"});
   renderDiscover();
@@ -1394,6 +1460,8 @@ function showDiscover(){
 function showHome(){
   document.getElementById("discoverPage").classList.remove("show");
   document.querySelector("main").style.display="";
+  const footer=document.querySelector(".stringoland-footer");
+  if(footer) footer.style.display="";
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function menuDiscover(){
