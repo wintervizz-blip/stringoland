@@ -243,9 +243,10 @@
 
 /* Stringoland — menu boczne */
 .menu-toggle{
+  display:none;
   position:fixed;left:18px;top:18px;z-index:120;
   width:44px;height:44px;border:1px solid #ddd3ca;border-radius:10px;
-  background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#fff;flex-direction:column;align-items:center;justify-content:center;
   gap:5px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.08)
 }
 .menu-toggle span{display:block;width:19px;height:2px;background:#231f1d;border-radius:2px}
@@ -271,6 +272,56 @@
 .side-menu-nav button:hover{background:#eee6df}
 .side-menu-section{margin:18px 12px 7px;color:#8b817b;font-size:10px;letter-spacing:1.5px;text-transform:uppercase}
 .side-menu-user{font-size:12px;color:#776e68;margin:0 12px 18px}
+
+
+/* Kolory przycisków logowania/rejestracji */
+#authModal #loginBtn,
+#authModal button[data-auth="login"]{
+  background:#fff!important;
+  color:#8f1730!important;
+  border:1px solid #8f1730!important;
+}
+#authModal #signupBtn,
+#authModal button[data-auth="signup"]{
+  background:#8f1730!important;
+  color:#fff!important;
+  border:1px solid #8f1730!important;
+}
+
+
+/* Final auth colors */
+.auth-actions .login-btn,
+.login-btn,
+button.login-btn,
+#loginBtn,
+[data-action="login"]{
+  background:#fff!important;
+  color:#8f1730!important;
+  border:1px solid #8f1730!important;
+}
+.auth-actions .signup-btn,
+.signup-btn,
+button.signup-btn,
+#signupBtn,
+[data-action="signup"]{
+  background:#8f1730!important;
+  color:#fff!important;
+  border:1px solid #8f1730!important;
+}
+
+
+/* Nagłówek: Zaloguj się zawsze czerwone, Załóż konto czerwone tło/biały tekst */
+header .actions .btn.login,
+header .actions .login{
+  background:#fff!important;
+  color:#8f1730!important;
+  border:1px solid #8f1730!important;
+}
+header .actions .btn.primary{
+  background:#8f1730!important;
+  border-color:#8f1730!important;
+  color:#fff!important;
+}
 
 </style>
 </head>
@@ -320,7 +371,7 @@
         <button class="btn secondary" onclick="openAuth('signup')">ZACZNIJ SPRZEDAWAĆ</button>
       </div>
       <div class="trust">
-        <div class="trust-icon">♡</div>
+        
         <div>Twój profil, Twoje zasady, pełna kontrola nad tym, co publikujesz.</div>
       </div>
     </div>
@@ -429,20 +480,27 @@
     <h3>§7. Opinie i treści</h3>
     <p>Opinie kupujących są stałym elementem profilu sprzedającej i sprzedająca nie może wyłączyć ich wyświetlania.</p>
     <p>Zabronione jest publikowanie treści bezprawnych, naruszających prywatność, dobra osobiste lub prawa innych osób.</p>
+    <h3>§7. Kontakt poza Stringoland i bezpieczeństwo komunikacji</h3>
+    <p>1. Zarówno sprzedającej, jak i kupującemu zabrania się przekazywania za pośrednictwem Stringoland prywatnych danych kontaktowych umożliwiających bezpośredni kontakt poza platformą, w szczególności numeru telefonu, prywatnego adresu e-mail, danych komunikatora, nazwy użytkownika w mediach społecznościowych, adresu zamieszkania lub innych danych pozwalających na nawiązanie kontaktu poza Stringoland.</p>
+    <p>2. Zabronione jest również nakłanianie drugiej strony do przeniesienia komunikacji lub transakcji poza Stringoland, w szczególności w celu obejścia zasad platformy lub należnych opłat.</p>
+    <p>3. Komunikacja dotycząca transakcji powinna odbywać się za pośrednictwem funkcji Wiadomości dostępnej w Stringoland.</p>
+    <p>4. W celu ochrony użytkowników, przeciwdziałania nadużyciom i egzekwowania Regulaminu komunikacja może być poddawana automatycznej analizie pod kątem naruszeń. W przypadkach uzasadnionych bezpieczeństwem, zgłoszeniem naruszenia lub obowiązkiem prawnym może zostać poddana odpowiedniej weryfikacji, z zachowaniem obowiązujących zasad ochrony danych osobowych.</p>
+    <p>5. Naruszenie powyższych zasad może skutkować ostrzeżeniem, ograniczeniem funkcjonalności konta, czasowym zawieszeniem lub zablokowaniem konta, a w przypadku poważnych lub powtarzających się naruszeń — jego usunięciem.</p>
 
     <h3>§8. Dane osobowe</h3>
+
     <p>Dane prywatne są wykorzystywane w zakresie niezbędnym do prowadzenia konta, wypłat, weryfikacji oraz wykonania obowiązków prawnych. Szczegółowe zasady określa Polityka prywatności.</p>
 
-    <h3>§9. Odpowiedzialność</h3>
+    <h3>§10. Odpowiedzialność</h3>
     <p>Sprzedająca odpowiada za prawdziwość i zgodność z prawem swoich ofert. Kupujący powinien przed zakupem zapoznać się z opisem i ceną oferty.</p>
 
-    <h3>§10. Blokada konta</h3>
+    <h3>§11. Blokada konta</h3>
     <p>Platforma może ograniczyć funkcje lub zablokować konto w przypadku naruszenia Regulaminu, przepisów prawa lub bezpieczeństwa serwisu.</p>
 
-    <h3>§11. Zmiany Regulaminu</h3>
+    <h3>§12. Zmiany Regulaminu</h3>
     <p>Regulamin może być aktualizowany w związku ze zmianą prawa, funkcjonalności lub sposobu działania serwisu. O istotnych zmianach użytkownicy będą informowani zgodnie z obowiązującymi przepisami.</p>
 
-    <h3>§12. Postanowienia końcowe</h3>
+    <h3>§13. Postanowienia końcowe</h3>
     <p>W sprawach nieuregulowanych Regulaminem zastosowanie mają właściwe przepisy prawa.</p>
   </div>
 </div>
@@ -763,6 +821,8 @@ supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(d
     <h3>8. Jak skorzystać ze swoich praw?</h3>
     <p>Wniosek dotyczący danych osobowych możesz skierować na adres: <strong>[adres e-mail do spraw ochrony danych]</strong>. Odpowiedzi udzielamy bez zbędnej zwłoki, co do zasady w terminie miesiąca od otrzymania żądania; w przypadkach przewidzianych RODO termin może zostać przedłużony.</p>
 
+    <p>W związku z bezpieczeństwem platformy komunikacja użytkowników może być poddawana automatycznej analizie pod kątem prób przekazywania niedozwolonych danych kontaktowych, naruszeń Regulaminu i nadużyć. Zakres takiej analizy powinien być ograniczony do celów bezpieczeństwa i egzekwowania zasad serwisu.</p>
+
     <h3>9. Bezpieczeństwo danych</h3>
     <p>Stosujemy odpowiednie środki techniczne i organizacyjne mające chronić dane przed nieuprawnionym dostępem, utratą, zniszczeniem, zmianą lub ujawnieniem. Zakres zabezpieczeń jest dobierany do ryzyka związanego z przetwarzaniem.</p>
 
@@ -789,15 +849,37 @@ function closeSideMenu(){
   document.getElementById("sideMenuOverlay").classList.remove("show");
 }
 function updateSideMenu(){
-  const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const role=(saved&&saved.role)||window.stringolandRole||"guest";
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
+  const toggle=document.querySelector(".menu-toggle");
+  const menu=document.getElementById("sideMenu");
+  const overlay=document.getElementById("sideMenuOverlay");
   const user=document.getElementById("sideMenuUser");
-  user.textContent=saved ? ("Zalogowano jako: "+saved.pseudonym) : "Nie jesteś zalogowana";
-  document.getElementById("buyerMenuSection").style.display=(role==="buyer"||role==="guest")?"block":"none";
-  document.getElementById("buyerPurchases").style.display=(role==="buyer")?"block":"none";
-  document.getElementById("sellerMenuSection").style.display=(role==="seller")?"block":"none";
-  document.getElementById("sellerOffers").style.display=(role==="seller")?"block":"none";
-  document.getElementById("sellerSales").style.display=(role==="seller")?"block":"none";
+  const buyerSection=document.getElementById("buyerMenuSection");
+  const buyerPurchases=document.getElementById("buyerPurchases");
+  const sellerSection=document.getElementById("sellerMenuSection");
+  const sellerOffers=document.getElementById("sellerOffers");
+  const sellerSales=document.getElementById("sellerSales");
+
+  // No account = no menu on the homepage.
+  if(!saved){
+    if(toggle) toggle.style.display="none";
+    if(menu){menu.classList.remove("show");}
+    if(overlay){overlay.classList.remove("show");}
+    return;
+  }
+
+  if(toggle) toggle.style.display="flex";
+  if(user) user.textContent="Zalogowano jako: "+saved.pseudonym;
+
+  const isBuyer=saved.role==="buyer";
+  const isSeller=saved.role==="seller";
+
+  buyerSection.style.display=isBuyer?"block":"none";
+  buyerPurchases.style.display=isBuyer?"block":"none";
+  sellerSection.style.display=isSeller?"block":"none";
+  sellerOffers.style.display=isSeller?"block":"none";
+  sellerSales.style.display=isSeller?"block":"none";
 }
 function menuHome(){closeSideMenu();window.scrollTo({top:0,behavior:"smooth"})}
 function menuDiscover(){
@@ -854,6 +936,48 @@ window.stringolandRole=(JSON.parse(localStorage.getItem("stringoland_test_user")
   document.addEventListener("DOMContentLoaded",updateMenuVisibility);
   window.addEventListener("storage",updateMenuVisibility);
   updateMenuVisibility();
+})();
+</script>
+
+
+<script>
+function refreshAccountMenuAfterAuth(){
+  if(typeof updateSideMenu==="function") updateSideMenu();
+}
+document.addEventListener("DOMContentLoaded",refreshAccountMenuAfterAuth);
+window.addEventListener("storage",refreshAccountMenuAfterAuth);
+</script>
+
+
+<script>
+(function(){
+  function styleAuthSwitch(){
+    const modal=document.getElementById("authModal");
+    if(!modal) return;
+    const btn=modal.querySelector(".switch button");
+    if(!btn) return;
+    const isLogin=(typeof mode!=="undefined" && mode==="login");
+    if(isLogin){
+      btn.style.background="#fff";
+      btn.style.color="#8f1730";
+      btn.style.border="1px solid #8f1730";
+      btn.textContent="Załóż konto";
+    }else{
+      btn.style.background="#8f1730";
+      btn.style.color="#fff";
+      btn.style.border="1px solid #8f1730";
+      btn.textContent="Zaloguj się";
+    }
+  }
+  const oldRenderAuth=window.renderAuth;
+  if(typeof oldRenderAuth==="function"){
+    window.renderAuth=function(){
+      const r=oldRenderAuth.apply(this,arguments);
+      setTimeout(styleAuthSwitch,0);
+      return r;
+    };
+  }
+  document.addEventListener("DOMContentLoaded",styleAuthSwitch);
 })();
 </script>
 
