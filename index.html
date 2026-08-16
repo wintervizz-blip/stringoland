@@ -3,75 +3,172 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Stringoland</title>
+  <title>Stringoland — odkryj swoją ulubioną sprzedającą</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{--ink:#181716;--muted:#6d6863;--line:#e7e2dc;--cream:#faf7f2;--accent:#7f1d2d;--green:#28ad69}
-    *{box-sizing:border-box}body{margin:0;color:var(--ink);font-family:Arial,Helvetica,sans-serif;background:#fff}
+    :root{
+      --ink:#191616;--muted:#756c68;--cream:#fbf8f5;--line:#e8dfda;
+      --accent:#8a1830;--accent2:#b51f48;--white:#fff;--green:#28a968
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;color:var(--ink);font-family:Arial,Helvetica,sans-serif;background:var(--cream)}
     button,input{font:inherit}button{cursor:pointer}
-    header{height:74px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;background:#fff;position:sticky;top:0;z-index:20}
-    .logo{font-size:20px;letter-spacing:6px;font-weight:500}.logo span{color:#8b2434}.actions{display:flex;gap:12px;align-items:center}
-    .btn{border:1px solid #cfc8c0;background:#fff;border-radius:9px;padding:11px 20px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-    .hero{min-height:310px;background:linear-gradient(90deg,rgba(250,247,242,.96),rgba(250,247,242,.68)),url("assets/hero.jpg") center/cover;display:flex;align-items:center}
-    .hero-copy{max-width:1050px;width:100%;margin:auto;padding:48px 34px}.hero h1{font-family:Georgia,serif;font-size:48px;line-height:1.03;margin:0 0 26px;max-width:570px}
-    .search{height:50px;background:#fff;border:1px solid #ddd6ce;border-radius:8px;display:flex;max-width:505px;overflow:hidden}.search input{border:0;outline:0;flex:1;padding:0 16px}.search button{width:55px;border:0;border-left:1px solid #ddd6ce;background:#fff}
-    .chips{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.chip{background:#fff;border:1px solid #ddd6ce;border-radius:9px;padding:8px 15px}
-    section{padding:28px 34px;max-width:1100px;margin:auto}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.section-head h2{font-size:22px;margin:0}.link{color:var(--accent);background:none;border:0}
-    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.card{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}.card img{width:100%;aspect-ratio:1/1.18;object-fit:cover;display:block;background:#eee}.card-body{padding:12px}.name{font-weight:700;font-size:17px}.rating{margin-top:8px;color:#756d66;font-size:13px}.active{color:var(--green);font-size:13px;margin-top:9px}
-    .offers{grid-template-columns:repeat(5,1fr)}.offer img{aspect-ratio:1/1.05}.price{font-weight:700;margin-top:10px}
-    .how{border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:32px 34px;max-width:none}.how div{max-width:240px}.how b{display:block;margin-bottom:7px}
-    footer{padding:28px 34px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;background:#faf8f5}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.show{display:flex}.box{width:min(420px,100%);background:#fff;border-radius:14px;padding:25px;box-shadow:0 20px 60px rgba(0,0,0,.2)}.box h2{margin-top:0}.field{width:100%;padding:12px;border:1px solid #d8d1ca;border-radius:8px;margin:7px 0 12px}.close{float:right;border:0;background:none;font-size:24px}.msg{font-size:14px;margin:8px 0 14px;min-height:18px}.profile-state{font-size:13px;color:var(--green);margin-left:5px}
-    @media(max-width:900px){header{padding:0 25px}.logo{font-size:17px;letter-spacing:5px}.grid{grid-template-columns:repeat(2,1fr)}.offers{grid-template-columns:repeat(2,1fr)}.how{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:43px}.actions .login{display:inline-block}}
-    @media(max-width:520px){header{height:70px;padding:0 26px}.logo{font-size:16px;letter-spacing:4px}.actions{gap:7px}.btn{padding:10px 13px}.hero{min-height:580px}.hero-copy{padding:40px 26px;align-self:flex-start;padding-top:120px}.hero h1{font-size:43px}.search{max-width:none}.chips{flex-wrap:nowrap;overflow:hidden}.chip{white-space:nowrap}.grid,.offers{grid-template-columns:repeat(2,1fr);gap:10px}section{padding:28px 26px}.how{grid-template-columns:1fr 1fr;padding:28px 26px}.how div{font-size:13px}.how b{font-size:14px}footer{grid-template-columns:1fr 1fr;padding:26px}}
+    header{
+      height:76px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 34px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);
+      position:sticky;top:0;z-index:30;backdrop-filter:blur(10px)
+    }
+    .brand{font-family:Georgia,serif;font-size:22px;letter-spacing:4px}
+    .brand span{color:var(--accent)}
+    .actions{display:flex;gap:6px;align-items:center;margin-left:42px;white-space:nowrap}
+    .btn{border:1px solid #d4cbc5;background:#fff;border-radius:7px;padding:8px 13px;font-size:13px}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .menu-btn{display:none;border:0;background:none;font-size:28px}
+    .hero{
+      min-height:690px;position:relative;display:flex;align-items:center;overflow:hidden;
+      background:
+        linear-gradient(90deg,rgba(15,10,10,.82),rgba(15,10,10,.42)),
+        url("assets/hero.jpg") center/cover;
+    }
+    .hero:after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--cream))}
+    .hero-copy{position:relative;z-index:2;width:min(1000px,100%);margin:auto;padding:58px 34px;color:#fff}
+    .eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.88;margin-bottom:18px}
+    h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(43px,6.5vw,70px);line-height:1;margin:0 0 17px;max-width:720px}
+    .hero-copy p{font-size:15px;line-height:1.45;max-width:540px;margin:0 0 18px;color:#f6efeb}
+    .hero-actions{display:flex;gap:9px;flex-wrap:wrap}
+    .hero .btn{padding:11px 20px;border-radius:7px;font-size:13px}
+    .hero .btn.secondary{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.75);color:#fff}
+    .trust{display:flex;align-items:center;gap:10px;margin-top:19px;font-size:12px}
+    .trust-icon{width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:50%;display:grid;place-items:center;font-size:20px}
+    section{max-width:1120px;margin:auto;padding:48px 34px}
+    .intro{text-align:center;padding-top:42px}
+    .intro h2,.section-head h2{font-family:Georgia,serif;font-weight:400;font-size:34px;margin:0 0 10px}
+    .intro p{max-width:700px;margin:auto;color:var(--muted);font-size:15px;line-height:1.5}
+    .categories{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:24px}
+    .category{background:#fff;border:1px solid var(--line);padding:20px 14px;border-radius:9px;text-align:center}
+    .category b{display:block;margin-bottom:7px;font-size:17px}.category span{color:var(--muted);font-size:13px}
+    .section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:15px}
+    .section-head h2{font-size:32px;margin:0}
+    .link{color:var(--accent);background:none;border:0;padding:8px}
+    .empty{
+      border:1px dashed #cfc4bd;background:#fff;border-radius:12px;padding:55px 24px;text-align:center
+    }
+    .empty-icon{font-size:34px;margin-bottom:6px}.empty h3{font-family:Georgia,serif;font-size:24px;font-weight:400;margin:6px 0}
+    .empty p{color:var(--muted);max-width:520px;margin:0 auto 17px;line-height:1.45;font-size:14px}
+    .how{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);max-width:none}
+    .how-inner{max-width:1120px;margin:auto;padding:48px 34px}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}
+    .step-number{width:36px;height:36px;border-radius:50%;background:#f0e5e2;color:var(--accent);display:grid;place-items:center;font-weight:700;margin-bottom:13px}
+    .step b{display:block;margin-bottom:7px}.step p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+    footer{background:#211a1a;color:#fff;padding:34px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px}
+    footer div{line-height:1.7;color:#d9ceca}footer b{color:#fff}
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;align-items:center;justify-content:center;padding:20px}
+    .modal.show{display:flex}.box{width:min(430px,100%);background:#fff;border-radius:14px;padding:25px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .box h2{margin-top:0;font-family:Georgia,serif;font-size:30px;font-weight:400}.close{float:right;border:0;background:none;font-size:27px}
+    .field{width:100%;padding:13px;border:1px solid #d8d1ca;border-radius:8px;margin:7px 0 12px}.msg{font-size:14px;margin:8px 0 14px;min-height:18px}
+    .profile-state{font-size:13px;color:var(--green);margin-right:5px}
+    @media(max-width:800px){
+      header{padding:0 22px}.menu-btn{display:block}.actions .login{display:inline-block}
+      .categories{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
+      footer{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:520px){
+      header{height:68px}.brand{font-size:16px;letter-spacing:3px}
+      .hero{min-height:650px}.hero-copy{padding:55px 25px 85px}
+      .hero-copy p{font-size:17px}.hero-actions{display:grid;grid-template-columns:1fr}
+      .hero .btn{width:100%}section{padding:38px 24px}
+      .intro h2{font-size:29px}.categories{grid-template-columns:1fr 1fr;gap:9px}
+      .category{padding:20px 10px}.section-head{align-items:start;gap:10px}.section-head h2{font-size:27px}
+      .steps{grid-template-columns:1fr 1fr;gap:20px 14px}.how-inner{padding:40px 24px}
+      footer{grid-template-columns:1fr;padding:34px 24px}
+    }
   </style>
 </head>
 <body>
 <header>
-  <div class="logo">STRINGO<span>LAND</span></div>
+  <button class="menu-btn" aria-label="Menu">☰</button>
+  <div class="brand">STRINGO<span>LAND</span></div>
   <div class="actions" id="actions">
     <button class="btn login" onclick="openAuth('login')">Zaloguj się</button>
     <button class="btn primary" onclick="openAuth('signup')">Załóż konto</button>
   </div>
 </header>
 
-<div class="hero">
-  <div class="hero-copy">
-    <h1>Znajdź swoją<br>ulubioną sprzedającą ♡</h1>
-    <div class="search"><input id="search" placeholder="Szukaj profilu lub oferty..."><button onclick="doSearch()">⌕</button></div>
-    <div class="chips"><button class="chip">Stringi</button><button class="chip">Majtki</button><button class="chip">Komplety</button><button class="chip">Skarpetki</button><button class="chip">Pończochy</button><button class="chip">Inne</button></div>
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Stringoland</div>
+      <h1>Twoje pragnienia. Twoje wybory.</h1>
+      <p>Odkrywaj używaną bieliznę, wyjątkowe kolekcje i oferty fetyszowe od dorosłych sprzedających.</p>
+      <div class="hero-actions">
+        <button class="btn primary" onclick="document.getElementById('offers').scrollIntoView()">ZOBACZ OFERTY</button>
+        <button class="btn secondary" onclick="openAuth('signup')">ZACZNIJ SPRZEDAWAĆ</button>
+      </div>
+      <div class="trust">
+        <div class="trust-icon">♡</div>
+        <div>Twój profil, Twoje zasady, pełna kontrola nad tym, co publikujesz.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="intro">
+    <h2>Co Cię dziś kusi?</h2>
+    <p>Przeglądaj prawdziwe profile i oferty dorosłych sprzedających. Wybierz kategorię, odkryj coś wyjątkowego i znajdź ofertę, która najbardziej Ci odpowiada. Na stronie głównej pokazujemy tylko prawdziwe, aktywne konta.</p>
+    <div class="categories">
+      <div class="category"><b>Używana bielizna</b><span>Odkrywaj wyjątkowe oferty</span></div>
+      <div class="category"><b>Majtki</b><span>Znajdź coś dla siebie</span></div>
+      <div class="category"><b>Fetysze</b><span>Wyjątkowe kolekcje</span></div>
+      <div class="category"><b>Skarpetki i pończochy</b><span>Popularne wybory</span></div>
+    </div>
+  </section>
+
+  <section id="offers">
+    <div class="section-head">
+      <h2>Poznaj sprzedające</h2>
+      <button class="link" onclick="openAuth('signup')">Zacznij sprzedawać →</button>
+    </div>
+    <div class="empty">
+      <div class="empty-icon">♡</div>
+      <h3>Stringoland dopiero startuje</h3>
+      <p>Pierwsze profile i oferty pojawią się tutaj już wkrótce. Chcesz być jedną z pierwszych sprzedających?</p>
+      <button class="btn primary" onclick="openAuth('signup')">Załóż konto</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Coś wyjątkowego czeka na Ciebie</h2>
+    </div>
+    <div class="empty">
+      <div class="empty-icon">✦</div>
+      <h3>Pierwsze oferty pojawią się tutaj już wkrótce</h3>
+      <p>Gdy pojawią się pierwsze oferty, właśnie tutaj znajdziesz najnowsze propozycje od naszych sprzedających.</p>
+    </div>
+  </section>
+
+  <div class="how">
+    <div class="how-inner">
+      <div class="intro" style="padding:0;text-align:left">
+        <h2>Jak to działa?</h2>
+        <p>Prosto od pierwszego kliknięcia.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-number">1</div><b>Załóż konto</b><p>Utwórz swoje konto i zdecyduj, czy chcesz kupować, czy sprzedawać.</p></div>
+        <div class="step"><div class="step-number">2</div><b>Uzupełnij profil</b><p>Dodaj nazwę, zdjęcie i opis, żeby inni mogli Cię poznać.</p></div>
+        <div class="step"><div class="step-number">3</div><b>Dodaj ofertę</b><p>Opublikuj produkt i ustaw własną cenę oraz szczegóły.</p></div>
+        <div class="step"><div class="step-number">4</div><b>Zacznij działać</b><p>Twoje prawdziwe oferty mogą pojawić się na stronie głównej.</p></div>
+      </div>
+    </div>
   </div>
-</div>
+</main>
 
-<section>
-  <div class="section-head"><h2>Popularne sprzedające</h2><button class="link">Zobacz wszystkie →</button></div>
-  <div class="grid" id="sellers">
-    <article class="card"><img src="assets/lena.jpg" onerror="this.style.background='#d9b995'"><div class="card-body"><div class="name">Lena ♥</div><div class="rating">★ 5.0 (124)</div><div class="rating">▱ 38 ofert</div><div class="active">● Aktywna teraz</div></div></article>
-    <article class="card"><img src="assets/mia.jpg" onerror="this.style.background='#d9b995'"><div class="card-body"><div class="name">Mia ♥</div><div class="rating">★ 4.9 (86)</div><div class="rating">▱ 24 oferty</div><div class="active">● Aktywna teraz</div></div></article>
-    <article class="card"><img src="assets/nika.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Nika ♥</div><div class="rating">★ 5.0 (98)</div><div class="rating">▱ 17 ofert</div><div class="active">● Aktywna teraz</div></div></article>
-    <article class="card"><img src="assets/zosia.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Zosia ♥</div><div class="rating">★ 4.8 (67)</div><div class="rating">▱ 29 ofert</div><div class="active">● Aktywna 15 min temu</div></div></article>
-    <article class="card"><img src="assets/emi.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Emi ♥</div><div class="rating">★ 4.9 (53)</div><div class="rating">▱ 14 ofert</div><div class="active">● Aktywna 1 godz. temu</div></div></article>
-  </div>
-</section>
-
-<section>
-  <div class="section-head"><h2>Najnowsze oferty</h2><button class="link">Zobacz wszystkie →</button></div>
-  <div class="grid offers">
-    <article class="card offer"><img src="assets/offer1.jpg" onerror="this.style.background='#eee5da'"><div class="card-body">Stringi czarne<div class="rating">Lena</div><div class="price">59 zł</div></div></article>
-    <article class="card offer"><img src="assets/offer2.jpg" onerror="this.style.background='#d9b2ad'"><div class="card-body">Komplet koronkowy<div class="rating">Mia</div><div class="price">79 zł</div></div></article>
-    <article class="card offer"><img src="assets/offer3.jpg" onerror="this.style.background='#e9dfd2'"><div class="card-body">Stringi beżowe<div class="rating">Nika</div><div class="price">55 zł</div></div></article>
-    <article class="card offer"><img src="assets/offer4.jpg" onerror="this.style.background='#ddd'"><div class="card-body">Komplet z koronki<div class="rating">Zosia</div><div class="price">89 zł</div></div></article>
-    <article class="card offer"><img src="assets/offer5.jpg" onerror="this.style.background='#eee'"><div class="card-body">Stringi białe<div class="rating">Emi</div><div class="price">49 zł</div></div></article>
-  </div>
-</section>
-
-<div class="how">
-  <div><b>1. Załóż konto</b>Szybka rejestracja i pełna dyskrecja.</div>
-  <div><b>2. Wybierz ofertę</b>Przeglądaj profile i oferty sprzedających.</div>
-  <div><b>3. Napisz wiadomość</b>Skontaktuj się i ustal szczegóły zakupu.</div>
-  <div><b>4. Odbierz przesyłkę</b>Dyskretna wysyłka i pełne bezpieczeństwo.</div>
-</div>
-
-<footer><div><b>Pełna dyskrecja</b><br>Twoje dane są u nas bezpieczne.</div><div><b>Zweryfikowane konta</b><br>Dbamy o bezpieczeństwo społeczności.</div><div><b>Bezpieczne płatności</b><br>Płać wygodnie i bez obaw.</div><div><b>Wsparcie</b><br>Jesteśmy tu, żeby pomóc.</div></footer>
+<footer>
+  <div><b>STRINGOLAND</b><br>Miejsce dla dorosłych, prawdziwych profili i prawdziwych ofert.</div>
+  <div><b>Dla kupujących</b><br>Przeglądaj oferty<br>Znajdź sprzedającą</div>
+  <div><b>Dla sprzedających</b><br>Załóż konto<br>Utwórz profil</div>
+  <div><b>Pomoc</b><br>Bezpieczeństwo<br>Kontakt</div>
+</footer>
 
 <div class="modal" id="authModal">
   <div class="box">
@@ -92,9 +189,9 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bPKJw5BUKdO9xOWiF6t5qw_EnzGL0nH
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 let mode = "signup";
 
-function openAuth(m){ mode=m; updateAuth(); document.getElementById("authModal").classList.add("show"); }
-function closeAuth(){ document.getElementById("authModal").classList.remove("show"); document.getElementById("msg").textContent=""; }
-function toggleAuth(){ mode=mode==="signup"?"login":"signup"; updateAuth(); }
+function openAuth(m){mode=m;updateAuth();document.getElementById("authModal").classList.add("show")}
+function closeAuth(){document.getElementById("authModal").classList.remove("show");document.getElementById("msg").textContent=""}
+function toggleAuth(){mode=mode==="signup"?"login":"signup";updateAuth()}
 function updateAuth(){
   const signup=mode==="signup";
   document.getElementById("authTitle").textContent=signup?"Załóż konto":"Zaloguj się";
@@ -103,31 +200,22 @@ function updateAuth(){
   document.getElementById("switchAuth").textContent=signup?"Mam już konto — zaloguj się":"Nie mam konta — załóż je";
 }
 async function submitAuth(){
-  const email=document.getElementById("email").value.trim(), password=document.getElementById("password").value;
-  const msg=document.getElementById("msg");
+  const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,msg=document.getElementById("msg");
   msg.textContent="";
-  if(!email || password.length<6){msg.textContent="Podaj e-mail i hasło (minimum 6 znaków).";return;}
-  const result = mode==="signup"
-    ? await supabaseClient.auth.signUp({email,password})
-    : await supabaseClient.auth.signInWithPassword({email,password});
-  if(result.error){msg.textContent=result.error.message;return;}
-  if(mode==="signup" && !result.data.session){
-    msg.textContent="Konto utworzone. Sprawdź e-mail i potwierdź adres.";
-    return;
-  }
-  closeAuth(); renderSession(result.data.session?.user);
+  if(!email||password.length<6){msg.textContent="Podaj e-mail i hasło (minimum 6 znaków).";return}
+  const result=mode==="signup"
+    ?await supabaseClient.auth.signUp({email,password})
+    :await supabaseClient.auth.signInWithPassword({email,password});
+  if(result.error){msg.textContent=result.error.message;return}
+  if(mode==="signup"&&!result.data.session){msg.textContent="Konto utworzone. Sprawdź e-mail i potwierdź adres.";return}
+  closeAuth();renderSession(result.data.session?.user)
 }
 async function renderSession(user){
-  const actions=document.getElementById("actions");
-  if(!user)return;
+  const actions=document.getElementById("actions");if(!user)return;
   actions.innerHTML='<span class="profile-state">● Zalogowano</span><button class="btn" onclick="logout()">Wyloguj się</button>';
 }
-async function logout(){await supabaseClient.auth.signOut(); location.reload();}
-supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)});
-function doSearch(){
-  const q=document.getElementById("search").value.toLowerCase();
-  document.querySelectorAll("#sellers .card").forEach(c=>c.style.display=(!q||c.innerText.toLowerCase().includes(q))?"":"none");
-}
+async function logout(){await supabaseClient.auth.signOut();location.reload()}
+supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
 </script>
 </body>
 </html>
