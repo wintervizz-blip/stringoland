@@ -442,12 +442,10 @@ header .menu-btn.account-menu-visible,
 .public-profile-modal{display:none;position:fixed;inset:0;background:#fff;z-index:150;overflow:auto}
 .public-profile-modal.show{display:block}
 .public-profile-page{min-height:100vh;background:#fff;color:#292522}
-.public-profile-header{height:72px;background:#241718;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}
-.profile-header-menu{border:0;background:none;color:#fff;font-size:28px;cursor:pointer}
-.public-profile-logo{font-family:Georgia,serif;letter-spacing:3px;font-size:21px}
-.public-profile-header-actions{display:flex;gap:22px;font-size:20px}
-.public-profile-gallery{height:190px;background:linear-gradient(120deg,#c6b0a4,#7c5355,#d5c1b4);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;overflow:hidden}
-.gallery-placeholder{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);color:rgba(255,255,255,.82);font:24px Georgia,serif}
+.public-profile-header{height:72px;background:#fff;color:#292522;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5;border-bottom:1px solid #eee7e1}
+.profile-header-menu{border:0;background:none;color:#292522;font-size:28px;cursor:pointer}
+.public-profile-logo{font-family:Georgia,serif;letter-spacing:3px;font-size:21px;color:#292522}
+.public-profile-header-actions{display:flex;gap:22px;font-size:20px;color:#8f1730}
 .public-profile-content{max-width:980px;margin:0 auto;padding:26px 28px 70px}
 .public-profile-back{border:0;background:none;color:#8f1730;font-size:12px;padding:0;margin-bottom:24px;cursor:pointer}
 .profile-identity{display:flex;gap:18px;align-items:center}
@@ -491,7 +489,6 @@ header .menu-btn.account-menu-visible,
 .profile-empty-tab{padding:40px 20px;text-align:center;color:#8a827d;border:1px dashed #d9cec5;border-radius:8px}
 @media(max-width:700px){
   .public-profile-content{padding:22px 18px 55px}
-  .public-profile-gallery{height:145px}
   .profile-public-info{grid-template-columns:1fr}
   .profile-name-row h1{font-size:27px}
 }
@@ -1227,13 +1224,6 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
         <span aria-hidden="true">♡</span>
       </div>
     </header>
-
-    <div class="public-profile-gallery" id="publicProfileGallery">
-      <div class="gallery-placeholder">STRINGOLAND</div>
-      <div class="gallery-placeholder">♡</div>
-      <div class="gallery-placeholder">✦</div>
-      <div class="gallery-placeholder">+</div>
-    </div>
 
     <main class="public-profile-content">
       <button class="public-profile-back" type="button" onclick="closePublicProfile()">← Wróć do sprzedających</button>
