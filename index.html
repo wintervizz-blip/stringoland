@@ -12,14 +12,14 @@
     }
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{margin:0;color:var(--ink);font-family:Arial,Helvetica,sans-serif;background:var(--cream)}
+    body{margin:0;color:var(--ink);font-family:Arial,Helvetica,sans-serif;background:var(--cream);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
     button,input{font:inherit}button{cursor:pointer}
     header{
       height:76px;display:flex;align-items:center;justify-content:space-between;
       padding:0 34px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);
       position:sticky;top:0;z-index:30;backdrop-filter:blur(10px)
     }
-    .brand{font-family:Georgia,serif;font-size:22px;letter-spacing:4px}
+    .brand{font-family:Georgia,serif;font-size:21px;letter-spacing:4px;line-height:1;white-space:nowrap}
     .brand span{color:var(--accent)}
     .actions{display:flex;gap:6px;align-items:center;margin-left:42px;white-space:nowrap}
     .btn{border:1px solid #d4cbc5;background:#fff;border-radius:7px;padding:8px 13px;font-size:13px}
@@ -33,9 +33,9 @@
     }
     .hero:after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--cream))}
     .hero-copy{position:relative;z-index:2;width:min(1000px,100%);margin:auto;padding:58px 34px;color:#fff}
-    .eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.88;margin-bottom:18px}
-    h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(43px,6.5vw,70px);line-height:1;margin:0 0 17px;max-width:720px}
-    .hero-copy p{font-size:15px;line-height:1.45;max-width:540px;margin:0 0 18px;color:#f6efeb}
+    .eyebrow{font-size:11px;letter-spacing:2.5px;letter-spacing:3px;text-transform:uppercase;opacity:.88;margin-bottom:18px}
+    h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(40px,6vw,66px);line-height:1.02;letter-spacing:-.6px;margin:0 0 16px;max-width:720px}
+    .hero-copy p{font-size:14px;line-height:1.5;max-width:530px;margin:0 0 18px;color:#f6efeb}
     .hero-actions{display:flex;gap:9px;flex-wrap:wrap}
     .hero .btn{padding:11px 20px;border-radius:7px;font-size:13px}
     .hero .btn.secondary{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.75);color:#fff}
@@ -43,24 +43,24 @@
     .trust-icon{width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:50%;display:grid;place-items:center;font-size:20px}
     section{max-width:1120px;margin:auto;padding:48px 34px}
     .intro{text-align:center;padding-top:42px}
-    .intro h2,.section-head h2{font-family:Georgia,serif;font-weight:400;font-size:34px;margin:0 0 10px}
-    .intro p{max-width:700px;margin:auto;color:var(--muted);font-size:15px;line-height:1.5}
+    .intro h2,.section-head h2{font-family:Georgia,serif;font-weight:400;font-size:32px;line-height:1.1;letter-spacing:-.2px;margin:0 0 9px}
+    .intro p{max-width:700px;margin:auto;color:var(--muted);font-size:14px;line-height:1.5}
     .categories{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:24px}
     .category{background:#fff;border:1px solid var(--line);padding:20px 14px;border-radius:9px;text-align:center}
-    .category b{display:block;margin-bottom:7px;font-size:17px}.category span{color:var(--muted);font-size:13px}
+    .category b{display:block;margin-bottom:6px;font-size:15px}.category span{color:var(--muted);font-size:12px;line-height:1.35}
     .section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:15px}
     .section-head h2{font-size:32px;margin:0}
     .link{color:var(--accent);background:none;border:0;padding:8px}
     .empty{
       border:1px dashed #cfc4bd;background:#fff;border-radius:12px;padding:55px 24px;text-align:center
     }
-    .empty-icon{font-size:34px;margin-bottom:6px}.empty h3{font-family:Georgia,serif;font-size:24px;font-weight:400;margin:6px 0}
+    .empty-icon{font-size:34px;margin-bottom:6px}.empty h3{font-family:Georgia,serif;font-size:23px;line-height:1.15;font-weight:400;margin:6px 0}
     .empty p{color:var(--muted);max-width:520px;margin:0 auto 17px;line-height:1.45;font-size:14px}
     .how{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);max-width:none}
     .how-inner{max-width:1120px;margin:auto;padding:48px 34px}
     .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}
     .step-number{width:36px;height:36px;border-radius:50%;background:#f0e5e2;color:var(--accent);display:grid;place-items:center;font-weight:700;margin-bottom:13px}
-    .step b{display:block;margin-bottom:7px}.step p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+    .step b{display:block;margin-bottom:6px;font-size:15px}.step p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
     footer{background:#211a1a;color:#fff;padding:34px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px}
     footer div{line-height:1.7;color:#d9ceca}footer b{color:#fff}
     
@@ -92,11 +92,11 @@
     }
     @media(max-width:520px){
       .account-type{grid-template-columns:1fr;}
-      header{height:68px}.brand{font-size:16px;letter-spacing:3px}
+      header{height:68px}.brand{font-size:15px;letter-spacing:2.5px}
       .hero{min-height:650px}.hero-copy{padding:55px 25px 85px}
-      .hero-copy p{font-size:17px}.hero-actions{display:grid;grid-template-columns:1fr}
+      .hero-copy p{font-size:14px}.hero-actions{display:grid;grid-template-columns:1fr}
       .hero .btn{width:100%}section{padding:38px 24px}
-      .intro h2{font-size:29px}.categories{grid-template-columns:1fr 1fr;gap:9px}
+      .intro h2{font-size:28px}.categories{grid-template-columns:1fr 1fr;gap:9px}
       .category{padding:20px 10px}.section-head{align-items:start;gap:10px}.section-head h2{font-size:27px}
       .steps{grid-template-columns:1fr 1fr;gap:20px 14px}.how-inner{padding:40px 24px}
       footer{grid-template-columns:1fr;padding:34px 24px}
@@ -117,8 +117,8 @@
   <section class="hero">
     <div class="hero-copy">
       <div class="eyebrow">Stringoland</div>
-      <h1>Twoje pragnienia. Twoje wybory.</h1>
-      <p>Odkrywaj używaną bieliznę, wyjątkowe kolekcje i oferty fetyszowe od dorosłych sprzedających.</p>
+      <h1>Tutaj zaczyna się Twoja ciekawość.</h1>
+      <p>Używana bielizna, fetysze, sex-chaty i wyjątkowe oferty dla dorosłych.</p>
       <div class="hero-actions">
         <button class="btn primary" onclick="document.getElementById('offers').scrollIntoView()">ZOBACZ OFERTY</button>
         <button class="btn secondary" onclick="openAuth('signup')">ZACZNIJ SPRZEDAWAĆ</button>
