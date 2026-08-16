@@ -326,7 +326,7 @@ header .actions .btn.primary{
 
 /* Menu konta: niewidoczne dla niezalogowanych */
 header .menu-btn{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
-header .menu-btn.account-menu-visible{display:block!important}
+header .menu-btn.account-menu-visible{display:none!important}
 
 
 /* Formularz logowania/rejestracji: kompaktowy, bez przewijania do przycisku */
@@ -437,7 +437,6 @@ header .menu-btn.account-menu-visible,
 </aside>
 
 <header>
-  <button class="menu-btn" aria-label="Menu">☰</button>
   <div class="brand">STRINGO<span>LAND</span></div>
   <div class="actions" id="actions">
     <button class="btn login" onclick="openAuth('login')">Zaloguj się</button>
