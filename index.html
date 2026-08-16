@@ -1302,6 +1302,33 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 
 <script>
 const STRINGOLAND_PUBLIC_SELLERS_KEY="stringoland_public_sellers";
+
+function seedDemoSeller(){
+  const key=STRINGOLAND_PUBLIC_SELLERS_KEY;
+  try{
+    const existing=JSON.parse(localStorage.getItem(key)||"[]");
+    if(existing.length) return;
+    const demo=[{
+      pseudonym:"Luna",
+      verified:true,
+      active:true,
+      bio:"Profil demonstracyjny Stringoland. Tutaj będzie opis sprzedającej, który sama uzupełni po założeniu i zweryfikowaniu konta.",
+      completedOrders:0,
+      soldCount:0,
+      lastActive:"Aktywna niedawno",
+      registeredAt:"Profil demonstracyjny",
+      reviewCount:0,
+      photos:[],
+      offers:[
+        {title:"Przykładowa oferta",description:"Miejsce na opis oferty sprzedającej.",price:99},
+        {title:"Druga przykładowa oferta",description:"Tutaj pojawią się kolejne oferty.",price:60}
+      ],
+      reviews:[]
+    }];
+    localStorage.setItem(key,JSON.stringify(demo));
+  }catch(e){}
+}
+
 function getPublicSellers(){
   try{return JSON.parse(localStorage.getItem(STRINGOLAND_PUBLIC_SELLERS_KEY)||"[]")}catch(e){return []}
 }
@@ -1422,7 +1449,7 @@ function menuDiscover(){
   closeSideMenu();
   showDiscover();
 }
-document.addEventListener("DOMContentLoaded",renderDiscover);
+document.addEventListener("DOMContentLoaded",function(){seedDemoSeller();renderDiscover();});
 window.addEventListener("storage",renderDiscover);
 </script>
 
