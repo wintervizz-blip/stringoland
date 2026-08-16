@@ -442,10 +442,9 @@ header .menu-btn.account-menu-visible,
 .public-profile-modal{display:none;position:fixed;inset:0;background:#fff;z-index:150;overflow:auto}
 .public-profile-modal.show{display:block}
 .public-profile-page{min-height:100vh;background:#fff;color:#292522}
-.public-profile-header{height:72px;background:#fff;color:#292522;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5;border-bottom:1px solid #eee7e1}
-.profile-header-menu{border:0;background:none;color:#292522;font-size:28px;cursor:pointer}
-.public-profile-logo{font-family:Georgia,serif;letter-spacing:3px;font-size:21px;color:#292522}
-.public-profile-header-actions{display:flex;gap:22px;font-size:20px;color:#8f1730}
+.public-profile-header{height:72px;background:#fff;color:#292522;display:flex;align-items:center;padding:0 22px;position:sticky;top:0;z-index:5;border-bottom:1px solid #eee7e1}
+.public-profile-header .brand{font-family:Georgia,serif;font-size:21px;letter-spacing:4px;line-height:1;white-space:nowrap;color:#1a1716}
+.public-profile-header .brand span{color:var(--accent)}
 .public-profile-content{max-width:980px;margin:0 auto;padding:26px 28px 70px}
 .public-profile-back{border:0;background:none;color:#8f1730;font-size:12px;padding:0;margin-bottom:24px;cursor:pointer}
 .profile-identity{display:flex;gap:18px;align-items:center}
@@ -521,6 +520,64 @@ header .menu-btn.account-menu-visible,
 .discover-empty p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
 @media(max-width:800px){.discover-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.discover-page{padding:36px 20px 60px}.discover-grid{grid-template-columns:1fr}}
+
+
+/* Elegancki, minimalistyczny profil — okrągłe zdjęcie zamiast kwadratowej galerii */
+.profile-identity .public-profile-avatar{
+  width:112px!important;
+  height:112px!important;
+  border-radius:50%!important;
+  border:2px solid #8f1730;
+  background:#f5f0ec;
+  box-shadow:0 0 0 6px #fff,0 0 0 7px #e6ddd7;
+  font-size:34px;
+}
+.profile-photo-grid{
+  display:flex!important;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:18px;
+}
+.profile-photo-grid div{
+  width:145px!important;
+  height:145px!important;
+  aspect-ratio:auto!important;
+  border-radius:50%!important;
+  overflow:hidden;
+  border:1px solid #e4d9d2;
+  background:linear-gradient(135deg,#eee5df,#c7b0a8)!important;
+}
+.profile-offers-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:22px;
+}
+.profile-offer-card{
+  border:1px solid #e4d9d2;
+  border-radius:14px;
+  overflow:hidden;
+  background:#fff;
+}
+.profile-offer-image{
+  height:245px;
+  border-radius:0;
+  background:linear-gradient(135deg,#eee5df,#c7b0a8);
+}
+@media(max-width:500px){
+  .profile-identity .public-profile-avatar{width:92px!important;height:92px!important}
+  .profile-photo-grid div{width:105px!important;height:105px!important}
+  .profile-offers-grid{grid-template-columns:1fr}
+}
+
+
+.profile-identity{display:flex!important;justify-content:center!important;text-align:center}
+.profile-identity-centered{display:flex;flex-direction:column;align-items:center}
+.profile-identity-centered .public-profile-avatar{margin:0 auto 16px}
+.profile-identity-centered h1{margin:0;font-size:28px;font-weight:500}
+.profile-age{margin-top:5px;color:#6f6863;font-size:13px}
+.profile-identity-centered .verified-badge{margin-top:9px}
+.profile-activity{margin-top:8px;color:#96908b;font-size:11px}
+.profile-social-stats{display:flex;justify-content:center;gap:18px;margin-top:13px;color:#6f6863;font-size:12px}
+.profile-social-stats b{color:#292522}
 
 </style>
 </head>
@@ -1217,28 +1274,21 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 <div class="public-profile-modal" id="publicProfileModal">
   <div class="public-profile-page">
     <header class="public-profile-header">
-      <button class="profile-header-menu" type="button" aria-label="Menu" onclick="closePublicProfile();openSideMenu()">☰</button>
-      <div class="public-profile-logo">STRINGOLAND</div>
-      <div class="public-profile-header-actions">
-        <span aria-hidden="true">💬</span>
-        <span aria-hidden="true">♡</span>
-      </div>
+      <div class="brand">STRINGO<span>LAND</span></div>
     </header>
 
     <main class="public-profile-content">
       <button class="public-profile-back" type="button" onclick="closePublicProfile()">← Wróć do sprzedających</button>
 
       <section class="profile-identity">
-        <div class="public-profile-avatar" id="publicProfileAvatar">?</div>
-        <div class="profile-identity-copy">
-          <div class="profile-name-row">
-            <h1 id="publicProfileName">Profil</h1>
-            <span class="verified-badge">✓ Zweryfikowana</span>
-          </div>
-          <div class="profile-stats">
-            <span>★ <b id="publicProfileRating">—</b></span>
-            <span><b id="publicProfileReviewsCount">0</b> opinii</span>
-            <span><b id="publicProfileOrders">0</b> zakończonych zamówień</span>
+        <div class="profile-identity-centered">
+          <div class="public-profile-avatar" id="publicProfileAvatar">?</div>
+          <h1 id="publicProfileName">Profil</h1>
+          <div class="profile-age" id="publicProfileAge">— lat</div>
+          <div class="profile-activity" id="publicProfileActiveTop">Aktywna dzisiaj o 19:30</div>
+          <div class="profile-social-stats">
+            <span><b id="publicProfileRating">—</b></span>
+            <span>♡ <b id="publicProfileLikes">0</b></span>
           </div>
         </div>
       </section>
@@ -1256,7 +1306,6 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
       <section class="profile-public-info" id="publicProfileInfo"></section>
 
       <div class="profile-status">
-        <div id="publicProfileActive">Aktywna niedawno</div>
         <div id="publicProfileSince"></div>
       </div>
 
@@ -1297,28 +1346,30 @@ function seedDemoSeller(){
   const key=STRINGOLAND_PUBLIC_SELLERS_KEY;
   try{
     const existing=JSON.parse(localStorage.getItem(key)||"[]");
-    if(existing.length) return;
-    const demo=[{
-      pseudonym:"Luna",
-      verified:true,
-      active:true,
-      bio:"Profil demonstracyjny Stringoland. Tutaj będzie opis sprzedającej, który sama uzupełni po założeniu i zweryfikowaniu konta.",
-      completedOrders:0,
-      soldCount:0,
-      lastActive:"Aktywna niedawno",
-      registeredAt:"Profil demonstracyjny",
-      reviewCount:0,
-      photos:[],
-      offers:[
-        {title:"Przykładowa oferta",description:"Miejsce na opis oferty sprzedającej.",price:99},
-        {title:"Druga przykładowa oferta",description:"Tutaj pojawią się kolejne oferty.",price:60}
-      ],
-      reviews:[]
-    }];
+    if(existing.length===2) return;
+    const demo=[
+      {
+        pseudonym:"Luna",verified:true,active:true,age:27,likes:128,
+        lastActive:"Aktywna dzisiaj o 19:30",
+        bio:"Profil demonstracyjny Stringoland — miejsce na krótki opis sprzedającej.",
+        completedOrders:0,soldCount:0,registeredAt:"Profil demonstracyjny",
+        reviewCount:0,photos:[],
+        offers:[{title:"Przykładowa oferta",description:"Miejsce na opis oferty.",price:99}],
+        reviews:[]
+      },
+      {
+        pseudonym:"Velvet",verified:true,active:true,age:31,likes:246,
+        lastActive:"Aktywna dzisiaj o 18:45",
+        bio:"Profil demonstracyjny Stringoland — tutaj pojawi się opis sprzedającej.",
+        completedOrders:0,soldCount:0,registeredAt:"Profil demonstracyjny",
+        reviewCount:0,photos:[],
+        offers:[{title:"Przykładowa oferta",description:"Miejsce na opis oferty.",price:79}],
+        reviews:[]
+      }
+    ];
     localStorage.setItem(key,JSON.stringify(demo));
   }catch(e){}
 }
-
 function getPublicSellers(){
   try{return JSON.parse(localStorage.getItem(STRINGOLAND_PUBLIC_SELLERS_KEY)||"[]")}catch(e){return []}
 }
@@ -1343,6 +1394,9 @@ function renderDiscover(){
 function openPublicProfile(seller){
   document.getElementById("publicProfileName").textContent=seller.pseudonym||"Sprzedająca";
   document.getElementById("publicProfileAvatar").textContent=(seller.pseudonym||"?").charAt(0).toUpperCase();
+  document.getElementById("publicProfileAge").textContent=seller.age ? seller.age+" lat" : "— lat";
+  document.getElementById("publicProfileActiveTop").textContent=seller.lastActive||"Aktywna niedawno";
+  document.getElementById("publicProfileLikes").textContent=seller.likes||0;
   document.getElementById("publicProfileBio").textContent=seller.bio||"Opis sprzedającej pojawi się tutaj.";
 
   const reviews=Array.isArray(seller.reviews)?seller.reviews:[];
@@ -1351,7 +1405,6 @@ function openPublicProfile(seller){
   const rating=reviews.length ? (reviews.reduce((a,r)=>a+Number(r.rating||5),0)/reviews.length).toFixed(1) : "—";
 
   document.getElementById("publicProfileRating").textContent=rating;
-  document.getElementById("publicProfileReviewsCount").textContent=reviews.length;
   document.getElementById("publicProfileOrders").textContent=seller.completedOrders||0;
   document.getElementById("tabOffersCount").textContent=offers.length;
   document.getElementById("tabSoldCount").textContent=seller.soldCount||0;
