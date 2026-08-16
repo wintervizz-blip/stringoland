@@ -437,23 +437,6 @@ header .menu-btn.account-menu-visible,
 
 .brand-inline{font-family:Georgia,serif;letter-spacing:1.5px;font-weight:400}
 
-.discover-section{padding:82px 7%;background:#fff}
-.discover-head{max-width:900px;margin:0 auto 28px;text-align:center}
-.discover-head h2{margin:6px 0 10px}
-.discover-head p{margin:0;color:var(--muted);font-size:14px}
-.discover-grid{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.discover-card{background:#fbf7f2;border:1px solid #e5ddd6;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
-.discover-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(40,25,20,.09)}
-.discover-avatar{height:190px;background:#eee5de;display:flex;align-items:center;justify-content:center;font:42px Georgia,serif;color:#8f1730}
-.discover-card-body{padding:18px}
-.discover-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px}
-.verified-badge{font-size:10px;padding:5px 8px;border-radius:20px;background:#eee1d7;color:#7e1c30;white-space:nowrap}
-.discover-bio{font-size:12px;line-height:1.55;color:var(--muted);margin:9px 0 13px}
-.discover-meta{font-size:11px;color:#766d67}
-.discover-empty{max-width:650px;margin:0 auto;text-align:center;padding:42px 20px;border:1px dashed #d9cec5;border-radius:14px;background:#fcfaf8}
-.discover-empty-icon{font-size:28px;margin-bottom:10px;color:#8f1730}
-.discover-empty h3{margin:0 0 7px;font-size:18px;font-weight:500}
-.discover-empty p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
 .public-profile-modal{display:none;position:fixed;inset:0;background:rgba(25,18,15,.55);z-index:150;align-items:center;justify-content:center;padding:20px}
 .public-profile-modal.show{display:flex}
 .public-profile-box{width:min(720px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:16px;padding:28px;position:relative}
@@ -466,6 +449,29 @@ header .menu-btn.account-menu-visible,
 .profile-review{padding:12px 0;border-top:1px solid #eee6df;font-size:12px;line-height:1.5}
 @media(max-width:800px){.discover-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.discover-section{padding:58px 20px}.discover-grid{grid-template-columns:1fr}.public-profile-top{align-items:flex-start}}
+
+
+.discover-page{display:none;min-height:calc(100vh - 80px);background:#fff;padding:48px 7% 80px}
+.discover-page.show{display:block}
+.discover-page-inner{max-width:1080px;margin:0 auto}
+.discover-back{border:0;background:none;color:#8f1730;font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:32px}
+.discover-head{text-align:center;margin-bottom:32px}
+.discover-head h2{margin:6px 0 10px;font-size:34px;font-weight:500}
+.discover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.discover-card{background:#fbf7f2;border:1px solid #e5ddd6;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.discover-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(40,25,20,.09)}
+.discover-avatar{height:190px;background:#eee5de;display:flex;align-items:center;justify-content:center;font:42px Georgia,serif;color:#8f1730}
+.discover-card-body{padding:18px}
+.discover-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px}
+.verified-badge{font-size:10px;padding:5px 8px;border-radius:20px;background:#eee1d7;color:#7e1c30;white-space:nowrap}
+.discover-bio{font-size:12px;line-height:1.55;color:var(--muted);margin:9px 0 13px}
+.discover-meta{font-size:11px;color:#766d67}
+.discover-empty{max-width:650px;margin:40px auto;text-align:center;padding:42px 20px;border:1px dashed #d9cec5;border-radius:14px;background:#fcfaf8}
+.discover-empty-icon{font-size:28px;margin-bottom:10px;color:#8f1730}
+.discover-empty h3{margin:0 0 7px;font-size:18px;font-weight:500}
+.discover-empty p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+@media(max-width:800px){.discover-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.discover-page{padding:36px 20px 60px}.discover-grid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -510,7 +516,7 @@ header .menu-btn.account-menu-visible,
       <h1>Tutaj zaczyna się Twoja ciekawość.</h1>
       <p>Używana bielizna, fetysze, sex-chaty i wyjątkowe oferty dla dorosłych.</p>
       <div class="hero-actions">
-        <button class="btn primary" onclick="document.getElementById('discover').scrollIntoView({behavior:'smooth',block:'start'})">ZOBACZ SPRZEDAJĄCE</button>
+        <button class="btn primary" onclick="showDiscover()">ZOBACZ SPRZEDAJĄCE</button>
         <button class="btn secondary" onclick="openAuth('signup')">ZACZNIJ SPRZEDAWAĆ</button>
       </div>
       <div class="trust">
@@ -530,24 +536,6 @@ header .menu-btn.account-menu-visible,
       <div class="category"><b>Skarpetki i pończochy</b><span>Popularne wybory</span></div>
     </div>
   </section>
-
-  
-
-<section id="discover" class="discover-section">
-  <div class="discover-head">
-    <div>
-      <div class="eyebrow">ZOBACZ SPRZEDAJĄCE</div>
-      <h2>Poznaj zweryfikowane sprzedające</h2>
-      <p>Przeglądaj profile zweryfikowanych sprzedających i poznaj ich oferty.</p>
-    </div>
-  </div>
-  <div class="discover-grid" id="discoverGrid"></div>
-  <div class="discover-empty" id="discoverEmpty">
-    <div class="discover-empty-icon">✦</div>
-    <h3>Wkrótce pojawią się pierwsze profile</h3>
-    <p>Aktywne i zweryfikowane sprzedające będą widoczne tutaj po przygotowaniu swoich profili.</p>
-  </div>
-</section>
 <div class="how">
     <div class="how-inner">
       <div class="intro" style="padding:0;text-align:left">
@@ -563,6 +551,19 @@ header .menu-btn.account-menu-visible,
     </div>
   </div>
 </main>
+
+<section id="discoverPage" class="discover-page" aria-label="Sprzedające">
+  <div class="discover-page-inner">
+    <button class="discover-back" type="button" onclick="showHome()">← Wróć</button>
+    <div class="discover-head">
+      <div class="eyebrow">STRINGOLAND</div>
+      <h2>Sprzedające</h2>
+    </div>
+    <div class="discover-grid" id="discoverGrid"></div>
+    <div class="discover-empty" id="discoverEmpty"></div>
+  </div>
+</section>
+
 
 <footer class="stringoland-footer">
   <div class="footer-brand">
@@ -1197,7 +1198,7 @@ function renderDiscover(){
   if(!grid||!empty)return;
   const sellers=getPublicSellers().filter(x=>x && x.verified===true && x.active!==false);
   grid.innerHTML="";
-  empty.style.display=sellers.length?"none":"block";
+  empty.style.display=sellers.length?"none":"none";
   sellers.forEach((seller,i)=>{
     const card=document.createElement("article");
     card.className="discover-card";
@@ -1227,10 +1228,20 @@ function openPublicProfile(seller){
   document.getElementById("publicProfileModal").classList.add("show");
 }
 function closePublicProfile(){document.getElementById("publicProfileModal").classList.remove("show")}
+function showDiscover(){
+  document.querySelector("main").style.display="none";
+  document.getElementById("discoverPage").classList.add("show");
+  window.scrollTo({top:0,behavior:"smooth"});
+  renderDiscover();
+}
+function showHome(){
+  document.getElementById("discoverPage").classList.remove("show");
+  document.querySelector("main").style.display="";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function menuDiscover(){
   closeSideMenu();
-  const el=document.getElementById("discover");
-  if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+  showDiscover();
 }
 document.addEventListener("DOMContentLoaded",renderDiscover);
 window.addEventListener("storage",renderDiscover);
