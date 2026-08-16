@@ -1,56 +1,133 @@
 <!doctype html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stringoland</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--ink:#181716;--muted:#6d6863;--line:#e7e2dc;--cream:#f8f4ef;--burg:#7d202a;--green:#26aa65}
-*{box-sizing:border-box}body{margin:0;color:var(--ink);background:#fff;font-family:Arial,Helvetica,sans-serif}a{text-decoration:none;color:inherit}button,input{font:inherit}.wrap{max-width:1100px;margin:auto;padding:0 28px}
-header{height:74px;border-bottom:1px solid var(--line);background:#fff;display:flex;align-items:center}.head{display:flex;align-items:center;justify-content:space-between;width:100%}.logo{font-size:21px;letter-spacing:4px;font-weight:500}.logo:before{content:"♕";display:block;text-align:center;font-size:15px;letter-spacing:0;margin-bottom:-3px}.logo span{color:var(--burg)}
-nav{display:flex;gap:34px;font-size:14px}nav a:hover{color:var(--burg)}.actions{display:flex;gap:12px}.btn{padding:11px 18px;border:1px solid #bdb4ac;background:#fff;border-radius:7px;font-weight:600;cursor:pointer}.btn.primary{background:var(--burg);border-color:var(--burg);color:#fff}.user-menu{display:none;align-items:center;gap:9px;font-size:13px}.user-name{font-weight:700}.logout{border:0;background:none;color:var(--burg);cursor:pointer;font-weight:700}
-.hero{height:310px;position:relative;overflow:hidden;background:var(--cream);display:flex;align-items:center}.hero-copy{width:55%;padding-left:max(28px,calc((100vw - 1044px)/2 + 28px));position:relative;z-index:2}.hero h1{font-family:Georgia,serif;font-weight:500;font-size:43px;line-height:1.08;margin:0 0 24px}.search{display:flex;width:505px;height:49px}.search input{flex:1;border:1px solid #ddd6cf;background:#fff;border-radius:8px 0 0 8px;padding:0 18px;font-size:14px;outline:none}.search button{width:54px;border:1px solid #ddd6cf;border-left:0;background:#fff;border-radius:0 8px 8px 0;font-size:22px}.chips{display:flex;gap:9px;align-items:center;margin-top:15px;font-size:13px;overflow:auto;white-space:nowrap}.chip{padding:8px 15px;border:1px solid #d9d2cb;background:#fff;border-radius:8px}.hero-img{position:absolute;right:0;top:0;width:48%;height:100%;background:url("assets/hero.jpg") center/cover no-repeat}.hero-img:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--cream),transparent 32%)}
-section{padding:28px 0}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}.section-head h2{font-size:20px;margin:0}.section-head a{color:var(--burg);font-size:13px}.profiles{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.profile{border:1px solid var(--line);border-radius:9px;background:#fff;overflow:hidden;cursor:pointer}.avatar{height:218px;background-size:cover;background-position:center}.pbody{padding:10px 14px 13px}.name{font-weight:700;font-size:16px}.verified{color:var(--burg)}.line{font-size:12px;color:#59544f;margin-top:8px}.green{color:var(--green)}.rating{margin-top:8px;font-size:12px;color:#6d604c}
-.offers{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.offer{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}.offer-img{height:195px;background-size:cover;background-position:center}.obody{padding:10px 13px 13px}.otitle{font-size:13px;font-weight:700}.seller{font-size:12px;color:#777;margin-top:5px}.price{font-size:17px;font-weight:700;margin-top:13px}.how{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:30px 0}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:30px}.step{display:flex;gap:13px}.icon{width:54px;height:54px;border-radius:50%;background:#f7f2ed;display:flex;align-items:center;justify-content:center;font-size:25px;flex:none}.step b{font-size:13px}.step p{font-size:12px;color:#6e6964;line-height:1.5;margin:6px 0 0}.trust{display:grid;grid-template-columns:repeat(4,1fr);gap:35px;padding:28px 0 45px}.trust-item{display:flex;gap:14px;align-items:center}.trust-icon{font-size:27px}.trust b{font-size:13px}.trust p{margin:5px 0 0;color:#777;font-size:12px}footer{background:#faf8f5;border-top:1px solid var(--line);padding:25px 0;color:#777;font-size:12px}
-.modal{display:none;position:fixed;inset:0;background:#0008;z-index:20;padding:24px;overflow:auto}.modal.show{display:block}.modal-box{max-width:430px;margin:8vh auto;background:#fff;border-radius:14px;padding:25px;position:relative}.close{position:absolute;right:16px;top:12px;border:0;background:none;font-size:25px;cursor:pointer;color:#777}.modal h2{font-family:Georgia,serif;font-weight:500;margin:5px 0 7px}.modal p{font-size:13px;color:var(--muted)}.form-row{margin:13px 0}.form-row label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.form-row input{width:100%;padding:12px;border:1px solid #d8d0c8;border-radius:8px}.full{width:100%}.switch{margin-top:13px;text-align:center;font-size:13px}.switch button{border:0;background:none;color:var(--burg);font-weight:700;cursor:pointer}.error{background:#fff0f0;color:#9a1f2a;padding:9px;border-radius:7px;font-size:12px;display:none;margin-bottom:10px}.success{background:#edf9f2;color:#1d7b49;padding:9px;border-radius:7px;font-size:12px;display:none;margin-bottom:10px}.empty{padding:30px;border:1px dashed #d9d1c8;border-radius:10px;color:#777;text-align:center;grid-column:1/-1}
-@media(max-width:900px){nav{display:none}.profiles{grid-template-columns:repeat(3,1fr)}.offers{grid-template-columns:repeat(3,1fr)}.hero-copy{width:70%}.hero-img{width:45%}.search{width:100%}.steps,.trust{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.wrap{padding:0 16px}.hero{height:360px}.hero-copy{width:100%;padding:30px 16px}.hero h1{font-size:34px}.hero-img{opacity:.28;width:100%}.profiles{grid-template-columns:repeat(2,1fr)}.offers{grid-template-columns:repeat(2,1fr)}.steps,.trust{grid-template-columns:1fr}.avatar{height:190px}.actions .btn:first-child{display:none}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stringoland</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--ink:#181716;--muted:#6d6863;--line:#e7e2dc;--cream:#faf7f2;--accent:#7f1d2d;--green:#28ad69}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);font-family:Arial,Helvetica,sans-serif;background:#fff}
+    button,input{font:inherit}button{cursor:pointer}
+    header{height:74px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;background:#fff;position:sticky;top:0;z-index:20}
+    .logo{font-size:20px;letter-spacing:6px;font-weight:500}.logo span{color:#8b2434}.actions{display:flex;gap:12px;align-items:center}
+    .btn{border:1px solid #cfc8c0;background:#fff;border-radius:9px;padding:11px 20px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .hero{min-height:310px;background:linear-gradient(90deg,rgba(250,247,242,.96),rgba(250,247,242,.68)),url("assets/hero.jpg") center/cover;display:flex;align-items:center}
+    .hero-copy{max-width:1050px;width:100%;margin:auto;padding:48px 34px}.hero h1{font-family:Georgia,serif;font-size:48px;line-height:1.03;margin:0 0 26px;max-width:570px}
+    .search{height:50px;background:#fff;border:1px solid #ddd6ce;border-radius:8px;display:flex;max-width:505px;overflow:hidden}.search input{border:0;outline:0;flex:1;padding:0 16px}.search button{width:55px;border:0;border-left:1px solid #ddd6ce;background:#fff}
+    .chips{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.chip{background:#fff;border:1px solid #ddd6ce;border-radius:9px;padding:8px 15px}
+    section{padding:28px 34px;max-width:1100px;margin:auto}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.section-head h2{font-size:22px;margin:0}.link{color:var(--accent);background:none;border:0}
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.card{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}.card img{width:100%;aspect-ratio:1/1.18;object-fit:cover;display:block;background:#eee}.card-body{padding:12px}.name{font-weight:700;font-size:17px}.rating{margin-top:8px;color:#756d66;font-size:13px}.active{color:var(--green);font-size:13px;margin-top:9px}
+    .offers{grid-template-columns:repeat(5,1fr)}.offer img{aspect-ratio:1/1.05}.price{font-weight:700;margin-top:10px}
+    .how{border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:32px 34px;max-width:none}.how div{max-width:240px}.how b{display:block;margin-bottom:7px}
+    footer{padding:28px 34px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;background:#faf8f5}.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.show{display:flex}.box{width:min(420px,100%);background:#fff;border-radius:14px;padding:25px;box-shadow:0 20px 60px rgba(0,0,0,.2)}.box h2{margin-top:0}.field{width:100%;padding:12px;border:1px solid #d8d1ca;border-radius:8px;margin:7px 0 12px}.close{float:right;border:0;background:none;font-size:24px}.msg{font-size:14px;margin:8px 0 14px;min-height:18px}.profile-state{font-size:13px;color:var(--green);margin-left:5px}
+    @media(max-width:900px){header{padding:0 25px}.logo{font-size:17px;letter-spacing:5px}.grid{grid-template-columns:repeat(2,1fr)}.offers{grid-template-columns:repeat(2,1fr)}.how{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:43px}.actions .login{display:inline-block}}
+    @media(max-width:520px){header{height:70px;padding:0 26px}.logo{font-size:16px;letter-spacing:4px}.actions{gap:7px}.btn{padding:10px 13px}.hero{min-height:580px}.hero-copy{padding:40px 26px;align-self:flex-start;padding-top:120px}.hero h1{font-size:43px}.search{max-width:none}.chips{flex-wrap:nowrap;overflow:hidden}.chip{white-space:nowrap}.grid,.offers{grid-template-columns:repeat(2,1fr);gap:10px}section{padding:28px 26px}.how{grid-template-columns:1fr 1fr;padding:28px 26px}.how div{font-size:13px}.how b{font-size:14px}footer{grid-template-columns:1fr 1fr;padding:26px}}
+  </style>
 </head>
 <body>
-<header><div class="wrap head">
-<div class="logo">STRINGO<span>LAND</span></div>
-<nav><a href="#sprzedajace">Sprzedające</a><a href="#oferty">Oferty</a><a href="#">Kategorie</a><a href="#jak">Jak to działa?</a><a href="#">Pomoc</a></nav>
-<div class="actions" id="guestActions"><button class="btn" onclick="openAuth('login')">Zaloguj się</button><button class="btn primary" onclick="openAuth('signup')">Załóż konto</button></div>
-<div class="user-menu" id="userMenu"><span class="user-name" id="userName"></span><button class="logout" onclick="logout()">Wyloguj</button></div>
-</div></header>
-<section class="hero"><div class="hero-copy"><h1>Znajdź swoją<br>ulubioną sprzedającą ♡</h1><div class="search"><input id="q" placeholder="Szukaj profilu lub oferty..." oninput="filter()"><button>⌕</button></div><div class="chips"><span>Popularne:</span><span class="chip">Stringi</span><span class="chip">Majtki</span><span class="chip">Komplety</span><span class="chip">Skarpetki</span><span class="chip">Pończochy</span><span class="chip">Inne</span></div></div><div class="hero-img"></div></section>
-<main class="wrap">
-<section id="sprzedajace"><div class="section-head"><h2>Popularne sprzedające</h2><a href="#">Zobacz wszystkie →</a></div><div class="profiles" id="profiles"></div></section>
-<section id="oferty"><div class="section-head"><h2>Najnowsze oferty</h2><a href="#">Zobacz wszystkie →</a></div><div class="offers" id="offers"></div></section>
-<section class="how" id="jak"><div class="section-head"><h2>Jak to działa?</h2></div><div class="steps"><div class="step"><div class="icon">♙</div><div><b>1. Załóż konto</b><p>Szybka rejestracja i pełna dyskrecja.</p></div></div><div class="step"><div class="icon">⌑</div><div><b>2. Wybierz ofertę</b><p>Przeglądaj profile i oferty sprzedających.</p></div></div><div class="step"><div class="icon">☏</div><div><b>3. Napisz wiadomość</b><p>Skontaktuj się i ustal szczegóły zakupu.</p></div></div><div class="step"><div class="icon">▣</div><div><b>4. Odbierz przesyłkę</b><p>Dyskretna wysyłka i pełne bezpieczeństwo.</p></div></div></div></section>
-<section class="trust"><div class="trust-item"><div class="trust-icon">♙</div><div><b>Pełna dyskrecja</b><p>Twoje dane są u nas bezpieczne.</p></div></div><div class="trust-item"><div class="trust-icon">◇</div><div><b>Zweryfikowane konta</b><p>Dbamy o bezpieczeństwo naszej społeczności.</p></div></div><div class="trust-item"><div class="trust-icon">▤</div><div><b>Bezpieczne płatności</b><p>Płać wygodnie i bez obaw.</p></div></div><div class="trust-item"><div class="trust-icon">♧</div><div><b>Wsparcie</b><p>Jesteśmy tu, żeby pomóc.</p></div></div></section>
-</main><footer><div class="wrap">© 2026 Stringoland · Regulamin · Prywatność · Kontakt</div></footer>
-<div class="modal" id="authModal"><div class="modal-box"><button class="close" onclick="closeAuth()">×</button><h2 id="authTitle">Załóż konto</h2><p id="authSubtitle">Utwórz konto i swój profil.</p><div class="error" id="authError"></div><div class="success" id="authSuccess"></div><form onsubmit="submitAuth(event)"><div class="form-row" id="nameRow"><label>Nazwa profilu</label><input id="displayName" placeholder="np. Lena"></div><div class="form-row" id="usernameRow"><label>Nazwa użytkownika</label><input id="username" placeholder="np. lena"></div><div class="form-row"><label>E-mail</label><input id="email" type="email" required placeholder="twoj@email.pl"></div><div class="form-row"><label>Hasło</label><input id="password" type="password" minlength="6" required placeholder="minimum 6 znaków"></div><button class="btn primary full" id="submitBtn">Załóż konto</button></form><div class="switch"><span id="switchText">Masz już konto?</span> <button type="button" onclick="toggleAuth()">Zaloguj się</button></div></div></div>
+<header>
+  <div class="logo">STRINGO<span>LAND</span></div>
+  <div class="actions" id="actions">
+    <button class="btn login" onclick="openAuth('login')">Zaloguj się</button>
+    <button class="btn primary" onclick="openAuth('signup')">Załóż konto</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-copy">
+    <h1>Znajdź swoją<br>ulubioną sprzedającą ♡</h1>
+    <div class="search"><input id="search" placeholder="Szukaj profilu lub oferty..."><button onclick="doSearch()">⌕</button></div>
+    <div class="chips"><button class="chip">Stringi</button><button class="chip">Majtki</button><button class="chip">Komplety</button><button class="chip">Skarpetki</button><button class="chip">Pończochy</button><button class="chip">Inne</button></div>
+  </div>
+</div>
+
+<section>
+  <div class="section-head"><h2>Popularne sprzedające</h2><button class="link">Zobacz wszystkie →</button></div>
+  <div class="grid" id="sellers">
+    <article class="card"><img src="assets/lena.jpg" onerror="this.style.background='#d9b995'"><div class="card-body"><div class="name">Lena ♥</div><div class="rating">★ 5.0 (124)</div><div class="rating">▱ 38 ofert</div><div class="active">● Aktywna teraz</div></div></article>
+    <article class="card"><img src="assets/mia.jpg" onerror="this.style.background='#d9b995'"><div class="card-body"><div class="name">Mia ♥</div><div class="rating">★ 4.9 (86)</div><div class="rating">▱ 24 oferty</div><div class="active">● Aktywna teraz</div></div></article>
+    <article class="card"><img src="assets/nika.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Nika ♥</div><div class="rating">★ 5.0 (98)</div><div class="rating">▱ 17 ofert</div><div class="active">● Aktywna teraz</div></div></article>
+    <article class="card"><img src="assets/zosia.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Zosia ♥</div><div class="rating">★ 4.8 (67)</div><div class="rating">▱ 29 ofert</div><div class="active">● Aktywna 15 min temu</div></div></article>
+    <article class="card"><img src="assets/emi.jpg" onerror="this.style.background='#aaa'"><div class="card-body"><div class="name">Emi ♥</div><div class="rating">★ 4.9 (53)</div><div class="rating">▱ 14 ofert</div><div class="active">● Aktywna 1 godz. temu</div></div></article>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><h2>Najnowsze oferty</h2><button class="link">Zobacz wszystkie →</button></div>
+  <div class="grid offers">
+    <article class="card offer"><img src="assets/offer1.jpg" onerror="this.style.background='#eee5da'"><div class="card-body">Stringi czarne<div class="rating">Lena</div><div class="price">59 zł</div></div></article>
+    <article class="card offer"><img src="assets/offer2.jpg" onerror="this.style.background='#d9b2ad'"><div class="card-body">Komplet koronkowy<div class="rating">Mia</div><div class="price">79 zł</div></div></article>
+    <article class="card offer"><img src="assets/offer3.jpg" onerror="this.style.background='#e9dfd2'"><div class="card-body">Stringi beżowe<div class="rating">Nika</div><div class="price">55 zł</div></div></article>
+    <article class="card offer"><img src="assets/offer4.jpg" onerror="this.style.background='#ddd'"><div class="card-body">Komplet z koronki<div class="rating">Zosia</div><div class="price">89 zł</div></div></article>
+    <article class="card offer"><img src="assets/offer5.jpg" onerror="this.style.background='#eee'"><div class="card-body">Stringi białe<div class="rating">Emi</div><div class="price">49 zł</div></div></article>
+  </div>
+</section>
+
+<div class="how">
+  <div><b>1. Załóż konto</b>Szybka rejestracja i pełna dyskrecja.</div>
+  <div><b>2. Wybierz ofertę</b>Przeglądaj profile i oferty sprzedających.</div>
+  <div><b>3. Napisz wiadomość</b>Skontaktuj się i ustal szczegóły zakupu.</div>
+  <div><b>4. Odbierz przesyłkę</b>Dyskretna wysyłka i pełne bezpieczeństwo.</div>
+</div>
+
+<footer><div><b>Pełna dyskrecja</b><br>Twoje dane są u nas bezpieczne.</div><div><b>Zweryfikowane konta</b><br>Dbamy o bezpieczeństwo społeczności.</div><div><b>Bezpieczne płatności</b><br>Płać wygodnie i bez obaw.</div><div><b>Wsparcie</b><br>Jesteśmy tu, żeby pomóc.</div></footer>
+
+<div class="modal" id="authModal">
+  <div class="box">
+    <button class="close" onclick="closeAuth()">×</button>
+    <h2 id="authTitle">Załóż konto</h2>
+    <p id="authIntro">Utwórz konto w Stringoland.</p>
+    <input class="field" id="email" type="email" placeholder="Adres e-mail">
+    <input class="field" id="password" type="password" placeholder="Hasło (min. 6 znaków)">
+    <div class="msg" id="msg"></div>
+    <button class="btn primary" style="width:100%" onclick="submitAuth()" id="authSubmit">Załóż konto</button>
+    <button class="link" style="width:100%;margin-top:12px" onclick="toggleAuth()" id="switchAuth">Mam już konto — zaloguj się</button>
+  </div>
+</div>
+
 <script>
-const SUPABASE_URL="https://eqatnxwicohczjydnvux.supabase.co";
-const SUPABASE_KEY="sb_publishable_bPKJw5BUKdO9xOWiF6t5qw_EnzGL0nH";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let mode="signup";
-const demos=[
-["Lena","5.0","124","38","assets/lena.jpg"],["Mia","4.9","86","24","assets/mia.jpg"],["Nika","5.0","98","17","assets/nika.jpg"],["Zosia","4.8","67","29","assets/zosia.jpg"],["Emi","4.9","53","14","assets/emi.jpg"]];
-const demoOffers=[["Stringi czarne","Lena","59","assets/offer1.jpg"],["Komplet koronkowy","Mia","79","assets/offer2.jpg"],["Stringi beżowe","Nika","55","assets/offer3.jpg"],["Komplet z koronki","Zosia","89","assets/offer4.jpg"],["Stringi białe","Emi","49","assets/offer5.jpg"]];
-function openAuth(m){mode=m;renderAuth();document.getElementById("authModal").classList.add("show")}
-function closeAuth(){document.getElementById("authModal").classList.remove("show")}
-function toggleAuth(){mode=mode==="signup"?"login":"signup";renderAuth()}
-function renderAuth(){let s=mode==="signup";document.getElementById("authTitle").textContent=s?"Załóż konto":"Zaloguj się";document.getElementById("authSubtitle").textContent=s?"Utwórz konto i swój profil.":"Zaloguj się do swojego konta.";document.getElementById("nameRow").style.display=s?"block":"none";document.getElementById("usernameRow").style.display=s?"block":"none";document.getElementById("submitBtn").textContent=s?"Załóż konto":"Zaloguj się";document.getElementById("switchText").textContent=s?"Masz już konto?":"Nie masz jeszcze konta?";document.querySelector(".switch button").textContent=s?"Zaloguj się":"Załóż konto";document.getElementById("authError").style.display="none";document.getElementById("authSuccess").style.display="none"}
-async function submitAuth(e){e.preventDefault();let err=document.getElementById("authError"),ok=document.getElementById("authSuccess");err.style.display="none";ok.style.display="none";let email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;try{if(mode==="signup"){let display_name=document.getElementById("displayName").value.trim(),username=document.getElementById("username").value.trim().toLowerCase();if(!display_name||!username)throw new Error("Uzupełnij nazwę profilu i nazwę użytkownika.");let r=await sb.auth.signUp({email,password,options:{data:{display_name,username}}});if(r.error)throw r.error;if(r.data.session){ok.textContent="Konto utworzone. Jesteś zalogowana.";ok.style.display="block";setTimeout(closeAuth,700)}else{ok.textContent="Konto utworzone. Sprawdź e-mail, aby potwierdzić adres.";ok.style.display="block"}}else{let r=await sb.auth.signInWithPassword({email,password});if(r.error)throw r.error;closeAuth()}}catch(ex){err.textContent=ex.message||"Nie udało się wykonać operacji.";err.style.display="block"}}
-async function logout(){await sb.auth.signOut()}
-async function loadUser(){let r=await sb.auth.getUser(),u=r.data.user,g=document.getElementById("guestActions"),m=document.getElementById("userMenu");if(u){g.style.display="none";m.style.display="flex";document.getElementById("userName").textContent=u.user_metadata?.display_name||u.email}else{g.style.display="flex";m.style.display="none"}}
-function renderProfiles(rows){let el=document.getElementById("profiles");el.innerHTML="";rows.forEach((p,i)=>{let d=demos[i%demos.length],img=p.avatar_url||d[4];el.innerHTML+=`<div class="profile" data-name="${(p.display_name||p.username||"").toLowerCase()}"><div class="avatar" style="background-image:url('${img}')"></div><div class="pbody"><div class="name">${p.display_name||p.username} <span class="verified">♥</span></div><div class="rating">★ 5.0</div><div class="line">▱ 0 ofert</div><div class="line green">● Aktywna</div></div></div>`})}
-function renderOffers(rows){let el=document.getElementById("offers");el.innerHTML="";rows.forEach((o,i)=>{let d=demoOffers[i%demoOffers.length];el.innerHTML+=`<div class="offer"><div class="offer-img" style="background-image:url('${o.image_url||d[3]}')"></div><div class="obody"><div class="otitle">${o.title}</div><div class="seller">${d[1]}</div><div class="price">${o.price} zł</div></div></div>`})}
-async function loadData(){let p=await sb.from("profiles").select("*").order("created_at",{ascending:false}).limit(20);renderProfiles(!p.error&&p.data?.length?p.data:demos.map(x=>({display_name:x[0],username:x[0].toLowerCase(),avatar_url:x[4]})));let l=await sb.from("listings").select("*").eq("is_active",true).order("created_at",{ascending:false}).limit(20);renderOffers(!l.error&&l.data?.length?l.data:demoOffers.map(x=>({title:x[0],price:x[2],image_url:x[3]})))}
-function filter(){let q=document.getElementById("q").value.toLowerCase().trim();document.querySelectorAll(".profile").forEach(x=>x.style.display=x.dataset.name.includes(q)?"block":"none")}
-sb.auth.onAuthStateChange(()=>loadUser());loadUser();loadData();
+const SUPABASE_URL = "https://eqatnxwicohczjydnvux.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bPKJw5BUKdO9xOWiF6t5qw_EnzGL0nH";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let mode = "signup";
+
+function openAuth(m){ mode=m; updateAuth(); document.getElementById("authModal").classList.add("show"); }
+function closeAuth(){ document.getElementById("authModal").classList.remove("show"); document.getElementById("msg").textContent=""; }
+function toggleAuth(){ mode=mode==="signup"?"login":"signup"; updateAuth(); }
+function updateAuth(){
+  const signup=mode==="signup";
+  document.getElementById("authTitle").textContent=signup?"Załóż konto":"Zaloguj się";
+  document.getElementById("authIntro").textContent=signup?"Utwórz konto w Stringoland.":"Zaloguj się do swojego konta.";
+  document.getElementById("authSubmit").textContent=signup?"Załóż konto":"Zaloguj się";
+  document.getElementById("switchAuth").textContent=signup?"Mam już konto — zaloguj się":"Nie mam konta — załóż je";
+}
+async function submitAuth(){
+  const email=document.getElementById("email").value.trim(), password=document.getElementById("password").value;
+  const msg=document.getElementById("msg");
+  msg.textContent="";
+  if(!email || password.length<6){msg.textContent="Podaj e-mail i hasło (minimum 6 znaków).";return;}
+  const result = mode==="signup"
+    ? await supabaseClient.auth.signUp({email,password})
+    : await supabaseClient.auth.signInWithPassword({email,password});
+  if(result.error){msg.textContent=result.error.message;return;}
+  if(mode==="signup" && !result.data.session){
+    msg.textContent="Konto utworzone. Sprawdź e-mail i potwierdź adres.";
+    return;
+  }
+  closeAuth(); renderSession(result.data.session?.user);
+}
+async function renderSession(user){
+  const actions=document.getElementById("actions");
+  if(!user)return;
+  actions.innerHTML='<span class="profile-state">● Zalogowano</span><button class="btn" onclick="logout()">Wyloguj się</button>';
+}
+async function logout(){await supabaseClient.auth.signOut(); location.reload();}
+supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)});
+function doSearch(){
+  const q=document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#sellers .card").forEach(c=>c.style.display=(!q||c.innerText.toLowerCase().includes(q))?"":"none");
+}
 </script>
-</body></html>
+</body>
+</html>
