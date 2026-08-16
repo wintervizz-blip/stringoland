@@ -163,9 +163,143 @@
 .regulation-box p{font-size:13px;line-height:1.55}
 .regulation-note{color:var(--muted);font-size:12px}
 
+
+/* Fix formularza rejestracji: przycisk pozostaje dostępny po przewinięciu */
+#authModal .modal-box{
+  max-height:90vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#authModal #registrationForm,
+#authModal .auth-form{
+  padding-bottom:28px;
+}
+#authModal #authSubmit,
+#authModal button[type="submit"]{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative;
+  z-index:5;
+  margin-bottom:8px;
+}
+
+
+.stringoland-footer{
+  background:#f7f2ec;
+  padding:72px 24px 28px;
+  text-align:center;
+}
+.footer-brand{margin-bottom:36px}
+.footer-logo{
+  font-family:Georgia,serif;
+  font-size:26px;
+  letter-spacing:5px;
+  color:#1a1716;
+}
+.footer-tagline{
+  margin-top:12px;
+  font-family:Georgia,serif;
+  font-size:17px;
+  color:#8f1730;
+}
+.footer-line{
+  height:1px;
+  background:#d8d0c8;
+  max-width:760px;
+  margin:0 auto 22px;
+}
+.footer-links{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px 28px;
+  max-width:1000px;
+  margin:0 auto;
+  text-align:center;
+}
+.footer-links button{
+  border:0;
+  background:none;
+  padding:0;
+  color:#5f5955;
+  cursor:pointer;
+  font-size:13px;
+}
+.footer-links button:hover{color:#8f1730}
+
+
+.privacy-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center;padding:20px}
+.privacy-modal.show{display:flex}
+.privacy-box{width:min(800px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;text-align:left}
+.privacy-box h2,.privacy-box h3{font-family:Georgia,serif;font-weight:400}
+.privacy-box h2{font-size:30px;margin:0 0 8px}
+.privacy-box h3{font-size:19px;margin:22px 0 7px}
+.privacy-box p,.privacy-box li{font-size:13px;line-height:1.6}
+.privacy-box ul{padding-left:22px}
+.privacy-note{color:var(--muted);font-size:12px}
+
+
+/* Stringoland — menu boczne */
+.menu-toggle{
+  position:fixed;left:18px;top:18px;z-index:120;
+  width:44px;height:44px;border:1px solid #ddd3ca;border-radius:10px;
+  background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.08)
+}
+.menu-toggle span{display:block;width:19px;height:2px;background:#231f1d;border-radius:2px}
+.side-menu-overlay{
+  display:none;position:fixed;inset:0;background:rgba(20,16,14,.28);z-index:109
+}
+.side-menu-overlay.show{display:block}
+.side-menu{
+  position:fixed;left:0;top:0;bottom:0;width:min(330px,82vw);
+  background:#fbf7f2;z-index:110;transform:translateX(-105%);
+  transition:transform .25s ease;box-shadow:10px 0 30px rgba(0,0,0,.12);
+  padding:26px 24px;box-sizing:border-box
+}
+.side-menu.show{transform:translateX(0)}
+.side-menu-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.side-menu-logo{font-family:Georgia,serif;font-size:21px;letter-spacing:3px}
+.side-menu-close{border:0;background:none;font-size:28px;cursor:pointer;color:#514a46}
+.side-menu-nav{display:flex;flex-direction:column;gap:4px}
+.side-menu-nav button{
+  width:100%;border:0;background:transparent;text-align:left;padding:14px 12px;
+  border-radius:9px;color:#292522;font-size:15px;cursor:pointer
+}
+.side-menu-nav button:hover{background:#eee6df}
+.side-menu-section{margin:18px 12px 7px;color:#8b817b;font-size:10px;letter-spacing:1.5px;text-transform:uppercase}
+.side-menu-user{font-size:12px;color:#776e68;margin:0 12px 18px}
+
 </style>
 </head>
 <body>
+
+<button class="menu-toggle" title="Menu konta" type="button" aria-label="Otwórz menu" onclick="openSideMenu()">
+  <span></span><span></span><span></span>
+</button>
+<div class="side-menu-overlay" id="sideMenuOverlay" onclick="closeSideMenu()"></div>
+<aside class="side-menu" id="sideMenu" aria-label="Menu Stringoland">
+  <div class="side-menu-head">
+    <div class="side-menu-logo">STRINGOLAND</div>
+    <button class="side-menu-close" type="button" aria-label="Zamknij menu" onclick="closeSideMenu()">×</button>
+  </div>
+  <div class="side-menu-user" id="sideMenuUser"></div>
+  <nav class="side-menu-nav">
+    <button type="button" onclick="menuHome()">🏠 Strona główna</button>
+    <button type="button" onclick="menuDiscover()">✨ Odkrywaj</button>
+    <button type="button" onclick="menuMessages()">💬 Wiadomości</button>
+    <div class="side-menu-section" id="buyerMenuSection">Kupowanie</div>
+    <button type="button" id="buyerPurchases" onclick="menuPurchases()">🛍️ Moje zakupy</button>
+    <div class="side-menu-section" id="sellerMenuSection">Sprzedaż</div>
+    <button type="button" id="sellerOffers" onclick="menuOffers()">📦 Moje oferty</button>
+    <button type="button" id="sellerSales" onclick="menuSales()">💰 Sprzedaż</button>
+    <button type="button" onclick="menuProfile()">👤 Mój profil</button>
+    <button type="button" onclick="menuSettings()">⚙️ Ustawienia</button>
+  </nav>
+</aside>
+
 <header>
   <button class="menu-btn" aria-label="Menu">☰</button>
   <div class="brand">STRINGO<span>LAND</span></div>
@@ -243,11 +377,19 @@
   </div>
 </main>
 
-<footer>
-  <div><b>STRINGOLAND</b><br>Miejsce dla dorosłych, prawdziwych profili i prawdziwych ofert.</div>
-  <div><b>Dla kupujących</b><br>Przeglądaj oferty<br>Znajdź sprzedającą</div>
-  <div><b>Dla sprzedających</b><br>Załóż konto<br>Utwórz profil</div>
-  <div><b>Pomoc</b><br><button class="regulation-trigger" onclick="openRegulation()">Regulamin</button><br>Bezpieczeństwo<br>Kontakt</div>
+<footer class="stringoland-footer">
+  <div class="footer-brand">
+    <div class="footer-logo">STRINGOLAND</div>
+    <div class="footer-tagline">Tutaj zaczyna się Twoja ciekawość.</div>
+  </div>
+  <div class="footer-line"></div>
+  <nav class="footer-links" aria-label="Informacje">
+    <button type="button" onclick="openRegulation()">Regulamin</button>
+    <button type="button" onclick="alert('Kontakt będzie dostępny wkrótce.')">Kontakt</button>
+    <button type="button" onclick="alert('Centrum pomocy będzie dostępne wkrótce.')">Centrum pomocy</button>
+    <button type="button" onclick="openPrivacy()">Ochrona danych osobowych</button>
+    <button type="button" onclick="alert('Informacje dotyczące płatności i dostawy będą dostępne wkrótce.')">Płatność i dostawa</button>
+  </nav>
 </footer>
 
 
@@ -536,7 +678,7 @@ function togglePassword(){
 async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
   const meta=user.user_metadata||{};
-  actions.innerHTML='<button class="btn" onclick="openProfile()">Mój profil</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+  actions.innerHTML='<button class="btn" onclick="openProfile()">👤 Mój profil</button><button class="btn" onclick="logout()">Wyloguj się</button>';
   fillProfile(user);
 }
 function fillProfile(user){
@@ -561,6 +703,160 @@ async function saveProfile(){
 async function logout(){await supabaseClient.auth.signOut();location.reload()}
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
 </script>
+
+<div class="privacy-modal" id="privacyModal">
+  <div class="privacy-box">
+    <button class="close" onclick="closePrivacy()">×</button>
+    <h2>Ochrona danych osobowych</h2>
+    <p class="privacy-note">Stringoland traktuje ochronę danych osobowych jako jeden z priorytetów. Poniższa informacja została przygotowana jako projekt zgodny z zasadami RODO. Przed uruchomieniem produkcyjnego serwisu należy uzupełnić dane administratora, dostawców usług i rzeczywiste okresy retencji oraz zweryfikować dokument prawnie.</p>
+
+    <h3>1. Kto jest administratorem Twoich danych?</h3>
+    <p>Administratorem danych osobowych jest operator serwisu Stringoland: <strong>[pełna nazwa podmiotu]</strong>, z siedzibą pod adresem <strong>[adres]</strong>, e-mail: <strong>[adres e-mail do spraw ochrony danych]</strong>.</p>
+    <p>Jeżeli administrator wyznaczy inspektora ochrony danych (IOD), jego dane kontaktowe zostaną wskazane w tym miejscu.</p>
+
+    <h3>2. Jakie dane możemy przetwarzać?</h3>
+    <ul>
+      <li>dane konta: pseudonim, adres e-mail i dane związane z logowaniem;</li>
+      <li>dane profilu publicznego, które użytkownik zdecyduje się opublikować;</li>
+      <li>dane związane z ofertami, transakcjami, płatnościami i wypłatami;</li>
+      <li>w przypadku sprzedających — dane identyfikacyjne, adresowe, podatkowe i dane rachunku potrzebne do weryfikacji, wypłat oraz realizacji obowiązków prawnych;</li>
+      <li>dane dotyczące korzystania z serwisu, urządzenia i bezpieczeństwa, w zakresie niezbędnym do jego działania.</li>
+    </ul>
+
+    <h3>3. W jakich celach przetwarzamy dane?</h3>
+    <ul>
+      <li>założenie i prowadzenie konta;</li>
+      <li>obsługa profilu, ofert i funkcji serwisu;</li>
+      <li>realizacja i rozliczanie transakcji oraz wypłat;</li>
+      <li>weryfikacja sprzedających i zapewnienie bezpieczeństwa platformy;</li>
+      <li>obsługa zgłoszeń, kontakt z użytkownikiem i pomoc;</li>
+      <li>zapobieganie nadużyciom, oszustwom i naruszeniom Regulaminu;</li>
+      <li>realizacja obowiązków wynikających z prawa, w tym obowiązków podatkowych i księgowych, jeżeli mają zastosowanie;</li>
+      <li>dochodzenie lub obrona przed roszczeniami.</li>
+    </ul>
+    <p>Każdy cel przetwarzania powinien mieć odpowiednią podstawę prawną, np. wykonanie umowy, obowiązek prawny, prawnie uzasadniony interes administratora albo zgodę — zależnie od konkretnego procesu.</p>
+
+    <h3>4. Jak długo przechowujemy dane?</h3>
+    <p>Nie przechowujemy danych dłużej, niż jest to niezbędne do celu, w którym zostały zebrane, z uwzględnieniem obowiązków prawnych dotyczących np. rachunkowości, podatków, rozliczeń oraz terminów przedawnienia roszczeń. Dla poszczególnych kategorii danych zostaną ustalone odrębne okresy lub kryteria ich ustalania przed uruchomieniem produkcyjnej wersji serwisu.</p>
+    <p>Przykładowo dane konta mogą być przechowywane przez okres istnienia konta, a po jego usunięciu przez okres niezbędny do realizacji obowiązków prawnych lub obrony przed roszczeniami. Dane, dla których przepisy wymagają dłuższego przechowywania, pozostają przechowywane przez wymagany prawem okres.</p>
+
+    <h3>5. Komu możemy przekazywać dane?</h3>
+    <p>Dane mogą być przekazywane podmiotom, które wspierają działanie Stringoland, wyłącznie w zakresie niezbędnym do realizacji określonych celów, np. dostawcom hostingu i infrastruktury IT, usług płatniczych, usług księgowych, narzędzi bezpieczeństwa, obsługi klienta lub usług weryfikacyjnych.</p>
+    <p>W przypadkach wymaganych prawem dane mogą być również przekazywane właściwym organom publicznym.</p>
+
+    <h3>6. Przekazywanie danych poza EOG</h3>
+    <p>Jeżeli korzystamy z dostawcy, który przetwarza dane poza Europejskim Obszarem Gospodarczym, takie przekazanie będzie realizowane na podstawie odpowiedniego mechanizmu przewidzianego przez RODO, np. decyzji stwierdzającej odpowiedni stopień ochrony albo standardowych klauzul umownych, wraz z wymaganymi zabezpieczeniami.</p>
+
+    <h3>7. Twoje prawa</h3>
+    <p>W granicach określonych przez RODO przysługują Ci w szczególności:</p>
+    <ul>
+      <li>prawo dostępu do swoich danych;</li>
+      <li>prawo do ich sprostowania;</li>
+      <li>prawo do usunięcia danych („prawo do bycia zapomnianym”), gdy są ku temu podstawy;</li>
+      <li>prawo do ograniczenia przetwarzania;</li>
+      <li>prawo do przenoszenia danych, gdy ma zastosowanie;</li>
+      <li>prawo wniesienia sprzeciwu wobec przetwarzania opartego na prawnie uzasadnionym interesie, a także w przypadkach przewidzianych prawem;</li>
+      <li>prawo do cofnięcia zgody w dowolnym momencie, jeżeli przetwarzanie odbywa się na podstawie zgody — bez wpływu na zgodność z prawem wcześniejszego przetwarzania;</li>
+      <li>prawo wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</li>
+    </ul>
+
+    <h3>8. Jak skorzystać ze swoich praw?</h3>
+    <p>Wniosek dotyczący danych osobowych możesz skierować na adres: <strong>[adres e-mail do spraw ochrony danych]</strong>. Odpowiedzi udzielamy bez zbędnej zwłoki, co do zasady w terminie miesiąca od otrzymania żądania; w przypadkach przewidzianych RODO termin może zostać przedłużony.</p>
+
+    <h3>9. Bezpieczeństwo danych</h3>
+    <p>Stosujemy odpowiednie środki techniczne i organizacyjne mające chronić dane przed nieuprawnionym dostępem, utratą, zniszczeniem, zmianą lub ujawnieniem. Zakres zabezpieczeń jest dobierany do ryzyka związanego z przetwarzaniem.</p>
+
+    <h3>10. Zautomatyzowane podejmowanie decyzji i profilowanie</h3>
+    <p>Jeżeli w Stringoland zostaną zastosowane procesy obejmujące zautomatyzowane podejmowanie decyzji lub profilowanie, użytkownik otrzyma odpowiednią informację o takim przetwarzaniu, w zakresie wymaganym przez RODO.</p>
+
+    <h3>11. Pliki cookies</h3>
+    <p>Serwis może korzystać z plików cookies i podobnych technologii w celu zapewnienia działania strony, utrzymania sesji, bezpieczeństwa oraz — jeżeli zostaną wdrożone — celów analitycznych lub marketingowych. Szczegółowe zasady zostaną opisane w Polityce cookies, jeżeli będzie ona wymagana.</p>
+
+    <h3>12. Aktualizacje informacji</h3>
+    <p>Informacja może być aktualizowana w związku ze zmianami funkcjonalności Stringoland, sposobu przetwarzania danych lub obowiązujących przepisów. Aktualna wersja będzie publikowana na stronie.</p>
+  </div>
+</div>
+
+<script>function openPrivacy(){document.getElementById("privacyModal").classList.add("show")}function closePrivacy(){document.getElementById("privacyModal").classList.remove("show")}</script>
+<script>
+function openSideMenu(){
+  document.getElementById("sideMenu").classList.add("show");
+  document.getElementById("sideMenuOverlay").classList.add("show");
+  updateSideMenu();
+}
+function closeSideMenu(){
+  document.getElementById("sideMenu").classList.remove("show");
+  document.getElementById("sideMenuOverlay").classList.remove("show");
+}
+function updateSideMenu(){
+  const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const role=(saved&&saved.role)||window.stringolandRole||"guest";
+  const user=document.getElementById("sideMenuUser");
+  user.textContent=saved ? ("Zalogowano jako: "+saved.pseudonym) : "Nie jesteś zalogowana";
+  document.getElementById("buyerMenuSection").style.display=(role==="buyer"||role==="guest")?"block":"none";
+  document.getElementById("buyerPurchases").style.display=(role==="buyer")?"block":"none";
+  document.getElementById("sellerMenuSection").style.display=(role==="seller")?"block":"none";
+  document.getElementById("sellerOffers").style.display=(role==="seller")?"block":"none";
+  document.getElementById("sellerSales").style.display=(role==="seller")?"block":"none";
+}
+function menuHome(){closeSideMenu();window.scrollTo({top:0,behavior:"smooth"})}
+function menuDiscover(){
+  closeSideMenu();
+  const el=document.getElementById("profiles")||document.getElementById("sellers")||document.querySelector(".profiles");
+  if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+  else window.location.hash="odkrywaj";
+}
+function menuMessages(){closeSideMenu();alert("Wiadomości będą dostępne po zalogowaniu.")}
+function menuPurchases(){closeSideMenu();alert("Moje zakupy będą dostępne po zalogowaniu.")}
+function menuOffers(){closeSideMenu();alert("Moje oferty będą dostępne po przygotowaniu profilu sprzedającej.")}
+function menuSales(){closeSideMenu();alert("Panel sprzedaży będzie dostępny po aktywacji konta sprzedającej.")}
+function menuProfile(){closeSideMenu();alert("Mój profil będzie dostępny po zalogowaniu.")}
+function menuSettings(){closeSideMenu();alert("Ustawienia będą dostępne po zalogowaniu.")}
+window.stringolandRole=(JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{}).role||"guest";
+</script>
+
+<script>
+(function(){
+  function getCurrentStringolandUser(){
+    try{return JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){return null}
+  }
+  function updateMenuVisibility(){
+    const menu=document.getElementById("sideMenu");
+    const toggle=document.querySelector(".menu-toggle");
+    const user=getCurrentStringolandUser();
+    if(toggle) toggle.style.display=user ? "flex" : "none";
+    if(!user && menu) closeSideMenu();
+    if(typeof updateSideMenu==="function") updateSideMenu();
+  }
+  window.updateStringolandMenu=updateMenuVisibility;
+
+  // Patch the existing test-mode registration flow so the menu appears
+  // immediately after an account is created.
+  const originalSubmit=window.submitRegistration;
+  if(typeof originalSubmit==="function"){
+    window.submitRegistration=function(e){
+      const result=originalSubmit.apply(this,arguments);
+      setTimeout(updateMenuVisibility,50);
+      return result;
+    };
+  }
+
+  // Also refresh after login/session rendering.
+  const originalRender=window.renderSession;
+  if(typeof originalRender==="function"){
+    window.renderSession=function(){
+      const result=originalRender.apply(this,arguments);
+      setTimeout(updateMenuVisibility,50);
+      return result;
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded",updateMenuVisibility);
+  window.addEventListener("storage",updateMenuVisibility);
+  updateMenuVisibility();
+})();
+</script>
+
 </body>
 </html>
 <script>
