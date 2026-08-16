@@ -579,6 +579,78 @@ header .menu-btn.account-menu-visible,
 .profile-social-stats{display:flex;justify-content:center;gap:18px;margin-top:13px;color:#6f6863;font-size:12px}
 .profile-social-stats b{color:#292522}
 
+/* Dwa profile w jednym rzędzie */
+
+.discover-page .discover-grid{
+  max-width:900px!important;
+  margin:0 auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:42px 55px!important;
+  align-items:start;
+}
+.discover-page .discover-card{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  box-shadow:none!important;
+  text-align:center!important;
+  cursor:pointer;
+}
+.discover-page .discover-card:hover{
+  transform:none!important;
+  box-shadow:none!important;
+}
+.discover-page .discover-avatar{
+  width:170px!important;
+  height:170px!important;
+  margin:0 auto 15px!important;
+  border-radius:50%!important;
+  background:#eee5df!important;
+  border:1px solid #ded2ca;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font:42px Georgia,serif!important;
+  color:#8f1730!important;
+  overflow:hidden!important;
+}
+.discover-page .discover-card-body{
+  padding:0!important;
+}
+.discover-page .discover-name{
+  display:block!important;
+  font-size:18px!important;
+  font-weight:500;
+  color:#292522;
+}
+.discover-page .discover-name .verified-badge{
+  display:none!important;
+}
+.discover-page .discover-bio{
+  margin:7px 0 8px!important;
+  color:#8a827d!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+}
+.discover-page .discover-meta{
+  color:#5f5955!important;
+  font-size:12px!important;
+}
+@media(max-width:600px){
+  .discover-page .discover-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:30px 18px!important;
+  }
+  .discover-page .discover-avatar{
+    width:125px!important;height:125px!important;
+  }
+  .discover-page .discover-name{font-size:15px!important}
+  .discover-page .discover-bio{font-size:10px!important}
+  .discover-page .discover-meta{font-size:11px!important}
+}
+
 </style>
 </head>
 <body>
@@ -1349,8 +1421,8 @@ function seedDemoSeller(){
     if(existing.length===2) return;
     const demo=[
       {
-        pseudonym:"Luna",verified:true,active:true,age:27,likes:128,
-        lastActive:"Aktywna dzisiaj o 19:30",
+        pseudonym:"Luna",verified:true,active:true,age:27,likes:128,rating:4.5,
+        lastActive:"Aktywna dzisiaj o 19:30",photo:"",
         bio:"Profil demonstracyjny Stringoland — miejsce na krótki opis sprzedającej.",
         completedOrders:0,soldCount:0,registeredAt:"Profil demonstracyjny",
         reviewCount:0,photos:[],
@@ -1358,8 +1430,8 @@ function seedDemoSeller(){
         reviews:[]
       },
       {
-        pseudonym:"Velvet",verified:true,active:true,age:31,likes:246,
-        lastActive:"Aktywna dzisiaj o 18:45",
+        pseudonym:"Velvet",verified:true,active:true,age:31,likes:246,rating:4.8,
+        lastActive:"Aktywna dzisiaj o 18:45",photo:"",
         bio:"Profil demonstracyjny Stringoland — tutaj pojawi się opis sprzedającej.",
         completedOrders:0,soldCount:0,registeredAt:"Profil demonstracyjny",
         reviewCount:0,photos:[],
@@ -1384,10 +1456,18 @@ function renderDiscover(){
     card.className="discover-card";
     card.onclick=()=>openPublicProfile(seller);
     const initial=(seller.pseudonym||"?").charAt(0).toUpperCase();
-    card.innerHTML='<div class="discover-avatar">'+initial+'</div><div class="discover-card-body"><div class="discover-name"><span></span><span class="verified-badge">✓ Zweryfikowana</span></div><div class="discover-bio"></div><div class="discover-meta"></div></div>';
-    card.querySelector(".discover-name span").textContent=seller.pseudonym||"Sprzedająca";
-    card.querySelector(".discover-bio").textContent=seller.bio||"Profil zweryfikowanej sprzedającej.";
-    card.querySelector(".discover-meta").textContent=(seller.reviewCount||0)+" opinii";
+    card.innerHTML='<div class="discover-avatar"></div><div class="discover-card-body"><div class="discover-name"></div><div class="discover-bio"></div><div class="discover-meta"></div></div>';
+    const avatar=card.querySelector(".discover-avatar");
+    if(seller.photo && /^https?:\\/\\//.test(seller.photo)){
+      avatar.style.backgroundImage='url("'+seller.photo.replace(/"/g,'&quot;')+'")';
+      avatar.style.backgroundSize="cover";
+      avatar.textContent="";
+    }else{
+      avatar.textContent=initial;
+    }
+    card.querySelector(".discover-name").textContent=seller.pseudonym||"Sprzedająca";
+    card.querySelector(".discover-bio").textContent=seller.lastActive||"Aktywna niedawno";
+    card.querySelector(".discover-meta").textContent=(seller.rating!=null?seller.rating:"—")+"   ♡ "+(seller.likes||0);
     grid.appendChild(card);
   });
 }
