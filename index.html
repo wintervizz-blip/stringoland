@@ -1390,7 +1390,7 @@ function openPublicProfile(seller){
       card.className="seller-offer-card";
       const image=document.createElement("div");
       image.className="seller-offer-image";
-      if(offer.image && /^data:image\\//.test(offer.image)){
+      if(offer.image && /^data:image\//.test(offer.image)){
         image.style.backgroundImage='url("'+offer.image+'")';
         image.textContent="";
       }else{
