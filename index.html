@@ -325,7 +325,7 @@ header .actions .btn.primary{
 
 
 /* Menu konta: niewidoczne dla niezalogowanych */
-header .menu-btn{display:none!important}
+header .menu-btn{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
 header .menu-btn.account-menu-visible{display:block!important}
 
 
@@ -389,6 +389,23 @@ header .menu-btn.account-menu-visible{display:block!important}
 #authModal .verification-panel,
 #authModal .email-verify-panel{
   font-size:11px;
+}
+
+
+/* FINAL: żadnych kresek/menu dla niezalogowanego użytkownika */
+header .menu-btn,
+.menu-toggle{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+header .menu-btn.account-menu-visible,
+.menu-toggle.account-menu-visible{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
 }
 
 </style>
@@ -1093,10 +1110,20 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 <script>
 (function(){
   function syncHeaderMenu(){
-    const user = JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-    const btn = document.querySelector("header .menu-btn");
-    if(!btn) return;
-    btn.classList.toggle("account-menu-visible",!!user);
+    let user=null;
+    try{user=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
+    const headerBtn=document.querySelector("header .menu-btn");
+    const drawerBtn=document.querySelector(".menu-toggle");
+    [headerBtn,drawerBtn].forEach(function(btn){
+      if(!btn)return;
+      const visible=!!user;
+      btn.classList.toggle("account-menu-visible",visible);
+      btn.style.display=visible?"flex":"none";
+      btn.style.visibility=visible?"visible":"hidden";
+      btn.style.opacity=visible?"1":"0";
+      btn.style.pointerEvents=visible?"auto":"none";
+    });
+    if(!user && typeof closeSideMenu==="function") closeSideMenu();
   }
   document.addEventListener("DOMContentLoaded",syncHeaderMenu);
   window.addEventListener("storage",syncHeaderMenu);
