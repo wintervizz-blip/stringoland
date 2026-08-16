@@ -408,11 +408,70 @@ header .menu-btn.account-menu-visible,
   pointer-events:auto!important;
 }
 
+
+.seller-cta-copy{text-align:center!important}
+.seller-cta-copy>div{text-align:center!important}
+
+
+.seller-cta-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.seller-cta-copy{text-align:center!important;margin:0!important;font-size:11px;line-height:1.55;color:var(--muted)!important}
+.seller-cta-copy>div{text-align:center!important}
+.seller-cta-copy .seller-cta-main{font-size:13px;color:var(--text)!important;margin-bottom:1px}
+
+
+/* Główny komunikat pod przyciskiem sprzedaży */
+.seller-cta-copy,
+.seller-cta-copy *{
+  text-align:center!important;
+}
+.seller-cta-copy{
+  width:100%;
+  margin:10px auto 0!important;
+  font-size:12px!important;
+  line-height:1.6!important;
+}
+.seller-cta-copy .seller-cta-main,
+.seller-cta-copy strong{
+  font-size:12px!important;
+}
+
+.brand-inline{font-family:Georgia,serif;letter-spacing:1.5px;font-weight:400}
+
+.discover-section{padding:82px 7%;background:#fff}
+.discover-head{max-width:900px;margin:0 auto 28px;text-align:center}
+.discover-head h2{margin:6px 0 10px}
+.discover-head p{margin:0;color:var(--muted);font-size:14px}
+.discover-grid{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.discover-card{background:#fbf7f2;border:1px solid #e5ddd6;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.discover-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(40,25,20,.09)}
+.discover-avatar{height:190px;background:#eee5de;display:flex;align-items:center;justify-content:center;font:42px Georgia,serif;color:#8f1730}
+.discover-card-body{padding:18px}
+.discover-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px}
+.verified-badge{font-size:10px;padding:5px 8px;border-radius:20px;background:#eee1d7;color:#7e1c30;white-space:nowrap}
+.discover-bio{font-size:12px;line-height:1.55;color:var(--muted);margin:9px 0 13px}
+.discover-meta{font-size:11px;color:#766d67}
+.discover-empty{max-width:650px;margin:0 auto;text-align:center;padding:42px 20px;border:1px dashed #d9cec5;border-radius:14px;background:#fcfaf8}
+.discover-empty-icon{font-size:28px;margin-bottom:10px;color:#8f1730}
+.discover-empty h3{margin:0 0 7px;font-size:18px;font-weight:500}
+.discover-empty p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.public-profile-modal{display:none;position:fixed;inset:0;background:rgba(25,18,15,.55);z-index:150;align-items:center;justify-content:center;padding:20px}
+.public-profile-modal.show{display:flex}
+.public-profile-box{width:min(720px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:16px;padding:28px;position:relative}
+.public-profile-top{display:flex;gap:20px;align-items:center}
+.public-profile-avatar{width:100px;height:100px;border-radius:50%;background:#eee5de;display:flex;align-items:center;justify-content:center;font:34px Georgia,serif;color:#8f1730;flex:none}
+.public-profile-box h2{margin:0 0 6px;font-size:27px;font-weight:500}
+.public-profile-box .profile-description{color:var(--muted);line-height:1.55;font-size:13px}
+.public-profile-section{margin-top:25px}
+.public-profile-section h3{font-size:16px;font-weight:500;margin:0 0 12px}
+.profile-review{padding:12px 0;border-top:1px solid #eee6df;font-size:12px;line-height:1.5}
+@media(max-width:800px){.discover-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.discover-section{padding:58px 20px}.discover-grid{grid-template-columns:1fr}.public-profile-top{align-items:flex-start}}
+
 </style>
 </head>
 <body>
 
-<button class="menu-toggle" title="Menu konta" type="button" aria-label="Otwórz menu" onclick="openSideMenu()">
+<button class="menu-toggle" title="Menu konta" type="button" aria-label="Otwórz menu" onclick="openSideMenu()" style="display:none!important;visibility:hidden!important">
   <span></span><span></span><span></span>
 </button>
 <div class="side-menu-overlay" id="sideMenuOverlay" onclick="closeSideMenu()"></div>
@@ -424,7 +483,7 @@ header .menu-btn.account-menu-visible,
   <div class="side-menu-user" id="sideMenuUser"></div>
   <nav class="side-menu-nav">
     <button type="button" onclick="menuHome()">🏠 Strona główna</button>
-    <button type="button" onclick="menuDiscover()">✨ Odkrywaj</button>
+    <button type="button" onclick="menuDiscover()">✨ Zobacz sprzedające</button>
     <button type="button" onclick="menuMessages()">💬 Wiadomości</button>
     <div class="side-menu-section" id="buyerMenuSection">Kupowanie</div>
     <button type="button" id="buyerPurchases" onclick="menuPurchases()">🛍️ Moje zakupy</button>
@@ -451,12 +510,12 @@ header .menu-btn.account-menu-visible,
       <h1>Tutaj zaczyna się Twoja ciekawość.</h1>
       <p>Używana bielizna, fetysze, sex-chaty i wyjątkowe oferty dla dorosłych.</p>
       <div class="hero-actions">
-        <button class="btn primary" onclick="document.getElementById('offers').scrollIntoView()">ZOBACZ OFERTY</button>
+        <button class="btn primary" onclick="document.getElementById('discover').scrollIntoView({behavior:'smooth',block:'start'})">ZOBACZ SPRZEDAJĄCE</button>
         <button class="btn secondary" onclick="openAuth('signup')">ZACZNIJ SPRZEDAWAĆ</button>
       </div>
       <div class="trust">
         
-        <div>Twój profil, Twoje zasady, pełna kontrola nad tym, co publikujesz.</div>
+        <div>Daj się ponieść ciekawości.<br><span>Anonimowo i dyskretnie.</span><br><strong>Wyłącznie zweryfikowane sprzedające.</strong>.</div>
       </div>
     </div>
   </section>
@@ -472,41 +531,34 @@ header .menu-btn.account-menu-visible,
     </div>
   </section>
 
-  <section id="offers">
-    <div class="section-head">
-      <h2>Poznaj sprzedające</h2>
-      <button class="link" onclick="openAuth('signup')">Zacznij sprzedawać →</button>
-    </div>
-    <div class="empty">
-      <div class="empty-icon">♡</div>
-      <h3>Stringoland dopiero startuje</h3>
-      <p>Pierwsze profile i oferty pojawią się tutaj już wkrótce. Chcesz być jedną z pierwszych sprzedających?</p>
-      <button class="btn primary" onclick="openAuth('signup')">Załóż konto</button>
-    </div>
-  </section>
+  
 
-  <section>
-    <div class="section-head">
-      <h2>Coś wyjątkowego czeka na Ciebie</h2>
+<section id="discover" class="discover-section">
+  <div class="discover-head">
+    <div>
+      <div class="eyebrow">ZOBACZ SPRZEDAJĄCE</div>
+      <h2>Poznaj zweryfikowane sprzedające</h2>
+      <p>Przeglądaj profile zweryfikowanych sprzedających i poznaj ich oferty.</p>
     </div>
-    <div class="empty">
-      <div class="empty-icon">✦</div>
-      <h3>Pierwsze oferty pojawią się tutaj już wkrótce</h3>
-      <p>Gdy pojawią się pierwsze oferty, właśnie tutaj znajdziesz najnowsze propozycje od naszych sprzedających.</p>
-    </div>
-  </section>
-
-  <div class="how">
+  </div>
+  <div class="discover-grid" id="discoverGrid"></div>
+  <div class="discover-empty" id="discoverEmpty">
+    <div class="discover-empty-icon">✦</div>
+    <h3>Wkrótce pojawią się pierwsze profile</h3>
+    <p>Aktywne i zweryfikowane sprzedające będą widoczne tutaj po przygotowaniu swoich profili.</p>
+  </div>
+</section>
+<div class="how">
     <div class="how-inner">
       <div class="intro" style="padding:0;text-align:left">
-        <h2>Jak to działa?</h2>
+        <h2>Jak działa <span class="brand-inline">STRINGOLAND</span></h2>
         <p>Prosto od pierwszego kliknięcia.</p>
       </div>
       <div class="steps">
-        <div class="step"><div class="step-number">1</div><b>Załóż konto</b><p>Utwórz swoje konto i zdecyduj, czy chcesz kupować, czy sprzedawać.</p></div>
-        <div class="step"><div class="step-number">2</div><b>Uzupełnij profil</b><p>Dodaj nazwę, zdjęcie i opis, żeby inni mogli Cię poznać.</p></div>
-        <div class="step"><div class="step-number">3</div><b>Dodaj ofertę</b><p>Opublikuj produkt i ustaw własną cenę oraz szczegóły.</p></div>
-        <div class="step"><div class="step-number">4</div><b>Zacznij działać</b><p>Twoje prawdziwe oferty mogą pojawić się na stronie głównej.</p></div>
+        <div class="step"><div class="step-number">1</div><b>Odkryj</b><p>Przeglądaj profile zweryfikowanych sprzedających i znajdź ofertę, która Cię interesuje.</p></div>
+        <div class="step"><div class="step-number">2</div><b>Wybierz</b><p>Zobacz szczegóły oferty i złóż zamówienie tak łatwo, jak w zwykłym sklepie internetowym.</p></div>
+        <div class="step"><div class="step-number">3</div><b>Kup bezpiecznie</b><p>Przejdź przez bezpieczny proces płatności i otrzymaj potwierdzenie swojego zamówienia.</p></div>
+        <div class="step"><div class="step-number">4</div><b>Odbierz dyskretnie</b><p>Zamówienie zostanie przygotowane i wysłane z zachowaniem prywatności oraz dyskrecji.</p></div>
       </div>
     </div>
   </div>
@@ -823,6 +875,7 @@ async function submitAuth(){
           msg.textContent="Nieprawidłowe hasło.";return;
         }
         currentUser=saved;
+        localStorage.setItem("stringoland_active_session","1");
         closeAuth();
         if(typeof loadUser==="function") loadUser();
         if(typeof updateSideMenu==="function") updateSideMenu();
@@ -842,6 +895,7 @@ async function submitAuth(){
 
     const result=await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole,display_name},emailRedirectTo:window.location.origin}});
     if(result.error){msg.textContent=result.error.message;return}
+    localStorage.setItem("stringoland_active_session","1");
     closeAuth();
     renderSession(result.data.session?.user);
   }catch(err){
@@ -882,7 +936,7 @@ async function saveProfile(){
   msg.textContent="Profil zapisany ✓";
   fillProfile(data.user);
 }
-async function logout(){await supabaseClient.auth.signOut();location.reload()}
+async function logout(){localStorage.removeItem("stringoland_active_session");await supabaseClient.auth.signOut();location.reload()}
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
 </script>
 
@@ -1021,47 +1075,7 @@ function menuSettings(){closeSideMenu();alert("Ustawienia będą dostępne po za
 window.stringolandRole=(JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{}).role||"guest";
 </script>
 
-<script>
-(function(){
-  function getCurrentStringolandUser(){
-    try{return JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){return null}
-  }
-  function updateMenuVisibility(){
-    const menu=document.getElementById("sideMenu");
-    const toggle=document.querySelector(".menu-toggle");
-    const user=getCurrentStringolandUser();
-    if(toggle) toggle.style.display=user ? "flex" : "none";
-    if(!user && menu) closeSideMenu();
-    if(typeof updateSideMenu==="function") updateSideMenu();
-  }
-  window.updateStringolandMenu=updateMenuVisibility;
 
-  // Patch the existing test-mode registration flow so the menu appears
-  // immediately after an account is created.
-  const originalSubmit=window.submitRegistration;
-  if(typeof originalSubmit==="function"){
-    window.submitRegistration=function(e){
-      const result=originalSubmit.apply(this,arguments);
-      setTimeout(updateMenuVisibility,50);
-      return result;
-    };
-  }
-
-  // Also refresh after login/session rendering.
-  const originalRender=window.renderSession;
-  if(typeof originalRender==="function"){
-    window.renderSession=function(){
-      const result=originalRender.apply(this,arguments);
-      setTimeout(updateMenuVisibility,50);
-      return result;
-    };
-  }
-
-  document.addEventListener("DOMContentLoaded",updateMenuVisibility);
-  window.addEventListener("storage",updateMenuVisibility);
-  updateMenuVisibility();
-})();
-</script>
 
 
 <script>
@@ -1106,28 +1120,120 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 </script>
 
 
+
+
+
 <script>
 (function(){
-  function syncHeaderMenu(){
-    let user=null;
-    try{user=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
-    const headerBtn=document.querySelector("header .menu-btn");
-    const drawerBtn=document.querySelector(".menu-toggle");
-    [headerBtn,drawerBtn].forEach(function(btn){
-      if(!btn)return;
-      const visible=!!user;
-      btn.classList.toggle("account-menu-visible",visible);
-      btn.style.display=visible?"flex":"none";
-      btn.style.visibility=visible?"visible":"hidden";
-      btn.style.opacity=visible?"1":"0";
-      btn.style.pointerEvents=visible?"auto":"none";
-    });
-    if(!user && typeof closeSideMenu==="function") closeSideMenu();
+  function activeSession(){
+    return localStorage.getItem("stringoland_active_session")==="1";
   }
-  document.addEventListener("DOMContentLoaded",syncHeaderMenu);
-  window.addEventListener("storage",syncHeaderMenu);
-  setInterval(syncHeaderMenu,500);
+  function syncAccountMenu(){
+    const btn=document.querySelector(".menu-toggle");
+    if(!btn)return;
+    const visible=activeSession();
+    btn.style.setProperty("display",visible?"flex":"none","important");
+    btn.style.setProperty("visibility",visible?"visible":"hidden","important");
+    btn.style.setProperty("opacity",visible?"1":"0","important");
+    btn.style.setProperty("pointer-events",visible?"auto":"none","important");
+    if(!visible && typeof closeSideMenu==="function") closeSideMenu();
+    if(visible && typeof updateSideMenu==="function") updateSideMenu();
+  }
+  window.syncAccountMenu=syncAccountMenu;
+
+  document.addEventListener("DOMContentLoaded",function(){
+    // Start hidden immediately, then reveal only for an active account session.
+    syncAccountMenu();
+    if(window.supabaseClient && supabaseClient.auth){
+      supabaseClient.auth.getSession().then(function(result){
+        if(result && result.data && result.data.session){
+          localStorage.setItem("stringoland_active_session","1");
+        }else{
+          localStorage.removeItem("stringoland_active_session");
+        }
+        syncAccountMenu();
+      });
+      supabaseClient.auth.onAuthStateChange(function(event,session){
+        if(session) localStorage.setItem("stringoland_active_session","1");
+        else localStorage.removeItem("stringoland_active_session");
+        syncAccountMenu();
+      });
+    }
+  });
 })();
+</script>
+
+
+<div class="public-profile-modal" id="publicProfileModal">
+  <div class="public-profile-box">
+    <button class="close" onclick="closePublicProfile()">×</button>
+    <div class="public-profile-top">
+      <div class="public-profile-avatar" id="publicProfileAvatar">?</div>
+      <div>
+        <h2 id="publicProfileName">Profil</h2>
+        <div class="verified-badge">✓ Zweryfikowana</div>
+        <p class="profile-description" id="publicProfileBio"></p>
+      </div>
+    </div>
+    <div class="public-profile-section">
+      <h3>Opinie</h3>
+      <div id="publicProfileReviews"><p class="profile-description">Opinie pojawią się po zakończonych zakupach.</p></div>
+    </div>
+    <div class="public-profile-section">
+      <h3>Oferty</h3>
+      <div id="publicProfileOffers"><p class="profile-description">Oferty tej sprzedającej pojawią się tutaj.</p></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const STRINGOLAND_PUBLIC_SELLERS_KEY="stringoland_public_sellers";
+function getPublicSellers(){
+  try{return JSON.parse(localStorage.getItem(STRINGOLAND_PUBLIC_SELLERS_KEY)||"[]")}catch(e){return []}
+}
+function renderDiscover(){
+  const grid=document.getElementById("discoverGrid"), empty=document.getElementById("discoverEmpty");
+  if(!grid||!empty)return;
+  const sellers=getPublicSellers().filter(x=>x && x.verified===true && x.active!==false);
+  grid.innerHTML="";
+  empty.style.display=sellers.length?"none":"block";
+  sellers.forEach((seller,i)=>{
+    const card=document.createElement("article");
+    card.className="discover-card";
+    card.onclick=()=>openPublicProfile(seller);
+    const initial=(seller.pseudonym||"?").charAt(0).toUpperCase();
+    card.innerHTML='<div class="discover-avatar">'+initial+'</div><div class="discover-card-body"><div class="discover-name"><span></span><span class="verified-badge">✓ Zweryfikowana</span></div><div class="discover-bio"></div><div class="discover-meta"></div></div>';
+    card.querySelector(".discover-name span").textContent=seller.pseudonym||"Sprzedająca";
+    card.querySelector(".discover-bio").textContent=seller.bio||"Profil zweryfikowanej sprzedającej.";
+    card.querySelector(".discover-meta").textContent=(seller.reviewCount||0)+" opinii";
+    grid.appendChild(card);
+  });
+}
+function openPublicProfile(seller){
+  document.getElementById("publicProfileName").textContent=seller.pseudonym||"Sprzedająca";
+  document.getElementById("publicProfileAvatar").textContent=(seller.pseudonym||"?").charAt(0).toUpperCase();
+  document.getElementById("publicProfileBio").textContent=seller.bio||"Profil zweryfikowanej sprzedającej.";
+  const reviews=document.getElementById("publicProfileReviews");
+  reviews.innerHTML="";
+  const list=Array.isArray(seller.reviews)?seller.reviews:[];
+  if(!list.length){reviews.innerHTML='<p class="profile-description">Opinie pojawią się po zakończonych zakupach.</p>'}
+  else list.forEach(r=>{
+    const d=document.createElement("div");d.className="profile-review";
+    d.textContent=(r.rating?"★".repeat(Math.min(5,Math.max(1,Number(r.rating))))+" ":"")+ (r.text||"Opinia kupującego.");
+    reviews.appendChild(d);
+  });
+  document.getElementById("publicProfileOffers").innerHTML='<p class="profile-description">Oferty tej sprzedającej pojawią się tutaj.</p>';
+  document.getElementById("publicProfileModal").classList.add("show");
+}
+function closePublicProfile(){document.getElementById("publicProfileModal").classList.remove("show")}
+function menuDiscover(){
+  closeSideMenu();
+  const el=document.getElementById("discover");
+  if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+}
+document.addEventListener("DOMContentLoaded",renderDiscover);
+window.addEventListener("storage",renderDiscover);
 </script>
 
 </body>
