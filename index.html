@@ -1458,7 +1458,7 @@ function renderDiscover(){
     const initial=(seller.pseudonym||"?").charAt(0).toUpperCase();
     card.innerHTML='<div class="discover-avatar"></div><div class="discover-card-body"><div class="discover-name"></div><div class="discover-bio"></div><div class="discover-meta"></div></div>';
     const avatar=card.querySelector(".discover-avatar");
-    if(seller.photo && /^https?:\\/\\//.test(seller.photo)){
+    if(seller.photo && /^https?:\/\//.test(seller.photo)){
       avatar.style.backgroundImage='url("'+seller.photo.replace(/"/g,'&quot;')+'")';
       avatar.style.backgroundSize="cover";
       avatar.textContent="";
