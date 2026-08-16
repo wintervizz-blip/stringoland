@@ -437,20 +437,72 @@ header .menu-btn.account-menu-visible,
 
 .brand-inline{font-family:Georgia,serif;letter-spacing:1.5px;font-weight:400}
 
-.public-profile-modal{display:none;position:fixed;inset:0;background:rgba(25,18,15,.55);z-index:150;align-items:center;justify-content:center;padding:20px}
-.public-profile-modal.show{display:flex}
-.public-profile-box{width:min(720px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:16px;padding:28px;position:relative}
-.public-profile-top{display:flex;gap:20px;align-items:center}
-.public-profile-avatar{width:100px;height:100px;border-radius:50%;background:#eee5de;display:flex;align-items:center;justify-content:center;font:34px Georgia,serif;color:#8f1730;flex:none}
-.public-profile-box h2{margin:0 0 6px;font-size:27px;font-weight:500}
-.public-profile-box .profile-description{color:var(--muted);line-height:1.55;font-size:13px}
-.public-profile-section{margin-top:25px}
-.public-profile-section h3{font-size:16px;font-weight:500;margin:0 0 12px}
-.profile-review{padding:12px 0;border-top:1px solid #eee6df;font-size:12px;line-height:1.5}
-@media(max-width:800px){.discover-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){.discover-section{padding:58px 20px}.discover-grid{grid-template-columns:1fr}.public-profile-top{align-items:flex-start}}
 
-
+/* Publiczny profil sprzedającej — własny układ Stringoland */
+.public-profile-modal{display:none;position:fixed;inset:0;background:#fff;z-index:150;overflow:auto}
+.public-profile-modal.show{display:block}
+.public-profile-page{min-height:100vh;background:#fff;color:#292522}
+.public-profile-header{height:72px;background:#241718;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}
+.profile-header-menu{border:0;background:none;color:#fff;font-size:28px;cursor:pointer}
+.public-profile-logo{font-family:Georgia,serif;letter-spacing:3px;font-size:21px}
+.public-profile-header-actions{display:flex;gap:22px;font-size:20px}
+.public-profile-gallery{height:190px;background:linear-gradient(120deg,#c6b0a4,#7c5355,#d5c1b4);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;overflow:hidden}
+.gallery-placeholder{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);color:rgba(255,255,255,.82);font:24px Georgia,serif}
+.public-profile-content{max-width:980px;margin:0 auto;padding:26px 28px 70px}
+.public-profile-back{border:0;background:none;color:#8f1730;font-size:12px;padding:0;margin-bottom:24px;cursor:pointer}
+.profile-identity{display:flex;gap:18px;align-items:center}
+.profile-identity .public-profile-avatar{width:88px;height:88px;border-radius:50%;background:#eee5de;display:flex;align-items:center;justify-content:center;font:32px Georgia,serif;color:#8f1730;flex:none}
+.profile-name-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.profile-name-row h1{margin:0;font-size:31px;font-weight:500}
+.profile-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:#716863;font-size:12px}
+.profile-stats b{color:#292522}
+.profile-about{margin:25px 0 18px;max-width:760px}
+.profile-about p{font-size:15px;line-height:1.65;margin:0}
+.profile-more{border:0;background:none;padding:7px 0;color:#77716d;text-decoration:underline;font-size:12px}
+.profile-actions{display:flex;gap:8px;margin:16px 0 30px}
+.profile-actions button{height:48px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}
+.profile-like{flex:1;border:1px solid #ddd4cd;background:#fff;color:#292522}
+.profile-like.liked{background:#f3e6e6;color:#8f1730}
+.profile-message{flex:2;border:1px solid #8f1730;background:#8f1730;color:#fff}
+.profile-public-info{display:grid;grid-template-columns:1fr 1fr;gap:8px 36px;border-top:1px solid #eee6df;border-bottom:1px solid #eee6df;padding:22px 0}
+.profile-info-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0}
+.profile-info-row span:first-child{color:#77716d}
+.profile-info-row span:last-child{font-weight:600}
+.profile-status{color:#99908a;font-size:11px;line-height:1.7;margin-top:22px}
+.profile-report{border:0;background:none;padding:0;margin-top:18px;color:#77716d;text-decoration:underline;font-size:11px}
+.profile-tabs{display:flex;gap:0;border-bottom:1px solid #d8d0ca;margin-top:42px;overflow:auto}
+.profile-tabs button{border:0;background:none;padding:14px 18px 12px;font-size:14px;color:#766e68;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent}
+.profile-tabs button.active{color:#292522;font-weight:700;border-bottom-color:#8f1730}
+.profile-tabs button span{display:inline-flex;min-width:20px;height:20px;padding:0 6px;align-items:center;justify-content:center;border-radius:12px;background:#8f1730;color:#fff;font-size:9px;margin-left:4px}
+.profile-tab-panel{display:none;padding-top:18px}
+.profile-tab-panel.active{display:block}
+.profile-search{height:46px;border-radius:7px;background:#f0ece8;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:14px;margin-bottom:18px}
+.profile-offers-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.profile-offer-card{border:1px solid #ddd4cd;border-radius:9px;overflow:hidden;background:#fff}
+.profile-offer-image{height:220px;background:linear-gradient(135deg,#d7c3b9,#9d7074);display:flex;align-items:center;justify-content:center;color:#fff;font:26px Georgia,serif}
+.profile-offer-body{padding:14px}
+.profile-offer-title{font-weight:700;font-size:16px}
+.profile-offer-desc{color:#77716d;font-size:12px;margin-top:5px;line-height:1.45}
+.profile-offer-price{color:#8f1730;font-size:18px;font-weight:700;margin-top:12px}
+.profile-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.profile-photo-grid div{aspect-ratio:1;background:linear-gradient(135deg,#e5d8d0,#a6817d);display:flex;align-items:center;justify-content:center;color:#fff;font:18px Georgia,serif}
+.profile-review-card{padding:15px 0;border-bottom:1px solid #eee6df;font-size:13px;line-height:1.5}
+.profile-review-stars{color:#8f1730;margin-bottom:5px}
+.profile-empty-tab{padding:40px 20px;text-align:center;color:#8a827d;border:1px dashed #d9cec5;border-radius:8px}
+@media(max-width:700px){
+  .public-profile-content{padding:22px 18px 55px}
+  .public-profile-gallery{height:145px}
+  .profile-public-info{grid-template-columns:1fr}
+  .profile-name-row h1{font-size:27px}
+}
+@media(max-width:500px){
+  .profile-identity{align-items:flex-start}
+  .profile-identity .public-profile-avatar{width:72px;height:72px;font-size:26px}
+  .profile-actions{flex-direction:column}
+  .profile-offers-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .profile-offer-image{height:150px}
+  .profile-tabs button{padding-left:12px;padding-right:12px}
+}
 .discover-page{display:none;min-height:calc(100vh - 80px);background:#fff;padding:48px 7% 80px}
 .discover-page.show{display:block}
 .discover-page-inner{max-width:1080px;margin:0 auto}
@@ -1166,26 +1218,86 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 
 
 <div class="public-profile-modal" id="publicProfileModal">
-  <div class="public-profile-box">
-    <button class="close" onclick="closePublicProfile()">×</button>
-    <div class="public-profile-top">
-      <div class="public-profile-avatar" id="publicProfileAvatar">?</div>
-      <div>
-        <h2 id="publicProfileName">Profil</h2>
-        <div class="verified-badge">✓ Zweryfikowana</div>
-        <p class="profile-description" id="publicProfileBio"></p>
+  <div class="public-profile-page">
+    <header class="public-profile-header">
+      <button class="profile-header-menu" type="button" aria-label="Menu" onclick="closePublicProfile();openSideMenu()">☰</button>
+      <div class="public-profile-logo">STRINGOLAND</div>
+      <div class="public-profile-header-actions">
+        <span aria-hidden="true">💬</span>
+        <span aria-hidden="true">♡</span>
       </div>
+    </header>
+
+    <div class="public-profile-gallery" id="publicProfileGallery">
+      <div class="gallery-placeholder">STRINGOLAND</div>
+      <div class="gallery-placeholder">♡</div>
+      <div class="gallery-placeholder">✦</div>
+      <div class="gallery-placeholder">+</div>
     </div>
-    <div class="public-profile-section">
-      <h3>Opinie</h3>
-      <div id="publicProfileReviews"><p class="profile-description">Opinie pojawią się po zakończonych zakupach.</p></div>
-    </div>
-    <div class="public-profile-section">
-      <h3>Oferty</h3>
-      <div id="publicProfileOffers"><p class="profile-description">Oferty tej sprzedającej pojawią się tutaj.</p></div>
-    </div>
+
+    <main class="public-profile-content">
+      <button class="public-profile-back" type="button" onclick="closePublicProfile()">← Wróć do sprzedających</button>
+
+      <section class="profile-identity">
+        <div class="public-profile-avatar" id="publicProfileAvatar">?</div>
+        <div class="profile-identity-copy">
+          <div class="profile-name-row">
+            <h1 id="publicProfileName">Profil</h1>
+            <span class="verified-badge">✓ Zweryfikowana</span>
+          </div>
+          <div class="profile-stats">
+            <span>★ <b id="publicProfileRating">—</b></span>
+            <span><b id="publicProfileReviewsCount">0</b> opinii</span>
+            <span><b id="publicProfileOrders">0</b> zakończonych zamówień</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-about">
+        <p id="publicProfileBio">Opis sprzedającej pojawi się tutaj.</p>
+        <button class="profile-more" type="button">Pełny opis</button>
+      </section>
+
+      <div class="profile-actions">
+        <button class="profile-like" type="button" onclick="this.classList.toggle('liked')">♡ <span>Polub profil</span></button>
+        <button class="profile-message" type="button" onclick="openAuth('login')">Napisz do sprzedającej</button>
+      </div>
+
+      <section class="profile-public-info" id="publicProfileInfo"></section>
+
+      <div class="profile-status">
+        <div id="publicProfileActive">Aktywna niedawno</div>
+        <div id="publicProfileSince"></div>
+      </div>
+
+      <button class="profile-report" type="button">Zgłoś sprzedającą</button>
+
+      <nav class="profile-tabs" aria-label="Profil sprzedającej">
+        <button class="active" type="button" onclick="switchProfileTab('offers',this)">Oferty <span id="tabOffersCount">0</span></button>
+        <button type="button" onclick="switchProfileTab('sold',this)">Sprzedane <span id="tabSoldCount">0</span></button>
+        <button type="button" onclick="switchProfileTab('photos',this)">Zdjęcia <span id="tabPhotosCount">0</span></button>
+        <button type="button" onclick="switchProfileTab('reviews',this)">Opinie <span id="tabReviewsCount">0</span></button>
+      </nav>
+
+      <section class="profile-tab-panel active" id="profileTabOffers">
+        <div class="profile-search">⌕ <span>Szukaj w ofertach</span></div>
+        <div class="profile-offers-grid" id="publicProfileOffers"></div>
+      </section>
+
+      <section class="profile-tab-panel" id="profileTabSold">
+        <div class="profile-empty-tab">Historia sprzedaży będzie dostępna tutaj.</div>
+      </section>
+
+      <section class="profile-tab-panel" id="profileTabPhotos">
+        <div class="profile-photo-grid" id="publicProfilePhotos"></div>
+      </section>
+
+      <section class="profile-tab-panel" id="profileTabReviews">
+        <div id="publicProfileReviews"></div>
+      </section>
+    </main>
   </div>
-</div>
+</div></div>
 
 
 <script>
@@ -1214,18 +1326,85 @@ function renderDiscover(){
 function openPublicProfile(seller){
   document.getElementById("publicProfileName").textContent=seller.pseudonym||"Sprzedająca";
   document.getElementById("publicProfileAvatar").textContent=(seller.pseudonym||"?").charAt(0).toUpperCase();
-  document.getElementById("publicProfileBio").textContent=seller.bio||"Profil zweryfikowanej sprzedającej.";
-  const reviews=document.getElementById("publicProfileReviews");
-  reviews.innerHTML="";
-  const list=Array.isArray(seller.reviews)?seller.reviews:[];
-  if(!list.length){reviews.innerHTML='<p class="profile-description">Opinie pojawią się po zakończonych zakupach.</p>'}
-  else list.forEach(r=>{
-    const d=document.createElement("div");d.className="profile-review";
-    d.textContent=(r.rating?"★".repeat(Math.min(5,Math.max(1,Number(r.rating))))+" ":"")+ (r.text||"Opinia kupującego.");
-    reviews.appendChild(d);
+  document.getElementById("publicProfileBio").textContent=seller.bio||"Opis sprzedającej pojawi się tutaj.";
+
+  const reviews=Array.isArray(seller.reviews)?seller.reviews:[];
+  const offers=Array.isArray(seller.offers)?seller.offers:[];
+  const photos=Array.isArray(seller.photos)?seller.photos:[];
+  const rating=reviews.length ? (reviews.reduce((a,r)=>a+Number(r.rating||5),0)/reviews.length).toFixed(1) : "—";
+
+  document.getElementById("publicProfileRating").textContent=rating;
+  document.getElementById("publicProfileReviewsCount").textContent=reviews.length;
+  document.getElementById("publicProfileOrders").textContent=seller.completedOrders||0;
+  document.getElementById("tabOffersCount").textContent=offers.length;
+  document.getElementById("tabSoldCount").textContent=seller.soldCount||0;
+  document.getElementById("tabPhotosCount").textContent=photos.length;
+  document.getElementById("tabReviewsCount").textContent=reviews.length;
+
+  const info=document.getElementById("publicProfileInfo");
+  info.innerHTML="";
+  (Array.isArray(seller.publicInfo)?seller.publicInfo:[]).forEach(item=>{
+    const row=document.createElement("div");row.className="profile-info-row";
+    const a=document.createElement("span"),b=document.createElement("span");
+    a.textContent=item.label||"";b.textContent=item.value||"";
+    row.append(a,b);info.appendChild(row);
   });
-  document.getElementById("publicProfileOffers").innerHTML='<p class="profile-description">Oferty tej sprzedającej pojawią się tutaj.</p>';
+
+  const offerBox=document.getElementById("publicProfileOffers");
+  offerBox.innerHTML="";
+  if(!offers.length){
+    offerBox.innerHTML='<div class="profile-empty-tab">Oferty tej sprzedającej pojawią się tutaj.</div>';
+  }else{
+    offers.forEach(o=>{
+      const card=document.createElement("article");card.className="profile-offer-card";
+      card.innerHTML='<div class="profile-offer-image">STRINGOLAND</div><div class="profile-offer-body"><div class="profile-offer-title"></div><div class="profile-offer-desc"></div><div class="profile-offer-price"></div></div>';
+      card.querySelector(".profile-offer-title").textContent=o.title||"Oferta";
+      card.querySelector(".profile-offer-desc").textContent=o.description||"";
+      card.querySelector(".profile-offer-price").textContent=o.price?o.price+" zł":"";
+      offerBox.appendChild(card);
+    });
+  }
+
+  const reviewBox=document.getElementById("publicProfileReviews");
+  reviewBox.innerHTML="";
+  if(!reviews.length){
+    reviewBox.innerHTML='<div class="profile-empty-tab">Opinie kupujących pojawią się po zakończonych zakupach.</div>';
+  }else{
+    reviews.forEach(r=>{
+      const card=document.createElement("div");card.className="profile-review-card";
+      const stars=document.createElement("div");stars.className="profile-review-stars";
+      stars.textContent="★".repeat(Math.min(5,Math.max(1,Number(r.rating||5))));
+      const text=document.createElement("div");text.textContent=r.text||"Opinia kupującego.";
+      card.append(stars,text);reviewBox.appendChild(card);
+    });
+  }
+
+  const photoBox=document.getElementById("publicProfilePhotos");
+  photoBox.innerHTML="";
+  if(!photos.length){
+    photoBox.innerHTML='<div style="grid-column:1/-1;padding:35px;text-align:center;color:#8a827d">Zdjęcia pojawią się tutaj.</div>';
+  }else{
+    photos.forEach((src)=>{
+      const d=document.createElement("div");
+      if(/^https?:\/\//.test(src)){d.style.backgroundImage=`url("${src}")`;d.style.backgroundSize="cover";d.textContent=""}
+      else d.textContent="STRINGOLAND";
+      photoBox.appendChild(d);
+    });
+  }
+
+  document.getElementById("publicProfileActive").textContent=seller.lastActive||"Aktywna niedawno";
+  document.getElementById("publicProfileSince").textContent=seller.registeredAt?("Dołączyła "+seller.registeredAt):"";
+
+  switchProfileTab("offers",document.querySelector(".profile-tabs button"));
   document.getElementById("publicProfileModal").classList.add("show");
+  document.querySelector(".public-profile-page").scrollTop=0;
+}
+function switchProfileTab(tab,button){
+  document.querySelectorAll(".profile-tabs button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".profile-tab-panel").forEach(p=>p.classList.remove("active"));
+  if(button)button.classList.add("active");
+  const panel=document.getElementById("profileTab"+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(panel)panel.classList.add("active");
 }
 function closePublicProfile(){document.getElementById("publicProfileModal").classList.remove("show")}
 function showDiscover(){
