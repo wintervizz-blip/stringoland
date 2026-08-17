@@ -642,6 +642,8 @@ header .menu-btn.account-menu-visible,
 
 .buyer-profile-actions{display:flex;max-width:760px;margin:20px auto 28px}
 .buyer-profile-actions button{width:100%;height:46px;border:1px solid #8f1730;border-radius:7px;background:#8f1730;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+
+.conversation-policy{max-width:760px;width:calc(100% - 36px);margin:10px auto 0;padding:8px 11px;border:1px solid #eee2db;border-radius:7px;background:#faf7f5;color:#8b817b;font-size:9px;line-height:1.45;text-align:center;box-sizing:border-box}
 </style>
 </head>
 <body>
@@ -1843,6 +1845,9 @@ window.addEventListener("storage",renderDiscover);
   <div class="conversation-header">
     <button type="button" onclick="closeConversation()">←</button>
     <div><strong id="conversationSellerName">Luna</strong><span>Sprzedająca</span></div>
+  </div>
+  <div class="conversation-policy">
+    Rozmowy prowadź wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail, nazw użytkownika w innych serwisach lub innych prywatnych danych kontaktowych jest niedozwolone. Próby obchodzenia zasad mogą skutkować blokadą konta.
   </div>
   <div class="conversation-body" id="conversationBody"></div>
   <form class="conversation-compose" onsubmit="sendConversationMessage(event)">
