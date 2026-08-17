@@ -604,7 +604,7 @@ header .menu-btn.account-menu-visible,
 .offer-delivery-note{margin-top:14px;padding:12px 13px;border-radius:8px;background:#faf7f4;color:#6f6863;font-size:11px;line-height:1.5}
 
 
-.seller-owner-actions{text-align:center;margin:18px 0 0}
+.seller-owner-actions{display:none;text-align:center;margin:18px 0 0}
 .seller-owner-actions button{border:1px solid #8f1730;background:#fff;color:#8f1730;border-radius:7px;padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer}
 .add-offer-modal{display:none;position:fixed;inset:0;background:rgba(20,15,13,.42);z-index:210;align-items:center;justify-content:center;padding:18px}
 .add-offer-modal.show{display:flex}
@@ -625,6 +625,20 @@ header .menu-btn.account-menu-visible,
 .add-offer-publish{width:100%;height:46px;margin-top:20px;border:0;border-radius:7px;background:#8f1730;color:#fff;font-weight:700;cursor:pointer}
 .add-offer-error{min-height:16px;color:#9b1c31;font-size:11px;text-align:center;margin-top:9px}
 
+
+.conversation-page{display:none;position:fixed;inset:0;background:#fff;z-index:240;flex-direction:column}
+.conversation-page.show{display:flex}
+.conversation-header{height:72px;flex:0 0 72px;border-bottom:1px solid #eee6df;display:flex;align-items:center;gap:14px;padding:0 18px}
+.conversation-header>button{border:0;background:none;font-size:22px;color:#8f1730;cursor:pointer}
+.conversation-header strong{display:block;font-size:15px}.conversation-header span{display:block;font-size:10px;color:#918982;margin-top:3px}
+.conversation-body{flex:1;overflow-y:auto;max-width:760px;width:100%;margin:auto;padding:24px 18px 100px;display:flex;flex-direction:column;gap:10px}
+.message-bubble{max-width:75%;padding:10px 13px;border-radius:14px;font-size:12px;line-height:1.5}
+.message-bubble.them{align-self:flex-start;background:#f3eeea;color:#403a36;border-bottom-left-radius:4px}
+.message-bubble.me{align-self:flex-end;background:#8f1730;color:#fff;border-bottom-right-radius:4px}
+.message-time{display:block;font-size:9px;opacity:.6;margin-top:4px}
+.conversation-compose{position:fixed;bottom:0;left:0;right:0;display:flex;gap:8px;max-width:760px;margin:auto;padding:12px 18px;background:rgba(255,255,255,.97);border-top:1px solid #eee6df}
+.conversation-compose textarea{flex:1;resize:none;min-height:42px;border:1px solid #ddd4cd;border-radius:20px;padding:11px 15px;font:inherit;font-size:12px}
+.conversation-compose button{width:44px;height:42px;border:0;border-radius:50%;background:#8f1730;color:#fff;font-size:17px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -1424,7 +1438,21 @@ function renderDiscover(){
     grid.appendChild(card);
   });
 }
+
+function canManageSellerProfile(seller){
+  try{
+    const active=localStorage.getItem("stringoland_active_session")==="1";
+    const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+    const role=(saved&&saved.role)||window.stringolandRole||"guest";
+    const name=(saved&&saved.pseudonym)||"";
+    return active && role==="seller" && !!name && name===seller.pseudonym;
+  }catch(e){
+    return false;
+  }
+}
 function openPublicProfile(seller){
+  const ownerActions=document.querySelector(".seller-owner-actions");
+  if(ownerActions) ownerActions.style.display=canManageSellerProfile(seller)?"block":"none";
   document.getElementById("publicProfileName").textContent=seller.pseudonym||"Sprzedająca";
   document.getElementById("publicProfileAge").textContent=seller.age ? seller.age+" lat" : "";
   document.getElementById("publicProfileActiveTop").textContent=seller.lastActive||"Aktywna niedawno";
@@ -1584,7 +1612,49 @@ function startPurchase(){
   alert("Zamówienie przygotowane: "+currentOffer.title+extra+" • "+price+". Następny krok: podsumowanie i płatność.");
 }
 
+let activeConversationSeller=null;
+const demoConversations={Luna:[
+ {from:"them",text:"Cześć! Jeśli masz pytania dotyczące moich ofert, napisz śmiało.",time:"19:24"},
+ {from:"me",text:"Hej, chciałabym dopytać o szczegóły oferty.",time:"19:26"}
+]};
+function openSellerMessage(){
+  activeConversationSeller=document.getElementById("publicProfileName")?.textContent||"Sprzedająca";
+  document.getElementById("conversationSellerName").textContent=activeConversationSeller;
+  renderConversation();
+  document.getElementById("conversationPage").classList.add("show");
+  setTimeout(()=>document.getElementById("conversationInput").focus(),100);
+}
+function renderConversation(){
+  const body=document.getElementById("conversationBody");
+  const messages=demoConversations[activeConversationSeller]||[];
+  body.innerHTML="";
+  if(!messages.length){body.innerHTML='<div style="margin:auto;text-align:center;color:#918982;font-size:12px">To początek Waszej rozmowy.</div>';return;}
+  messages.forEach(msg=>{
+    const bubble=document.createElement("div");
+    bubble.className="message-bubble "+(msg.from==="me"?"me":"them");
+    bubble.textContent=msg.text;
+    const time=document.createElement("span"); time.className="message-time"; time.textContent=msg.time||"";
+    bubble.appendChild(time); body.appendChild(bubble);
+  });
+  body.scrollTop=body.scrollHeight;
+}
+function sendConversationMessage(event){
+  event.preventDefault();
+  const input=document.getElementById("conversationInput"), text=input.value.trim();
+  if(!text)return;
+  if(!demoConversations[activeConversationSeller])demoConversations[activeConversationSeller]=[];
+  demoConversations[activeConversationSeller].push({from:"me",text,time:new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})});
+  input.value=""; renderConversation();
+}
+function closeConversation(){document.getElementById("conversationPage").classList.remove("show");}
 function openAddOffer(){
+  try{
+    const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+    if(!saved || saved.role!=="seller"){
+      alert("Dodawanie ofert jest dostępne wyłącznie dla sprzedających.");
+      return;
+    }
+  }catch(e){ return; }
   document.getElementById("addOfferModal").classList.add("show");
   document.getElementById("addOfferError").textContent="";
   updateOfferForm();
@@ -1758,6 +1828,18 @@ window.addEventListener("storage",renderDiscover);
   </div>
 </div>
 
+
+<div class="conversation-page" id="conversationPage">
+  <div class="conversation-header">
+    <button type="button" onclick="closeConversation()">←</button>
+    <div><strong id="conversationSellerName">Luna</strong><span>Sprzedająca</span></div>
+  </div>
+  <div class="conversation-body" id="conversationBody"></div>
+  <form class="conversation-compose" onsubmit="sendConversationMessage(event)">
+    <textarea id="conversationInput" rows="1" placeholder="Napisz wiadomość…" maxlength="1000"></textarea>
+    <button type="submit">➤</button>
+  </form>
+</div>
 </body>
 </html>
 <script>
