@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Stringoland — odkryj swoją ulubioną sprzedającą</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">document.getElementById("buyerEmail")?.addEventListener("input",updateCheckoutSummary);
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>document.addEventListener("DOMContentLoaded",()=>document.getElementById("buyerEmail")?.addEventListener("input",updateCheckoutSummary));</script>
   <style>
     :root{
       --ink:#191616;--muted:#5f5954;--cream:#f3eeea;--line:#d8d0cb;
@@ -30,7 +30,7 @@
       min-height:690px;position:relative;display:flex;align-items:center;overflow:hidden;
       background:
         linear-gradient(90deg,rgba(15,10,10,.82),rgba(15,10,10,.42)),
-        url("assets/hero.jpg") center/cover;
+        url("assets/hero.jpg") center/cover, linear-gradient(135deg,#3a2f2c,#8a1830);
     }
     .hero:after{content:"";position:absolute;inset:auto 0 0;height:180px;background:linear-gradient(transparent,var(--cream))}
     .hero-copy{position:relative;z-index:2;width:min(1000px,100%);margin:auto;padding:58px 34px;color:#fff}
@@ -1156,7 +1156,7 @@ h1,h2,h3,.hero h1,.section-title,.subhead h1,.profile-info h1,
 <script>
 const SUPABASE_URL = "https://eqatnxwicohczjydnvux.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bPKJw5BUKdO9xOWiF6t5qw_EnzGL0nH";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
 let mode = "signup";
 let accountRole = "buyer";
 let sellerStep = false;
@@ -1402,7 +1402,7 @@ async function saveProfile(){
   msg.textContent="Profil zapisany ✓";
   fillProfile(data.user);
 }
-async function logout(){localStorage.removeItem("stringoland_active_session");await supabaseClient.auth.signOut();location.reload()}
+async function logout(){localStorage.removeItem("stringoland_active_session");if(supabaseClient) await supabaseClient.auth.signOut();location.reload()}
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
 </script>
 
@@ -1985,6 +1985,68 @@ let currentOffer=null;
 let selectedDuration=1;
 let selectedAddons=[];
 
+
+function openAddOffer(){
+  const m=document.getElementById("addOfferModal");
+  if(!m)return;
+  const role=(JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{}).role||"guest";
+  if(role!=="seller"){openAuth("login");return;}
+  m.classList.add("show");
+  updateOfferForm();
+}
+function closeAddOffer(){
+  document.getElementById("addOfferModal")?.classList.remove("show");
+}
+function updateOfferForm(){
+  const type=document.getElementById("newOfferType")?.value;
+  const duration=document.getElementById("durationField");
+  const digital=document.getElementById("digitalFileField");
+  const custom=document.getElementById("customOfferInfo");
+  const file=document.getElementById("newOfferFile");
+  if(duration) duration.style.display=type==="underwear"?"block":"none";
+  if(digital) digital.style.display=(type==="video"||type==="photo")?"block":"none";
+  if(custom) custom.style.display=type==="custom_photo"?"block":"none";
+  if(file) file.required=(type==="video"||type==="photo");
+}
+function publishOffer(){
+  const type=document.getElementById("newOfferType")?.value;
+  const title=document.getElementById("newOfferTitle")?.value.trim();
+  const description=document.getElementById("newOfferDescription")?.value.trim();
+  const price=Number(document.getElementById("newOfferPrice")?.value||0);
+  const file=document.getElementById("newOfferFile")?.files?.[0];
+  const err=document.getElementById("addOfferError");
+  if(err)err.textContent="";
+  if(!title||price<=0){
+    if(err)err.textContent="Uzupełnij nazwę oferty i prawidłową cenę.";
+    return;
+  }
+  if((type==="video"||type==="photo")&&!file){
+    if(err)err.textContent="Przy ofercie cyfrowej dodaj gotowy materiał przed publikacją.";
+    return;
+  }
+  const user=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
+  const sellerName=user.pseudonym||"Sprzedająca";
+  const offer={title,description,price,sellerName,type,available:true};
+  if(type==="underwear"){
+    const max=Number(document.getElementById("newOfferDuration")?.value||1);
+    offer.defaultDuration=1;
+    offer.durationPrices={};
+    for(let i=1;i<=max;i++)offer.durationPrices[i]=i===1?price:price*i;
+  }
+  if(type==="video"||type==="photo")offer.digitalAssetReady=true;
+  const sellers=getPublicSellers();
+  let seller=sellers.find(x=>x.pseudonym===sellerName);
+  if(!seller){
+    seller={pseudonym:sellerName,verified:true,active:true,age:null,likes:0,rating:null,lastActive:"Aktywna teraz",bio:"",offers:[],reviews:[]};
+    sellers.push(seller);
+  }
+  seller.offers=Array.isArray(seller.offers)?seller.offers:[];
+  seller.offers.push(offer);
+  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  closeAddOffer();
+  renderDiscover();
+  alert("Oferta została dodana w wersji demonstracyjnej.");
+}
 function openOfferDetail(offer){
   currentOffer=offer;
   selectedDuration=1;
@@ -2444,9 +2506,9 @@ window.addEventListener("storage",renderDiscover);
     <p class="buyer-data-info-footnote">Szczegółowe zasady przetwarzania danych znajdziesz w Polityce prywatności Stringoland.</p>
   </div>
 </div>
+<script>
+function openRegulation(){document.getElementById("regulationModal")?.classList.add("show")}
+function closeRegulation(){document.getElementById("regulationModal")?.classList.remove("show")}
+</script>
 </body>
 </html>
-<script>
-function openRegulation(){document.getElementById("regulationModal").classList.add("show")}
-function closeRegulation(){document.getElementById("regulationModal").classList.remove("show")}
-</script>
