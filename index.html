@@ -1229,7 +1229,12 @@ button{min-height:38px}
 
 <div id="buyerOrdersPage" class="page" style="display:none">
   <div class="subhead"><button class="small-btn" onclick="go('buyerPanel')">← Panel kupującego</button><div><div class="eyebrow">Historia</div><h1>Moje zamówienia</h1></div></div>
-  <div id="buyerOrdersContent" class="content-wrap"></div>
+  <div id="buyerOrderFilters" class="buyer-order-filters">
+      <button class="active" onclick="filterBuyerOrders('all',this)">Wszystkie</button>
+      <button onclick="filterBuyerOrders('active',this)">W toku</button>
+      <button onclick="filterBuyerOrders('completed',this)">Zakończone</button>
+    </div>
+    <div id="buyerOrdersContent" class="content-wrap"></div>
 </div>
 
 <div id="sellerPanel" class="page" style="display:none">
@@ -1652,7 +1657,7 @@ async function verifyEmailCode(){
     if(i<0){document.getElementById("msg").textContent="Nie znaleziono konta.";return}
     accounts[i].verifiedEmail=true;
     if(accounts[i].role==="seller")accounts[i].verifiedSeller=false;
-    localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+    if(!safeWriteLocal("stringoland_accounts",accounts))return;
     persistActiveUser(accounts[i]);
     localStorage.setItem("stringoland_active_session","1");
     closeEmailVerification();
@@ -1696,8 +1701,7 @@ async function submitAuth(){
         ?await apiRequest("/api/auth/register",{method:"POST",body:JSON.stringify({email:identifier,password,pseudonym,role:accountRole})})
         :await apiRequest("/api/auth/login",{method:"POST",body:JSON.stringify({email:identifier,password})});
       localStorage.setItem("stringoland_api_token",data.token);
-      localStorage.setItem("stringoland_test_user",JSON.stringify(data.user));
-      localStorage.setItem("stringoland_active_session","1");
+      persistActiveUser(data.user);
       currentUser=data.user;persistActiveUser(data.user);closeAuth();renderLocalSession(data.user);updateSideMenu?.();sellerAutoVerification(data.user);
       return;
     }
@@ -1706,14 +1710,14 @@ async function submitAuth(){
       if(accounts.some(a=>a.email.toLowerCase()===identifier.toLowerCase())){msg.textContent="E-mail jest już zajęty.";return}
       if(accounts.some(a=>a.pseudonym.toLowerCase()===pseudonym.toLowerCase())){msg.textContent="Ten pseudonim jest już zajęty.";return}
       const account={id:"u_"+Date.now(),email:identifier.toLowerCase(),password,pseudonym,role:accountRole,verifiedEmail:false,verifiedSeller:accountRole==="buyer",createdAt:new Date().toISOString()};
-      accounts.push(account);localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+      accounts.push(account);if(!safeWriteLocal("stringoland_accounts",accounts))return;
       localStorage.removeItem(STRINGOLAND_SESSION_KEY);localStorage.removeItem("stringoland_test_user");localStorage.removeItem("stringoland_active_session");
       pendingVerificationEmail=account.email;localStorage.setItem("stringoland_pending_verification",account.email);
       showEmailVerification(account.email);return;
     }
     const account=accounts.find(a=>a.email.toLowerCase()===identifier.toLowerCase()||a.pseudonym.toLowerCase()===identifier.toLowerCase());
     if(!account||account.password!==password){msg.textContent="Nieprawidłowe dane logowania.";return}
-    localStorage.setItem("stringoland_test_user",JSON.stringify(account));localStorage.setItem("stringoland_active_session","1");
+    persistActiveUser(account);
     currentUser=account;persistActiveUser(account);closeAuth();renderLocalSession(account);updateSideMenu?.();sellerAutoVerification(account);
   }catch(err){console.error(err);msg.textContent="Nie udało się wykonać operacji."}
   finally{button.disabled=false;button.textContent=mode==="signup"?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto"):"Zaloguj się"}
@@ -1743,7 +1747,6 @@ function getLocalOrders(){
 function openSellerOfferEditor(index=null){
   const u=getActiveUser();
   if(!u||u.role!=="seller"){openAuth("login");return}
-  if(!sellerIsVerified(u.pseudonym)){openSellerVerification();return}
   if(!sellerIsVerified(u.pseudonym)){openSellerVerification();return}
   const sellers=getPublicSellers();let me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(!me){me={pseudonym:u.pseudonym,offers:[],verified:false};sellers.push(me)}
@@ -1801,7 +1804,7 @@ function toggleSellerOffer(index){
   if(!me||!me.offers?.[index])return;
   me.offers[index].available=me.offers[index].available===false;
   me.offers[index].updatedAt=new Date().toISOString();
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zmian oferty.");return}
   renderSellerPanel();
 }
 function deleteSellerOffer(index){
@@ -1823,7 +1826,7 @@ function setOfferAvailability(offerRef,available){
   if(index<0||!me.offers[index])return;
   me.offers[index].available=!!available;
   me.offers[index].updatedAt=new Date().toISOString();
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zmian oferty.");return}
   renderSellerPanel();
 }
 
@@ -1879,6 +1882,9 @@ function validateSellerOffer(raw){
   return {ok:!errors.length,offer:o,errors};
 }
 async function saveSellerOffer(index){
+  const __sellerGuard=getActiveUser();
+  if(__sellerGuard?.role==="seller"&&!sellerIsVerified(__sellerGuard.pseudonym)){openSellerVerification();return}
+
   const raw=collectSellerOfferForm();
   const validation=validateSellerOffer(raw);
   if(!validation.ok){alert(validation.errors.join("\n"));return}
@@ -1923,6 +1929,9 @@ async function saveSellerOffer(index){
 }
 
 function sellerCreateOfferDemo(){
+  const __sellerGuard=getActiveUser();
+  if(__sellerGuard?.role==="seller"&&!sellerIsVerified(__sellerGuard.pseudonym)){openSellerVerification();return}
+
   openSellerOfferEditor();
 }
 window.openSellerDashboard=openSellerPanel;
@@ -1940,13 +1949,15 @@ function setActiveUtilityLink(label){
   });
 }
 function go(target){
-  const map={home:"home",sellers:"sellers"};
+  const map={home:"home",sellers:"sellers",admin:"adminPanel"};
   if(target==="home"||target==="sellers"){
+
     closeAllPages();
     const el=document.getElementById(map[target]);
     if(el){el.style.display="block";el.classList.add("active")}
     return;
   }
+  if(target==="admin"){openAdminPanel();return}
   if(target==="login"){openAuth("login");return}
 }
 function closeTopModal(){
@@ -1956,6 +1967,157 @@ function closeTopModal(){
 function closeAllPages(){
   document.querySelectorAll(".page").forEach(el=>{el.style.display="none";el.classList.remove("active")});
   document.querySelectorAll(".modal-overlay").forEach(el=>el.classList.remove("show"));
+}
+
+function getAdminStats(){
+  const sellers=getPublicSellers(),orders=getLocalOrders().map(normalizeOrder),payouts=readLSJson("stringoland_payout_requests",[]),reports=getReports();
+  const completed=orders.filter(x=>x.status==="completed");
+    const grossSales=Math.round(completed.reduce((n,o)=>n+Number(o.total||0),0)*100)/100;
+    const platformCommission=Math.round(completed.reduce((n,o)=>n+calculateSellerNet(o).commission,0)*100)/100;
+    return {
+    sellers:sellers.length,
+    verified:sellers.filter(x=>getSellerVerification(x.pseudonym).status==="approved").length,
+    grossSales,platformCommission,
+    pending:getAdminVerificationRequests().filter(x=>x.status==="pending").length,
+    offers:sellers.reduce((n,x)=>n+(Array.isArray(x.offers)?x.offers.length:0),0),
+    orders:orders.length,
+    activeOrders:orders.filter(x=>["pending_seller","accepted","in_progress"].includes(x.status)).length,
+    completedOrders:orders.filter(x=>x.status==="completed").length,
+    payoutPending:payouts.filter(x=>x.status==="pending").reduce((n,x)=>n+Number(x.amount||0),0),
+    reports:reports.filter(x=>x.status!=="resolved").length
+  };
+}
+function openAdminPanel(){
+  const u=getActiveUser();
+  if(!u||u.role!=="admin"){alert("Brak uprawnień administratora.");return}
+  closeAllPages();
+  const panel=document.getElementById("adminPanel");if(!panel)return;
+  panel.style.display="block";panel.classList.add("active");renderAdminPanel();window.scrollTo(0,0);
+}
+function renderAdminPanel(){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const box=document.getElementById("adminPanelContent");if(!box)return;
+  const st=getAdminStats();
+  box.innerHTML=`<div class="admin-dashboard">
+    <div class="admin-dashboard-head"><div><div class="eyebrow">Centrum zarządzania</div><h1>Panel administracyjny</h1><p>Kontrola sprzedających, zamówień, wypłat i bezpieczeństwa.</p></div><div style="display:flex;gap:7px"><button class="small-btn" onclick="openAdminAudit()">Dziennik</button><button class="small-btn" onclick="go('home')">Wróć do strony</button></div></div>
+    <div class="admin-kpi-grid"><div class="admin-kpi"><span>Sprzedaż brutto</span><b>${formatPLN(st.grossSales)}</b><small>zakończone zamówienia</small></div>
+      <div class="admin-kpi"><span>Prowizja platformy</span><b>${formatPLN(st.platformCommission)}</b><small>24% od sprzedaży</small></div>
+      <button class="admin-kpi" onclick="openAdminVerificationPanel()"><span>Weryfikacja</span><b>${st.pending}</b><small>oczekujących</small></button>
+      <div class="admin-kpi"><span>Sprzedające</span><b>${st.sellers}</b><small>${st.verified} zweryfikowanych</small></div>
+      <div class="admin-kpi"><span>Oferty</span><b>${st.offers}</b><small>aktywnych profili</small></div>
+      <div class="admin-kpi"><span>Zamówienia</span><b>${st.orders}</b><small>${st.activeOrders} aktywnych</small></div>
+      <button class="admin-kpi" onclick="openAdminPayouts()"><span>Wypłaty</span><b>${formatPLN(st.payoutPending)}</b><small>oczekujące</small></button>
+      <button class="admin-kpi" onclick="openModerationQueue()"><span>Zgłoszenia</span><b>${st.reports}</b><small>otwarte</small></button>
+    </div>
+    <div class="admin-main-grid">
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Sprzedające</div><h2>Weryfikacja</h2></div><button class="small-btn" onclick="openAdminVerificationPanel()">Otwórz</button></div>
+        <button class="small-btn" onclick="openAdminSellers()">Lista sprzedających</button><p class="admin-muted">${st.pending?`Masz ${st.pending} ${st.pending===1?"wniosek oczekujący":"wnioski oczekujące"} do ręcznego rozpatrzenia.`:"Nie ma obecnie oczekujących wniosków."}</p>
+        <button class="primary" onclick="openAdminVerificationPanel()">Zarządzaj weryfikacją</button>
+      </section>
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Finanse</div><h2>Wypłaty</h2></div><button class="small-btn" onclick="openAdminPayouts()">Otwórz</button></div>
+        <p class="admin-muted">Do ręcznego obsłużenia: <b>${formatPLN(st.payoutPending)}</b></p><button class="primary" onclick="openAdminPayouts()">Sprawdź wypłaty</button>
+      </section>
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Bezpieczeństwo</div><h2>Zgłoszenia</h2></div><button class="small-btn" onclick="openModerationQueue()">Otwórz</button></div>
+        <p class="admin-muted">${st.reports?`Otwarte zgłoszenia: <b>${st.reports}</b>.`:"Brak otwartych zgłoszeń."}</p><button class="primary" onclick="openModerationQueue()">Przejdź do moderacji</button>
+      </section>
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Sprzedaż</div><h2>Zamówienia</h2></div><button class="small-btn" onclick="openAdminOrders()">Otwórz</button></div>
+        <div class="admin-order-summary"><span>Aktywne <b>${st.activeOrders}</b></span><span>Zakończone <b>${st.completedOrders}</b></span></div>
+      </section>
+    </div>
+  </div>`;
+}
+
+
+function openAdminOrders(filter="all"){
+  const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
+  let modal=document.getElementById("adminOrdersModal");
+  if(!modal){modal=document.createElement("div");modal.id="adminOrdersModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const all=getLocalOrders().map(normalizeOrder).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  const orders=filter==="active"?all.filter(o=>["pending_seller","accepted","in_progress"].includes(o.status)):filter==="completed"?all.filter(o=>o.status==="completed"):filter==="declined"?all.filter(o=>["declined","expired"].includes(o.status)):all;
+  modal.innerHTML=`<div class="admin-verification-card admin-orders-modal"><button class="modal-close" onclick="closeModalById('adminOrdersModal')">×</button>
+    <div class="eyebrow">Sprzedaż</div><h2>Wszystkie zamówienia</h2>
+    <div class="admin-order-filters">
+      ${["all","active","completed","declined"].map(x=>`<button class="${filter===x?"active":""}" onclick="openAdminOrders('${x}')">${({all:"Wszystkie",active:"Aktywne",completed:"Zakończone",declined:"Odrzucone"})[x]}</button>`).join("")}
+    </div>
+    <div class="admin-orders-list">${orders.length?orders.map(o=>`<article class="admin-order-row">
+      <div><strong>${escapeHtml(o.title||"Zamówienie")}</strong><small>${escapeHtml(o.buyer||"—")} → ${escapeHtml(o.seller||"—")}</small><small>${o.createdAt?new Date(o.createdAt).toLocaleString("pl-PL"):"—"}</small></div>
+      <div><b>${formatPLN(o.total||0)}</b><span class="order-status-pill">${escapeHtml(getBuyerOrderStatusLabel(o.status))}</span></div>
+    </article>`).join(""):`<div class="empty-state"><p>Brak zamówień w tej kategorii.</p></div>`}</div>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function openAdminSellers(){
+  const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
+  let modal=document.getElementById("adminSellersModal");
+  if(!modal){modal=document.createElement("div");modal.id="adminSellersModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const sellers=getPublicSellers().sort((a,b)=>String(a.pseudonym).localeCompare(String(b.pseudonym),"pl"));
+  modal.innerHTML=`<div class="admin-verification-card">
+    <button class="modal-close" onclick="closeModalById('adminSellersModal')">×</button>
+    <div class="eyebrow">Użytkownicy</div><h2>Sprzedające</h2>
+    <input id="adminSellerSearch" class="admin-search" placeholder="Szukaj po pseudonimie..." oninput="filterAdminSellers()">
+    <div id="adminSellersList">${renderAdminSellersList(sellers)}</div>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function renderAdminSellersList(sellers){
+  if(!sellers.length)return `<div class="empty-state"><p>Nie znaleziono sprzedających.</p></div>`;
+  return sellers.map(v=>{
+    const status=getSellerVerification(v.pseudonym).status;
+    const offers=Array.isArray(v.offers)?v.offers.length:0;
+    return `<article class="admin-seller-row" data-seller="${escapeHtml(String(v.pseudonym).toLowerCase())}">
+      <div><strong>${escapeHtml(v.pseudonym)}</strong><small>${escapeHtml(getSellerVerificationLabel(status))} · ${offers} ofert</small></div>
+      <div class="admin-seller-actions"><button class="small-btn" onclick="openAdminSellerProfile('${String(v.pseudonym).replace(/'/g,"\\'")}')">Profil</button>${status==="pending"?`<button class="small-btn" onclick="openAdminVerificationRequest('${String(v.pseudonym).replace(/'/g,"\\'")}')">Weryfikacja</button>`:""}</div>
+    </article>`;
+  }).join("");
+}
+function filterAdminSellers(){
+  const q=(document.getElementById("adminSellerSearch")?.value||"").trim().toLowerCase();
+  document.querySelectorAll("#adminSellersList .admin-seller-row").forEach(row=>{row.style.display=String(row.dataset.seller||"").includes(q)?"":"none"});
+}
+
+function adminToggleSellerActive(pseudonym){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const sellers=getPublicSellers(),i=sellers.findIndex(x=>x.pseudonym===pseudonym);if(i<0)return;
+  const next=sellers[i].active===false;
+  if(!next&&!confirm("Aktywować profil tej sprzedającej i ponownie pokazywać go kupującym?"))return;
+  if(next&& !confirm("Dezaktywować profil? Sprzedająca przestanie być widoczna dla kupujących, ale konto nie zostanie usunięte."))return;
+  sellers[i].active=next;
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zmienić statusu profilu.");return}
+  addAdminAudit(next?"Aktywacja profilu":"Dezaktywacja profilu",pseudonym);
+  openAdminSellerProfile(pseudonym);
+}
+function openAdminSellerProfile(pseudonym){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const me=getPublicSellers().find(x=>x.pseudonym===pseudonym);if(!me)return;
+  const v=getSellerVerification(pseudonym),offers=Array.isArray(me.offers)?me.offers:[],activity=readLSJson("stringoland_user_activity",{})[pseudonym];
+  const modal=document.getElementById("adminSellersModal");if(!modal)return;
+  modal.innerHTML=`<div class="admin-verification-card"><button class="modal-close" onclick="openAdminSellers()">×</button>
+    <div class="eyebrow">Profil sprzedającej</div><h2>${escapeHtml(me.pseudonym)}</h2>
+    <div class="admin-verification-detail"><div><span>Weryfikacja</span><b>${escapeHtml(getSellerVerificationLabel(v.status))}</b></div><div><span>Wiek</span><b>${Number(me.age)||"—"}</b></div><div><span>Oferty</span><b>${offers.length}</b></div><div><span>Opinie</span><b>${getReviews().filter(r=>r.seller===pseudonym).length}</b></div>
+      <div><span>Przychód netto</span><b>${formatPLN(getSellerWallet(pseudonym).net)}</b></div>
+      <div><span>Do wypłaty</span><b>${formatPLN(getSellerWallet(pseudonym).available)}</b></div>
+      <div><span>Ostatnia aktywność</span><b>${activity?.lastActiveAt?new Date(activity.lastActiveAt).toLocaleString("pl-PL"):"Brak danych"}</b></div>
+      <div><span>Wniosek wysłany</span><b>${v.submittedAt?new Date(v.submittedAt).toLocaleString("pl-PL"):"Brak"}</b></div>
+    </div>
+    <div class="admin-seller-bio">${escapeHtml(me.bio||"Brak opisu profilu.")}</div>
+    <h3>Oferty</h3>${offers.length?offers.map(o=>`<div class="admin-seller-offer"><span>${escapeHtml(o.title||"Oferta")}</span><b>${formatPLN(o.price||0)}</b></div>`).join(""):`<div class="empty-state"><p>Brak ofert.</p></div>`}
+  </div>`;
+}
+function openAdminPayouts(){
+  const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
+  let modal=document.getElementById("adminPayoutsModal");if(!modal){modal=document.createElement("div");modal.id="adminPayoutsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.status==="pending").sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  modal.innerHTML=`<div class="admin-verification-card"><button class="modal-close" onclick="closeModalById('adminPayoutsModal')">×</button><div class="eyebrow">Finanse</div><h2>Wypłaty do obsłużenia</h2><p class="verification-intro">Wypłaty są przygotowane po odliczeniu prowizji 24%. Administrator może oznaczyć zlecenie jako wypłacone.</p>${payouts.length?payouts.map(x=>`<article class="admin-payout-row"><div><strong>${escapeHtml(x.seller)}</strong><b>${formatPLN(x.amount)}</b><small>•••• ${escapeHtml(x.accountLast4||"")} · ${new Date(x.createdAt).toLocaleString("pl-PL")}</small></div><button class="primary" onclick="adminMarkPayoutPaid('${String(x.id).replace(/'/g,"\\'")}')">Oznacz jako wypłacone</button></article>`).join(""):`<div class="empty-state"><p>Brak oczekujących wypłat.</p></div>`}</div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function adminMarkPayoutPaid(id){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const payouts=readLSJson("stringoland_payout_requests",[]),i=payouts.findIndex(x=>x.id===id);if(i<0)return;
+  payouts[i]={...payouts[i],status:"paid",updatedAt:new Date().toISOString(),paidAt:new Date().toISOString()};
+  addAdminAudit("Oznaczenie wypłaty jako zrealizowane",`${payouts[i].seller} · ${formatPLN(payouts[i].amount)}`);
+  if(!safeWriteLocal("stringoland_payout_requests",payouts)){alert("Nie udało się zapisać wypłaty.");return}
+  addNotification(payouts[i].seller,`Wypłata ${formatPLN(payouts[i].amount)} została oznaczona jako zrealizowana.`,"payout");
+  openAdminPayouts();
 }
 function openSellerPanel(){
   const sellerUser=requireSeller(); if(!sellerUser)return;
@@ -2009,6 +2171,11 @@ function calculateSellerNet(order){
   const commission=Math.round(gross*rate*100)/100;
   return {gross,rate,commission,net:Math.round((gross-commission)*100)/100};
 }
+
+function getSellerCommissionBreakdown(amount){
+  const gross=Math.max(0,Number(amount||0)),commission=Math.round(gross*0.24*100)/100,net=Math.round((gross-commission)*100)/100;
+  return {gross,commission,net,rate:.24};
+}
 function getSellerWallet(pseudonym){
   const orders=getLocalOrders().map(normalizeOrder).filter(o=>o.seller===pseudonym&&o.status==="completed");
   const earnings=orders.map(calculateSellerNet);
@@ -2040,6 +2207,11 @@ function isSellerPayoutReady(pseudonym){
   const b=getSellerPayoutSettings(pseudonym);
   return !!(b.ownerName&&b.bankName&&isValidBankAccount(b.accountNumber));
 }
+
+function openSellerPayoutSettings(){
+  const u=requireSeller();if(!u)return;
+  openSellerProfileEditor();
+}
 function openSellerWallet(){
   const u=requireSeller();if(!u)return;
   const w=getSellerWallet(u.pseudonym), bank=getSellerPayoutSettings(u.pseudonym);
@@ -2048,7 +2220,7 @@ function openSellerWallet(){
   modal.innerHTML=`<div class="seller-wallet-card">
     <button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerWalletModal').classList.remove('show');syncModalScrollLock()">×</button>
     <div class="eyebrow">Finanse</div><h2>Portfel</h2>
-    <div class="wallet-balance"><span>Do wypłaty</span><strong>${formatPLN(w.available)}</strong><small>Po odliczeniu prowizji 24%</small></div>
+    <div class="wallet-balance"><span>Do wypłaty</span><strong>${formatPLN(w.available)}</strong><small>Po odliczeniu prowizji 24% · Portfel przeliczany na bieżąco</small></div>
     <div class="wallet-stats">
       <div><span>Wartość zamówień</span><b>${formatPLN(w.gross)}</b></div>
       <div><span>Prowizja Stringoland (24%)</span><b>− ${formatPLN(w.commission)}</b></div>
@@ -2056,9 +2228,9 @@ function openSellerWallet(){
       <div><span>Wypłaty zakończone</span><b>${formatPLN(w.paidOut)}</b></div>
       <div><span>Wypłaty oczekujące</span><b>${formatPLN(w.pending)}</b></div>
     </div>
-    <div class="payout-account-card"><div><b>Dane do wypłaty</b><small>${escapeHtml(bank.ownerName||"Brak danych")} · ${escapeHtml(formatPayoutAccount(bank.accountNumber))}</small></div><button type="button" class="small-btn" onclick="openSellerProfileEditor()">Edytuj</button></div>
-    <div class="wallet-actions"><button type="button" class="primary" ${w.available<=0||!isSellerPayoutReady(u.pseudonym)?"disabled":""} onclick="requestSellerPayout()">Wypłać ${formatPLN(w.available)}</button><button type="button" class="secondary" onclick="openSellerPayoutHistory()">Historia wypłat</button></div>
-    <p class="wallet-note">W tej wersji wypłata jest zgłoszeniem demonstracyjnym. Nie wykonuje rzeczywistego przelewu bankowego.</p>
+    <div class="payout-account-card"><div><b>Dane do wypłaty</b><small>${escapeHtml(bank.ownerName||"Brak danych")} · ${escapeHtml(formatPayoutAccount(bank.accountNumber))}</small><em class="payout-ready ${isSellerPayoutReady(u.pseudonym)?"ok":"warn"}">${isSellerPayoutReady(u.pseudonym)?"✓ Dane kompletne":"Uzupełnij dane"}</em></div><button type="button" class="small-btn" onclick="openSellerProfileEditor()">Edytuj</button></div>
+    <div class="wallet-actions"><button type="button" class="primary" ${w.available<=0||!isSellerPayoutReady(u.pseudonym)?"disabled":""} onclick="requestSellerPayout()">Wypłać ${formatPLN(w.available)}</button><button type="button" class="secondary" onclick="openSellerWalletBreakdown()">Rozliczenie zamówień</button><button type="button" class="secondary" onclick="openSellerPayoutHistory()">Historia wypłat</button></div>
+    <p class="wallet-note">Wypłata jest zleceniem do ręcznej realizacji przez administratora. Kwota jest już pomniejszona o prowizję Stringoland 24%.</p>
   </div>`;
   modal.classList.add("show");syncModalScrollLock();
 }
@@ -2069,12 +2241,26 @@ function requestSellerPayout(){
   if(!confirm("Zlecić wypłatę środków na zapisane konto bankowe?"))return;
   if(w.available<=0){alert("Nie masz obecnie środków dostępnych do wypłaty.");return}
   const payouts=readLSJson("stringoland_payout_requests",[]);
+  if(payouts.some(x=>x.seller===u.pseudonym&&x.status==="pending")){alert("Masz już oczekującą wypłatę. Poczekaj na jej realizację.");return}
   payouts.push({id:"payout_"+Date.now(),seller:u.pseudonym,amount:w.available,status:"pending",updatedAt:new Date().toISOString(),accountLast4:String(bank.accountNumber||"").slice(-4),ownerName:bank.ownerName,createdAt:new Date().toISOString()});
-  writeLSJson("stringoland_payout_requests",payouts);
+  if(!safeWriteLocal("stringoland_payout_requests",payouts)){alert("Nie udało się zlecić wypłaty.");return}
+  notifyAdmins(`Nowe zlecenie wypłaty od ${u.pseudonym}: ${formatPLN(w.available)}.`);
   addNotification(u.pseudonym,`Zlecenie wypłaty ${formatPLN(w.available)} zostało przyjęte do realizacji.`);
   document.getElementById("sellerWalletModal")?.classList.remove("show");syncModalScrollLock();
   alert("Zlecenie wypłaty zostało zapisane.");
   renderSellerPanel();
+}
+
+function openSellerWalletBreakdown(){
+  const u=requireSeller();if(!u)return;
+  const orders=getLocalOrders().map(normalizeOrder).filter(o=>o.seller===u.pseudonym&&o.status==="completed").sort((a,b)=>new Date(b.completedAt||b.createdAt||0)-new Date(a.completedAt||a.createdAt||0));
+  let modal=document.getElementById("sellerWalletBreakdownModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerWalletBreakdownModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="seller-wallet-card"><button class="modal-close" onclick="closeModalById('sellerWalletBreakdownModal')">×</button><div class="eyebrow">Portfel</div><h2>Rozliczenie zamówień</h2>
+    <p class="info">Każde zakończone zamówienie jest rozliczane osobno. Prowizja platformy wynosi 24%.</p>
+    ${orders.length?orders.map(o=>{const x=calculateSellerNet(o);return `<div class="wallet-order-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>${new Date(o.completedAt||o.createdAt||Date.now()).toLocaleDateString("pl-PL")}</small></div><div><span>Brutto ${formatPLN(x.gross)}</span><span>− 24% ${formatPLN(x.commission)}</span><b>Netto ${formatPLN(x.net)}</b></div></div>`}).join(""):`<div class="empty-state"><p>Brak zakończonych zamówień do rozliczenia.</p></div>`}
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
 }
 function openSellerPayoutHistory(){
   const u=requireSeller();if(!u)return;
@@ -2092,7 +2278,9 @@ function getSellerVerification(pseudonym){
 function getSellerVerificationLabel(status){
   return ({not_started:"Weryfikacja niewysłana",pending:"Oczekuje na weryfikację",approved:"Zweryfikowana",needs_changes:"Wymaga poprawy",rejected:"Odrzucona"})[status]||"Weryfikacja niewysłana";
 }
-function sellerIsVerified(pseudonym){const u=getActiveUser();return !!u&&u.role==="seller"&&u.pseudonym===pseudonym&&getSellerVerification(pseudonym).status==="approved"}
+function sellerIsVerified(pseudonym){
+  return !!String(pseudonym||"").trim() && getSellerVerification(pseudonym).status==="approved";
+}
 function saveSellerVerification(v){
   const all=readLSJson("stringoland_seller_verifications",[]),i=all.findIndex(x=>x.seller===v.seller);
   if(i>=0)all[i]=v;else all.push(v);return safeWriteLocal("stringoland_seller_verifications",all);
@@ -2103,7 +2291,7 @@ function openSellerVerification(){
   let modal=document.getElementById("sellerVerificationModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   if(v.status==="approved"){
-    modal.innerHTML=`<div class="verification-card"><button aria-label="Zamknij" class="modal-close" onclick="closeModalById('sellerVerificationModal')">×</button><div class="verification-icon">✓</div><div class="eyebrow">Weryfikacja sprzedającej</div><h2>Profil jest zweryfikowany</h2><p>Możesz publikować i edytować swoje oferty.</p><button class="primary" onclick="closeModalById('sellerVerificationModal')">Gotowe</button></div>`;
+    modal.innerHTML=`<div class="verification-card"><button aria-label="Zamknij" class="modal-close" onclick="closeModalById('sellerVerificationModal')">×</button><div class="verification-icon">✓</div><div class="eyebrow">Weryfikacja sprzedającej</div><div class="manual-review-note">Ręczna weryfikacja przez administratora · standardowo do 1 dnia roboczego</div><h2>Profil jest zweryfikowany</h2><p>Możesz publikować i edytować swoje oferty.</p><button class="primary" onclick="closeModalById('sellerVerificationModal')">Gotowe</button></div>`;
   }else{
     const pending=v.status==="pending";
     modal.innerHTML=`<div class="verification-card"><button aria-label="Zamknij" class="modal-close" onclick="closeModalById('sellerVerificationModal')">×</button>
@@ -2111,8 +2299,8 @@ function openSellerVerification(){
       <h2>${pending?"Weryfikacja oczekuje na sprawdzenie":"Zweryfikuj konto sprzedającej"}</h2>
       ${v.status==="needs_changes"?`<div class="verification-status pending"><b>Administrator poprosił o poprawki.</b><span>${escapeHtml(v.reviewNote||"Uzupełnij dane i wyślij wniosek ponownie.")}</span></div>
         <button class="primary" onclick="openSellerVerification()">Popraw dane</button>`
-      :pending?`<div class="verification-status pending"><b>Dokumenty zostały wysłane.</b><span>Weryfikacja zajmuje około <strong>1–2 dni roboczych</strong>. Do czasu zatwierdzenia możesz uzupełniać profil, ale nie możesz publikować ofert.</span></div>
-        <div class="verification-demo-note">Weryfikacja zajmuje około <strong>1–2 dni roboczych</strong>. Wersja demonstracyjna: faktyczna kontrola dokumentów wymaga połączenia z systemem weryfikacji po stronie serwera.</div>
+      :pending?`<div class="verification-status pending"><b>Dokumenty zostały wysłane.</b><span>Weryfikacja zajmuje około <strong>1 dzień roboczy</strong>. Do czasu zatwierdzenia możesz uzupełniać profil, ale nie możesz publikować ofert.</span></div>
+        <div class="verification-demo-note">Weryfikacja zajmuje około <strong>1 dzień roboczy</strong>. Wersja demonstracyjna: faktyczna kontrola dokumentów wymaga połączenia z systemem weryfikacji po stronie serwera.</div>
         <button class="primary" onclick="closeModalById('sellerVerificationModal')">Wróć do panelu</button>`
       :`<p class="verification-intro">Weryfikacja dotyczy wyłącznie kont sprzedających. Kupujący nie przechodzą tego procesu.</p><div class="verification-time-note">⏱ Szacowany czas weryfikacji: <strong>1–2 dni robocze</strong>.</div>
         <div class="verification-fields">
@@ -2150,7 +2338,76 @@ function submitSellerVerification(){
   if(!saveSellerVerification(v)){alert("Nie udało się wysłać wniosku. Spróbuj ponownie.");return}
   addNotification(u.pseudonym,"Wniosek o weryfikację sprzedającej został wysłany.",null);
   closeModalById("sellerVerificationModal");renderSellerPanel();
-  alert("Wniosek został wysłany. Weryfikacja zajmuje około 1–2 dni roboczych. Do czasu zatwierdzenia nie możesz publikować ofert.");
+  alert("Wniosek został wysłany. Weryfikacja zajmuje około 1 dzień roboczy. Do czasu zatwierdzenia nie możesz publikować ofert.");
+}
+
+function getAdminVerificationRequests(){
+  return readLSJson("stringoland_seller_verifications",[]).sort((a,b)=>String(b.submittedAt||"").localeCompare(String(a.submittedAt||"")));
+}
+function setSellerVerificationStatus(seller,status,note=""){
+  const all=getAdminVerificationRequests(),i=all.findIndex(x=>x.seller===seller);
+  if(i<0)return false;
+  all[i]={...all[i],status,reviewedAt:new Date().toISOString(),reviewNote:String(note||"").slice(0,800)};
+  if(!safeWriteLocal("stringoland_seller_verifications",all))return false;
+  addNotification(seller,
+    status==="approved"?"Administrator zatwierdził Twoją weryfikację. Możesz teraz publikować oferty.":
+    status==="needs_changes"?"Administrator poprosił o poprawienie danych weryfikacyjnych.":
+    "Administrator odrzucił weryfikację. Sprawdź powód.",
+    "verification");
+  return true;
+}
+function openAdminVerificationPanel(){
+  const u=getActiveUser();
+  if(!u||u.role!=="admin"){alert("Panel weryfikacji jest dostępny wyłącznie administratorowi.");return}
+  let modal=document.getElementById("adminVerificationModal");
+  if(!modal){modal=document.createElement("div");modal.id="adminVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const requests=getAdminVerificationRequests(),pending=requests.filter(x=>x.status==="pending");
+  modal.innerHTML=`<div class="admin-verification-card">
+    <button class="modal-close" aria-label="Zamknij" onclick="closeModalById('adminVerificationModal')">×</button>
+    <div class="eyebrow">Panel administratora</div><h2>Weryfikacja sprzedających</h2>
+    <p class="verification-intro">Każdy wniosek jest rozpatrywany ręcznie. Po 1 dniu nic nie zostaje zaakceptowane automatycznie.</p>
+    <div class="admin-verification-summary"><b>${pending.length}</b><span>oczekujących wniosków</span><small>standardowy czas rozpatrzenia: do 1 dnia roboczego</small></div>
+    <div class="admin-verification-list">${requests.length?requests.map(v=>`
+      <article class="admin-verification-item"><div><strong>${escapeHtml(v.seller)}</strong><span>${escapeHtml(getSellerVerificationLabel(v.status))}</span><small>${v.submittedAt?new Date(v.submittedAt).toLocaleString("pl-PL"):"—"}</small></div>
+      <button class="small-btn" onclick="openAdminVerificationRequest('${String(v.seller).replace(/'/g,"\\'")}')">Sprawdź wniosek</button></article>`).join(""):`<div class="inline-state">Brak wniosków.</div>`}</div>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function openAdminVerificationRequest(seller){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const v=getAdminVerificationRequests().find(x=>x.seller===seller);if(!v)return;
+  const modal=document.getElementById("adminVerificationModal");if(!modal)return;
+  modal.innerHTML=`<div class="admin-verification-card">
+    <button class="modal-close" aria-label="Wróć" onclick="openAdminVerificationPanel()">×</button>
+    <div class="eyebrow">Wniosek weryfikacyjny</div><h2>${escapeHtml(v.seller)}</h2>
+    <div class="admin-verification-detail">
+      <div><span>Imię i nazwisko</span><b>${escapeHtml(v.legalName||"—")}</b></div>
+      <div><span>Data urodzenia</span><b>${escapeHtml(v.birthDate||"—")}</b></div>
+      <div><span>Kraj</span><b>${escapeHtml(v.country||"—")}</b></div>
+      <div><span>Dokument</span><b>${v.filesSubmitted?.id?"Załączony":"Brak"}</b></div>
+      <div><span>Selfie</span><b>${v.filesSubmitted?.selfie?"Załączone":"Brak"}</b></div>
+      <div><span>Oświadczenia</span><b>${v.checks?.adult&&v.checks?.ownData&&v.checks?.rules?"Komplet":"Niekompletne"}</b></div>
+    </div>
+    <textarea id="adminVerificationNote" maxlength="800" placeholder="Notatka / powód decyzji">${escapeHtml(v.reviewNote||"")}</textarea>
+    <div class="admin-verification-actions">${v.status==="pending"?`
+      <button class="primary" onclick="adminApproveVerification('${String(v.seller).replace(/'/g,"\\'")}')">Zatwierdź</button>
+      <button class="small-btn" onclick="adminNeedsChanges('${String(v.seller).replace(/'/g,"\\'")}')">Poproś o poprawki</button>
+      <button class="small-btn danger-btn" onclick="adminRejectVerification('${String(v.seller).replace(/'/g,"\\'")}')">Odrzuć</button>`:`<span>Wniosek został już rozpatrzony.</span>`}</div>
+  </div>`;
+}
+function adminApproveVerification(seller){
+  const note=document.getElementById("adminVerificationNote")?.value.trim()||"";
+  if(setSellerVerificationStatus(seller,"approved",note)){addAdminAudit("Zatwierdzenie weryfikacji",seller);openAdminVerificationPanel();}
+}
+function adminNeedsChanges(seller){
+  const note=document.getElementById("adminVerificationNote")?.value.trim()||"";
+  if(!note){alert("Podaj, co sprzedająca ma poprawić.");return}
+  if(setSellerVerificationStatus(seller,"needs_changes",note)){addAdminAudit("Poprawki wymagane",seller);openAdminVerificationPanel();}
+}
+function adminRejectVerification(seller){
+  const note=document.getElementById("adminVerificationNote")?.value.trim()||"";
+  if(!note){alert("Podaj powód odrzucenia.");return}
+  if(setSellerVerificationStatus(seller,"rejected",note)){addAdminAudit("Odrzucenie weryfikacji",seller);openAdminVerificationPanel();}
 }
 function openSellerProfileEditor(){
   const u=getActiveUser();
@@ -2171,6 +2428,7 @@ function openSellerProfileEditor(){
       <div class="profile-photo-main">${me.photo?`<img src="${escapeHtml(me.photo)}" alt="Zdjęcie profilowe">`:'<span>Brak zdjęcia</span>'}</div>
       <div><b>Zdjęcia profilowe</b><p class="info">Dodaj jedno lub kilka zdjęć. Pierwsze zdjęcie jest główne.</p>
       <input id="sellerProfilePhotosInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+      <small class="photo-upload-hint">Maks. 8 zdjęć. Zdjęcia są automatycznie zmniejszane przed zapisaniem.</small>
       <div id="sellerProfilePhotoPreview" class="profile-photo-strip">${photos.map((src,i)=>`<div class="profile-photo-thumb"><img src="${escapeHtml(src)}" alt="Zdjęcie ${i+1}"><button type="button" onclick="removeSellerProfilePhoto(${i})">Usuń</button></div>`).join("")}</div></div>
     </div>
 
@@ -2206,13 +2464,34 @@ async function handleSellerProfilePhotoUpload(e){
   me.photos=Array.isArray(me.photos)?me.photos:[];
   for(const file of files){
     if(file.size>3*1024*1024){alert("Jedno zdjęcie może mieć maksymalnie 3 MB.");continue}
-    const data=await readFileAsDataURL(file);
+    const data=await compressProfileImage(file);
     if(data&&!me.photos.includes(data))me.photos.push(data);
   }
   me.photos=me.photos.slice(0,8);
+  const totalPhotoBytes=me.photos.reduce((n,x)=>n+Math.ceil(String(x).length*.75),0);
+  if(totalPhotoBytes>4*1024*1024){alert("Łączny rozmiar zdjęć jest zbyt duży. Usuń część zdjęć i spróbuj ponownie.");return}
   me.photo=me.photos[0]||"";
   if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zdjęć. Usuń część zdjęć lub zmniejsz ich rozmiar.");return}
   openSellerProfileEditor();
+}
+
+async function compressProfileImage(file){
+  const src=await readFileAsDataURL(file);
+  if(!src)return "";
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1600,scale=Math.min(1,max/Math.max(img.width,img.height));
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.max(1,Math.round(img.width*scale));
+      canvas.height=Math.max(1,Math.round(img.height*scale));
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      resolve(canvas.toDataURL("image/jpeg",.82));
+    };
+    img.onerror=()=>resolve("");
+    img.src=src;
+  });
 }
 function readFileAsDataURL(file){
   return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file)});
@@ -2261,6 +2540,10 @@ function openOrderReview(orderId){
   modal.classList.add("show");syncModalScrollLock();
 }
 function selectReviewRating(n){const el=document.getElementById("selectedReviewRating");if(el)el.value=n;document.querySelectorAll(".review-stars-input button").forEach((b,i)=>b.classList.toggle("selected",i<n))}
+function getReviews(){
+  const v=readLSJson("stringoland_reviews",[]);
+  return Array.isArray(v)?v:[];
+}
 function submitOrderReview(orderId){
   const u=requireBuyer();if(!u)return;
   const rating=Number(document.getElementById("selectedReviewRating")?.value||0);if(!rating){alert("Wybierz ocenę.");return}
@@ -2457,7 +2740,62 @@ function expireOverdueOrders(){
       addNotification(o.buyer,"Termin realizacji zamówienia minął. Zamówienie zostało anulowane.",o.id);
     }
   });
-  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(changed&&!safeWriteLocal("stringoland_orders",orders))console.warn("Nie udało się zapisać wygasłych zamówień.");
+}
+
+
+function getSellerProfileCompleteness(profile){
+  const p=profile||{},checks=[
+    !!String(p.bio||"").trim(),
+    !!(Array.isArray(p.photos)?p.photos.length:(p.photo?1:0)),
+    !!String(p.age||"").trim(),
+    !!String(p.category||"").trim()
+  ];
+  return {done:checks.filter(Boolean).length,total:checks.length,percent:Math.round(checks.filter(Boolean).length/checks.length*100)};
+}
+function renderSellerPanel(){
+  const u=getActiveUser();
+  const box=document.getElementById("sellerPanelContent");
+  if(!box||!u||u.role!=="seller")return;
+  const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym)||{pseudonym:u.pseudonym,offers:[]};
+  const v=getSellerVerification(u.pseudonym),w=getSellerWallet(u.pseudonym);
+  const offers=Array.isArray(me.offers)?me.offers:[];
+  const orders=getLocalOrders().filter(o=>o.seller===u.pseudonym);
+  const active=orders.filter(o=>["pending_seller","accepted","in_progress"].includes(o.status)).length;
+  const completed=orders.filter(o=>o.status==="completed").length;
+  const verified=v.status==="approved";
+  box.innerHTML=`<div class="seller-dashboard">
+    <div class="seller-dashboard-head">
+      <div><div class="eyebrow">Strefa sprzedającej</div><h1>Panel sprzedającej</h1><p>Witaj, ${escapeHtml(u.pseudonym)}.</p></div>
+      <div class="seller-head-actions"><button class="small-btn" onclick="openOwnSellerProfile()">Podgląd profilu</button><button class="small-btn" onclick="openSellerProfileEditor()">Edytuj profil</button></div>
+    </div>
+    <div class="seller-verification-banner ${verified?"approved":v.status==="pending"?"pending":"required"}">
+      <div><div class="eyebrow">Weryfikacja sprzedającej</div><strong>${escapeHtml(getSellerVerificationLabel(v.status))}</strong>
+      <p>${verified?"Konto jest zatwierdzone przez administratora. Możesz publikować oferty.":v.status==="pending"?"Wniosek jest sprawdzany ręcznie. Standardowy czas rozpatrzenia: do 1 dnia roboczego.":v.status==="needs_changes"?"Administrator poprosił o poprawki przed zatwierdzeniem.":"Weryfikacja jest wymagana przed rozpoczęciem sprzedaży."}</p></div>
+      <button class="small-btn" onclick="openSellerVerification()">${verified?"Zobacz weryfikację":v.status==="pending"?"Sprawdź status":"Rozpocznij weryfikację"}</button>
+    </div>
+    ${(()=>{const pc=getSellerProfileCompleteness(me);return `<div class="seller-profile-completeness"><div><span>Profil uzupełniony</span><b>${pc.percent}%</b></div><div class="seller-progress"><i style="width:${pc.percent}%"></i></div><small>${pc.done}/${pc.total} podstawowych elementów · Uzupełnij profil, aby wyglądał wiarygodnie dla kupujących.</small></div>`})()}
+    <div class="seller-finance-strip">
+      <div><span>Przychód netto</span><b>${formatPLN(w.net)}</b><small>po prowizji 24%</small></div>
+      <div><span>Prowizja</span><b>${formatPLN(w.commission)}</b><small>24% od zakończonych zamówień</small></div>
+      <div><span>Wypłacone</span><b>${formatPLN(w.paidOut)}</b><small>łącznie</small></div>
+    </div>
+    <div class="seller-kpi-grid">
+      <button class="seller-kpi" onclick="openSellerWallet()"><span>Do wypłaty</span><b>${formatPLN(w.available)}</b><small>po prowizji 24%</small></button>
+      <button class="seller-kpi" onclick="renderSellerOrders()"><span>Aktywne zamówienia</span><b>${active}</b><small>${orders.length} wszystkich</small></button>
+      <button class="seller-kpi" onclick="renderSellerOrders()"><span>Zakończone</span><b>${completed}</b><small>zamówienia</small></button>
+      <button class="seller-kpi" onclick="${verified?"sellerCreateOfferDemo()":"openSellerVerification()"}"><span>Moje oferty</span><b>${offers.length}</b><small>${verified?"Dodaj lub edytuj":"Odblokuj po weryfikacji"}</small></button>
+    </div>
+    <div class="seller-dashboard-grid">
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Sprzedaż</div><h2>Zamówienia</h2></div><button class="small-btn" onclick="renderSellerOrders()">Zobacz wszystkie</button></div>
+        ${orders.slice(0,3).map(o=>`<div class="seller-mini-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>${escapeHtml(getSellerOrderStatusLabel(o.status))} · ${formatPLN(o.total||0)}</small></div><button class="small-btn" onclick="openSellerOrderDetails('${o.id}')">Szczegóły</button></div>`).join("")||`<div class="empty-state"><p>Nie masz jeszcze zamówień.</p></div>`}
+      </section>
+      <section class="panel-card"><div class="section-heading"><div><div class="eyebrow">Oferta</div><h2>Moje oferty</h2></div><button class="small-btn" onclick="${verified?"sellerCreateOfferDemo()":"openSellerVerification()"}">${verified?"＋ Dodaj":"Weryfikacja"}</button></div>
+        ${offers.slice(0,4).map((o,i)=>`<div class="seller-mini-row"><div><b>${escapeHtml(o.title||"Oferta")}</b><small>${o.available===false?"Ukryta":"Opublikowana"} · ${formatPLN(o.price||0)}</small></div><button class="small-btn" onclick="${verified?`openSellerOfferEditor(${i})`:`openSellerVerification()`}">${verified?"Edytuj":"Zablokowane"}</button></div>`).join("")||`<div class="empty-state"><p>Brak ofert. ${verified?"Dodaj pierwszą ofertę.":"Po weryfikacji będziesz mogła dodać pierwszą ofertę."}</p></div>`}
+      </section>
+    </div>
+    <div class="seller-quick-actions"><button class="primary" onclick="openSellerWallet()">Portfel i wypłaty</button><button class="secondary" onclick="openSellerProfileEditor()">Profil i dane do wypłaty</button><button class="secondary" onclick="openConversations()">Wiadomości</button></div>
+  </div>`;
 }
 function renderSellerOrders(){
   expireOverdueOrders();
@@ -2475,8 +2813,16 @@ function renderSellerOrders(){
   }).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
 }
 
+
+function touchUserActivity(user){
+  if(!user||!user.pseudonym)return;
+  const key="stringoland_user_activity";
+  const all=readLSJson(key,{});
+  all[user.pseudonym]={lastActiveAt:new Date().toISOString(),role:user.role||""};
+  safeWriteLocal(key,all);
+}
 function renderLocalSession(account){
-  persistActiveUser(account); refreshAuthHeader();
+  persistActiveUser(account); touchUserActivity(account); refreshAuthHeader();
   if(!account)return;
   const actions=document.getElementById("actions");
   if(!actions)return;
@@ -2501,6 +2847,31 @@ function togglePassword(){
 
 
 
+
+function sellerAutoVerification(user){
+  if(!user||user.role!=="seller")return;
+  const v=getSellerVerification(user.pseudonym);
+  if(v.status!=="approved")setTimeout(()=>openSellerVerification(),150);
+}
+
+function getVerifiedPublicOffers(){
+  return getPublicSellers().filter(seller=>seller&&seller.active!==false&&sellerIsVerified(seller.pseudonym))
+    .flatMap(seller=>(Array.isArray(seller.offers)?seller.offers:[])
+      .filter(o=>o&&o.available!==false)
+      .map(o=>({...o,seller:seller.pseudonym,sellerPhoto:seller.photo||"",sellerBio:seller.bio||""})));
+}
+function getBuyerOffers(){return getVerifiedPublicOffers()}
+function getReports(){return readLSJson("stringoland_reports",[])}
+function saveReports(reports){return safeWriteLocal("stringoland_reports",reports)}
+function blockCurrentConversationUser(){
+  const u=getActiveUser(),other=(document.getElementById("conversationTitle")?.textContent||"").trim();
+  if(!u||!other)return;
+  const key="stringoland_blocked_"+encodeURIComponent(u.pseudonym);
+  const list=readLSJson(key,[]);
+  if(!list.includes(other))list.push(other);
+  safeWriteLocal(key,list);
+  alert("Użytkownik został zablokowany.");
+}
 function safeWriteLocal(key,value){
   try{localStorage.setItem(key,JSON.stringify(value));return true}
   catch(e){alert("Nie udało się zapisać danych lokalnie. Pamięć przeglądarki może być pełna.");return false}
@@ -2636,29 +3007,30 @@ function openBuyerFavorites(){
   modal.innerHTML=`<div class="reviews-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('buyerFavoritesModal').classList.remove('show')">×</button><div class="eyebrow">Kupujący</div><h2>Ulubione oferty</h2>${offers.length?offers.map(o=>`<article class="favorite-offer"><b>${escapeHtml(o.title||"Oferta")}</b><span>${formatPLN(o.price)}</span><button class="small-btn" onclick="openBuyerOfferFromSeller('${String(o.id).replace(/'/g,"\\'")}')">Otwórz</button></article>`).join(""):"<div class='empty-state'><p>Nie masz jeszcze zapisanych ofert.</p></div>"}</div>`;
   modal.classList.add("show");syncModalScrollLock();
 }
-function openBuyerOrders(){
+function openBuyerOrders(filter="all"){
   closeBuyerProfileMenu();closeBuyerSection();
-  const u=getBuyerAccount();
-  const box=document.getElementById("buyerOrdersContent");
+  const u=getBuyerAccount(),box=document.getElementById("buyerOrdersContent");
   if(!box)return;
-  const orders=getLocalOrders().filter(o=>o.buyer===u?.pseudonym).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  const all=getLocalOrders().filter(o=>o.buyer===u?.pseudonym).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  const orders=filter==="active"?all.filter(o=>["pending_seller","accepted","in_progress"].includes(o.status)):filter==="completed"?all.filter(o=>["completed","declined","expired"].includes(o.status)):all;
   box.innerHTML=orders.length?orders.map(o=>{
-    const statusLabels={pending_seller:"Oczekuje na akceptację",accepted:"Zaakceptowane",in_progress:"W realizacji",completed:"Zakończone",declined:"Odrzucone",expired:"Anulowane po terminie"};
     const canReview=o.status==="completed";
     return `<article class="buyer-order-card">
       <div><div class="eyebrow">Zamówienie</div><h3>${escapeHtml(o.title||"Oferta")}</h3>
       <p><span>Sprzedająca:</span> <b>${escapeHtml(o.seller||"—")}</b></p>
       ${o.selectedDuration?`<p><span>Czas:</span> ${o.selectedDuration} ${o.selectedDuration===1?"dzień":"dni"}</p>`:""}
-      <p><span>Kwota:</span> <b>${Number(o.total||0).toFixed(2).replace(".",",")} zł</b></p>
-      </div>
+      <p><span>Kwota:</span> <b>${formatPLN(o.total||0)}</b></p></div>
       <div class="buyer-order-side"><span class="status-badge">${getBuyerOrderStatusLabel(o.status)}</span>
-      ${getOrderTimeline(o).length?`<small class="order-history-count">${getOrderTimeline(o).length} etapów historii</small>`:""}
       ${o.deadline&&["accepted","in_progress"].includes(o.status)?`<small>Termin: ${new Date(o.deadline).toLocaleDateString("pl-PL")}</small>`:""}
-      ${canReview?`<button class="small-btn review-after-order" onclick="openOrderReview('${String(o.id).replace(/'/g,"\\'")}')">Oceń zamówienie</button>`:""}
-      </div>
+      <div class="buyer-order-actions"><button class="small-btn" onclick="openBuyerOrderDetails('${String(o.id).replace(/'/g,"\\'")}')">Szczegóły</button>
+      ${canReview?`<button class="small-btn review-after-order" onclick="openOrderReview('${String(o.id).replace(/'/g,"\\'")}')">Oceń</button>`:""}</div></div>
     </article>`;
-  }).join(""):`<div class="empty-state"><h3>Nie masz jeszcze zamówień</h3><p>Po zakupie zamówienia pojawią się tutaj.</p></div>`;
-  document.getElementById("buyerOrdersPage").classList.add("show");
+  }).join(""):`<div class="empty-state"><h3>Brak zamówień w tej kategorii</h3><p>Spróbuj wybrać inną zakładkę.</p></div>`;
+  const page=document.getElementById("buyerOrdersPage");if(page)page.classList.add("show");
+}
+function filterBuyerOrders(filter,btn){
+  document.querySelectorAll("#buyerOrderFilters button").forEach(b=>b.classList.remove("active"));
+  btn?.classList.add("active");openBuyerOrders(filter);
 }
 
 function openBuyerOrderDetails(id){
@@ -2792,9 +3164,9 @@ function closeBuyerSection(){
 function getConversations(){
   const v=readLSJson("stringoland_conversations",[]);return Array.isArray(v)?v:[];
 }
-function saveConversations(v){localStorage.setItem("stringoland_conversations",JSON.stringify(v))}
+function saveConversations(v){return safeWriteLocal("stringoland_conversations",v)}
 function getMessages(){const v=readLSJson("stringoland_messages",[]);return Array.isArray(v)?v:[]}
-function saveMessages(v){localStorage.setItem("stringoland_messages",JSON.stringify(v))}
+function saveMessages(v){return safeWriteLocal("stringoland_messages",v)}
 function openConversationWithSeller(seller){
   const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return}
@@ -2853,7 +3225,7 @@ function refreshOrderLifecycle(){
       addNotification(o.seller,"Termin realizacji zamówienia minął.",o.id);
     }
   });
-  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(changed)if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać zamówienia.");return}
 }
 function runOrderDeadlines(){ refreshOrderLifecycle(); }
 
@@ -2882,7 +3254,7 @@ function sendConversationMessageSafe(recipient,text){
   if(containsContactInfo(clean)){alert("Dla bezpieczeństwa nie wysyłaj numeru telefonu ani adresu e-mail.");return}
   const messages=getMessages();
   messages.push({id:"msg_"+Date.now(),sender:u.pseudonym,recipient,text:clean,createdAt:new Date().toISOString(),type:"text"});
-  localStorage.setItem("stringoland_messages",JSON.stringify(messages));
+  if(!safeWriteLocal("stringoland_messages",messages))return false;
   return true;
 }
 function sendConversationMedia(recipient,file){
@@ -2894,7 +3266,7 @@ function sendConversationMedia(recipient,file){
   return savePrivateMedia(file,recipient,"chat_"+Date.now(),file.type.startsWith("video/")?"video":"photo").then(()=>{
     const messages=getMessages();
     messages.push({id:"msg_"+Date.now(),sender:u.pseudonym,recipient,createdAt:new Date().toISOString(),type:"media",mediaName:file.name});
-    localStorage.setItem("stringoland_messages",JSON.stringify(messages));
+    if(!safeWriteLocal("stringoland_messages",messages))return false;
     return true;
   });
 }
@@ -2903,7 +3275,7 @@ function blockChatUser(target){
   if(!u||!target)return;
   const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
   if(!blocks.some(x=>x.owner===u.pseudonym&&x.target===target))blocks.push({owner:u.pseudonym,target,createdAt:new Date().toISOString()});
-  localStorage.setItem("stringoland_blocks",JSON.stringify(blocks));
+  if(!safeWriteLocal("stringoland_blocks",blocks)){alert("Nie udało się zapisać blokady.");return}
   alert("Użytkownik został zablokowany.");
 }
 function isUserBlocked(a,b){
@@ -2918,7 +3290,7 @@ function reportChatUser(target,reason){
   if(!u||!target)return;
   const reports=getReports();
   reports.push({id:"report_"+Date.now(),reporter:u.pseudonym,target,type:"chat",reason:sanitizeChatText(reason||"Nieodpowiednie zachowanie"),status:"new",createdAt:new Date().toISOString()});
-  saveReports(reports);
+  if(!saveReports(reports)){alert("Nie udało się zapisać zgłoszenia.");return}
   alert("Zgłoszenie zostało zapisane.");
 }
 
@@ -2940,7 +3312,7 @@ function markConversationRead(other){
   const messages=getMessages();
   let changed=false;
   messages.forEach(m=>{if(m.sender===other&&m.recipient===u.pseudonym&&!m.read){m.read=true;changed=true}});
-  if(changed)localStorage.setItem("stringoland_messages",JSON.stringify(messages));
+  if(changed)safeWriteLocal("stringoland_messages",messages);
   refreshAuthHeader();
 }
 function openConversations(){
@@ -3016,7 +3388,7 @@ function createDemoAccounts(){
     {id:"demo_seller",email:"sprzedajaca@example.test",password:"demo1234",pseudonym:"SprzedajacaDemo",role:"seller",verified:true}
   ];
   demos.forEach(d=>{if(!accounts.some(a=>a.id===d.id))accounts.push(d)});
-  localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+  if(!safeWriteLocal("stringoland_accounts",accounts))return;
   alert("Konta demonstracyjne utworzone. Kupujący: kupujacy@example.test / demo1234. Sprzedająca: sprzedajaca@example.test / demo1234.");
 }
 async 
@@ -3495,7 +3867,7 @@ function getPublicSellers(){
 function renderDiscover(){
   const grid=document.getElementById("discoverGrid"), empty=document.getElementById("discoverEmpty");
   if(!grid||!empty)return;
-  const sellers=getPublicSellers().filter(x=>x && x.verified===true && x.active!==false);
+  const sellers=getPublicSellers().filter(x=>x && x.active!==false && getSellerVerification(x.pseudonym).status==="approved");
   grid.innerHTML="";
   empty.style.display=sellers.length?"none":"none";
   sellers.forEach((seller,i)=>{
@@ -3676,7 +4048,7 @@ function publishOffer(){
   }
   seller.offers=Array.isArray(seller.offers)?seller.offers:[];
   seller.offers.push(offer);
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zmian oferty.");return}
   closeAddOffer();
   renderDiscover();
   alert("Oferta została dodana w wersji demonstracyjnej.");
@@ -3695,7 +4067,7 @@ function placeLocalOrder(offer){
     durationDays:days?Number(days):null,tip,status:"pending_seller",
     createdAt:new Date().toISOString()
   };
-  orders.push(order);localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  orders.push(order);if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać zamówienia.");return}
   alert("Zamówienie zostało złożone. Sprzedająca otrzyma je do akceptacji.");
   closeModal?.();go("buyerPanel");refreshBuyerStats?.();
 }
@@ -3832,6 +4204,27 @@ async function openBuyerCollectionPrivate(){
   });
 }
 function getNotifications(){const v=readLSJson("stringoland_notifications",[]);return Array.isArray(v)?v:[]}
+
+
+function addAdminAudit(action,details=""){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const logs=readLSJson("stringoland_admin_audit",[]);
+  logs.unshift({id:"audit_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),admin:u.pseudonym,action:String(action),details:String(details).slice(0,500),createdAt:new Date().toISOString()});
+  safeWriteLocal("stringoland_admin_audit",logs.slice(0,500));
+}
+function openAdminAudit(){
+  const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
+  let modal=document.getElementById("adminAuditModal");
+  if(!modal){modal=document.createElement("div");modal.id="adminAuditModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const logs=readLSJson("stringoland_admin_audit",[]);
+  modal.innerHTML=`<div class="admin-verification-card"><button class="modal-close" onclick="closeModalById('adminAuditModal')">×</button><div class="eyebrow">Bezpieczeństwo</div><h2>Dziennik administratora</h2>${logs.length?`<div class="admin-audit-list">${logs.map(x=>`<article class="admin-audit-row"><b>${escapeHtml(x.action)}</b><span>${escapeHtml(x.details||"")}</span><small>${escapeHtml(x.admin||"—")} · ${x.createdAt?new Date(x.createdAt).toLocaleString("pl-PL"):"—"}</small></article>`).join("")}</div>`:`<div class="empty-state"><p>Brak zapisanych działań.</p></div>`}</div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function notifyAdmins(text){
+  const accounts=readLSJson("stringoland_accounts",[]);
+  const admins=accounts.filter(a=>a&&a.role==="admin").map(a=>a.pseudonym).filter(Boolean);
+  admins.forEach(a=>addNotification(a,text));
+}
 function addNotification(user,text,orderId=null){
   const n=getNotifications();
   const item={id:"ntf_"+Date.now()+Math.random(),user:String(user||""),recipient:String(user||""),
@@ -3854,7 +4247,7 @@ function markAllNotificationsRead(){
   const u=getActiveUser();
   if(!u)return;
   all.forEach(n=>{if((n.user||n.recipient)===u.pseudonym)n.read=true});
-  localStorage.setItem("stringoland_notifications",JSON.stringify(all));
+  if(!safeWriteLocal("stringoland_notifications",all)){alert("Nie udało się zapisać powiadomień.");return}
   renderNotifications();
 }
 
@@ -3888,7 +4281,7 @@ function openNotifications(){
   modal.classList.add("show");syncModalScrollLock();
   const u=getActiveUser();
   const all=getNotifications().map(n=>(n.user||n.recipient)===u?.pseudonym?{...n,read:true}:n);
-  localStorage.setItem("stringoland_notifications",JSON.stringify(all));
+  if(!safeWriteLocal("stringoland_notifications",all))return;
 }
 
 function getPaymentStatusLabel(status){
@@ -3968,7 +4361,7 @@ function finalizeDemoOrder(offer){
     createdAt:new Date().toISOString()
   };
   orders.push(order);
-  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać zamówienia.");return}
   addNotification(order.seller,"Nowe zamówienie: "+order.title,order.id);
   document.getElementById("orderSummaryModal")?.classList.remove("show");
   document.getElementById("typedCheckoutModal")?.classList.remove("show");
@@ -4119,7 +4512,7 @@ function confirmTypedOrder(offer){
     }:null,
     buyerEmail:u.email||"",
     createdAt:new Date().toISOString()};
-  orders.push(order);localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  orders.push(order);if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać zamówienia.");return}
   closeTypedCheckout();alert("Zamówienie zostało złożone. Sprzedająca musi je zaakceptować.");
 }
 function openOfferDetail(offer){
@@ -4352,7 +4745,7 @@ function exportMyDemoData(){
 }
 function openModerationQueue(){
   const u=getActiveUser();
-  if(!u||u.role!=="seller"&&u.role!=="admin"){alert("Brak uprawnień.");return}
+  if(!u||u.role!=="admin"){alert("Panel moderacji jest dostępny wyłącznie administratorowi.");return}
   const reports=getReports().filter(r=>r.status!=="resolved");
   let modal=document.getElementById("moderationQueueModal");
   if(!modal){modal=document.createElement("div");modal.id="moderationQueueModal";modal.className="modal-overlay";document.body.appendChild(modal)}
@@ -4363,12 +4756,20 @@ function openModerationQueue(){
   modal.classList.add("show");syncModalScrollLock();
 }
 function resolveReport(id){
-  const u=getActiveUser();if(!u||!["seller","admin"].includes(u.role))return;
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
   const reports=getReports();const r=reports.find(x=>x.id===id);if(!r)return;
-  r.status="resolved";r.resolvedAt=new Date().toISOString();saveReports(reports);openModerationQueue();
+  r.status="resolved";r.resolvedAt=new Date().toISOString();saveReports(reports);addAdminAudit("Zamknięcie zgłoszenia",r.target||r.id);openModerationQueue();
 }
 
 
+
+function runAppIntegrityCheck(){
+  const required=["getActiveUser","getPublicSellers","getVerifiedPublicOffers","openSellerProfileEditor","openSellerOfferEditor","openSellerWallet","getLocalOrders","openBuyerOrders","openAdminPanel"];
+  const missing=required.filter(n=>typeof window[n]!=="function"&&typeof eval("typeof "+n)==="undefined");
+  const sellers=getPublicSellers();
+  const approved=sellers.filter(x=>getSellerVerification(x.pseudonym).status==="approved").length;
+  return {ok:missing.length===0,missing,approvedSellers:approved,version:"prototype"};
+}
 function getAppHealth(){
   const required=["getActiveUser","getPublicSellerOffers","openSellerProfileEditor","openSellerOfferEditor","openSellerWallet","getLocalOrders","openBuyerCollection","sendConversationMessage","addNotification"];
   return {ok:required.every(n=>typeof window[n]==="function"||typeof eval("typeof "+n)!=="undefined"),missing:required.filter(n=>typeof window[n]!=="function"&&typeof eval("typeof "+n)==="undefined"),storage:typeof localStorage!=="undefined",indexedDB:typeof indexedDB!=="undefined"};
@@ -4473,7 +4874,7 @@ function placeOrder(){
   };
   const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
   orders.push(order);
-  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać zamówienia.");return}
   alert("Zamówienie zostało wysłane do sprzedającej. Otrzyma ona informację o zakupie i będzie musiała je zaakceptować.");
 }
 
@@ -4769,5 +5170,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape")closeTopModa
 <script>
 window.addEventListener("stringoland:auth",function(e){try{refreshAuthHeader()}catch(err){}});
 </script>
-</body>
+<style>
+.seller-finance-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.seller-finance-strip>div{padding:13px 15px;background:#faf8f6;border:1px solid #e7e0dc;border-radius:13px}.seller-finance-strip span,.seller-finance-strip small{display:block;font-size:8px;color:#7b716c}.seller-finance-strip b{display:block;font-size:17px;margin:4px 0}.wallet-order-row{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid #eee8e4}.wallet-order-row>div:first-child{display:grid;gap:4px}.wallet-order-row small,.wallet-order-row span{font-size:8px;color:#7b716c}.wallet-order-row>div:last-child{display:grid;gap:3px;text-align:right}.wallet-order-row>div:last-child b{font-size:11px}@media(max-width:650px){.seller-finance-strip{grid-template-columns:1fr}.wallet-order-row{align-items:flex-start;flex-direction:column}.wallet-order-row>div:last-child{text-align:left}}
+</style></body>
 </html>
