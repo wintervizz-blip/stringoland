@@ -1453,7 +1453,7 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
       </section>
 
       <div class="buyer-profile-actions" id="buyerProfileActions">
-        <button type="button" onclick="openSellerMessage()">💬 Wyślij wiadomość</button>
+        <button type="button" id="buyerMessageButton" onclick="openSellerMessage(); return false;">💬 Wyślij wiadomość</button>
       </div>
 
       <section class="seller-offers-section">
@@ -1468,6 +1468,62 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
 
 
 <script>
+
+let activeConversationSeller=null;
+const demoConversations={
+  Luna:[
+    {from:"them",text:"Cześć! Jeśli masz pytania dotyczące moich ofert, napisz śmiało.",time:"19:24"}
+  ]
+};
+function openSellerMessage(){
+  const page=document.getElementById("conversationPage");
+  if(!page){alert("Nie udało się otworzyć rozmowy.");return false;}
+  activeConversationSeller=document.getElementById("publicProfileName")?.textContent?.trim()||"Sprzedająca";
+  const name=document.getElementById("conversationSellerName");
+  if(name) name.textContent=activeConversationSeller;
+  renderConversation();
+  page.classList.add("show");
+  setTimeout(()=>document.getElementById("conversationInput")?.focus(),50);
+  return false;
+}
+function renderConversation(){
+  const body=document.getElementById("conversationBody");
+  if(!body)return;
+  const messages=demoConversations[activeConversationSeller]||[];
+  body.innerHTML="";
+  if(!messages.length){
+    body.innerHTML='<div style="margin:auto;text-align:center;color:#918982;font-size:12px">To początek Waszej rozmowy.</div>';
+    return;
+  }
+  messages.forEach(msg=>{
+    const bubble=document.createElement("div");
+    bubble.className="message-bubble "+(msg.from==="me"?"me":"them");
+    bubble.textContent=msg.text;
+    const time=document.createElement("span");
+    time.className="message-time";
+    time.textContent=msg.time||"";
+    bubble.appendChild(time);
+    body.appendChild(bubble);
+  });
+  body.scrollTop=body.scrollHeight;
+}
+function sendConversationMessage(event){
+  event.preventDefault();
+  const input=document.getElementById("conversationInput");
+  const text=input?.value.trim();
+  if(!text)return;
+  if(!demoConversations[activeConversationSeller])demoConversations[activeConversationSeller]=[];
+  demoConversations[activeConversationSeller].push({
+    from:"me",text,
+    time:new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})
+  });
+  input.value="";
+  renderConversation();
+}
+function closeConversation(){
+  const page=document.getElementById("conversationPage");
+  if(page)page.classList.remove("show");
+}
 const STRINGOLAND_PUBLIC_SELLERS_KEY="stringoland_public_sellers";
 
 function seedDemoSeller(){
