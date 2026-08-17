@@ -644,6 +644,28 @@ header .menu-btn.account-menu-visible,
 .buyer-profile-actions button{width:100%;height:46px;border:1px solid #8f1730;border-radius:7px;background:#8f1730;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
 
 .conversation-policy{max-width:760px;width:calc(100% - 36px);margin:10px auto 0;padding:8px 11px;border:1px solid #eee2db;border-radius:7px;background:#faf7f5;color:#8b817b;font-size:9px;line-height:1.45;text-align:center;box-sizing:border-box}
+
+.profile-stat{border:0;background:transparent;padding:0;font:inherit;color:inherit}
+.profile-stat-clickable{cursor:pointer;border-radius:8px;transition:background .15s;padding:4px 8px}
+.profile-stat-clickable:hover{background:#faf6f3}
+.reviews-page{display:none;position:fixed;inset:0;background:#fff;z-index:250;overflow:auto}
+.reviews-page.show{display:block}
+.reviews-page-header{height:72px;border-bottom:1px solid #eee6df;display:flex;align-items:center;gap:14px;padding:0 18px}
+.reviews-page-header button{border:0;background:none;color:#8f1730;font-size:22px;cursor:pointer}
+.reviews-page-header strong{display:block;font-size:15px;font-weight:600}
+.reviews-page-header span{display:block;font-size:10px;color:#918982;margin-top:3px}
+.reviews-page-content{max-width:760px;margin:auto;padding:28px 18px 60px}
+.reviews-summary{display:flex;align-items:center;justify-content:center;gap:18px;padding:20px 0 28px;border-bottom:1px solid #eee6df}
+.reviews-summary-score{font-size:40px;font-weight:500;color:#292522}
+.reviews-summary-stars{color:#8f1730;font-size:16px;letter-spacing:2px}
+.reviews-summary-label{margin-top:5px;color:#918982;font-size:11px}
+.reviews-list{display:grid;gap:12px;margin-top:22px}
+.review-full-card{padding:17px;border:1px solid #e7ded8;border-radius:11px;background:#fff}
+.review-full-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.review-full-author{font-size:12px;font-weight:600}
+.review-full-rating{font-size:11px;color:#8f1730}
+.review-full-text{margin-top:9px;color:#5f5955;font-size:12px;line-height:1.6}
+.review-full-date{margin-top:8px;color:#a09892;font-size:9px}
 </style>
 </head>
 <body>
@@ -1357,7 +1379,9 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
         <div class="seller-active" id="publicProfileActiveTop">Aktywna dzisiaj o 19:30</div>
 
         <div class="seller-stats">
-          <div><strong id="publicProfileRating">4,5</strong><span>średnia ocen</span></div>
+          <button class="profile-stat profile-stat-clickable" type="button" onclick="openReviewsPage()">
+  <strong id="publicProfileRating">4,5</strong><span>średnia ocen</span>
+</button>
           <div><strong id="publicProfileOrders">0</strong><span>zamówień</span></div>
           <div><strong id="publicProfileLikes">0</strong><span>polubień</span></div>
         </div>
@@ -1629,6 +1653,42 @@ const demoConversations={Luna:[
  {from:"them",text:"Cześć! Jeśli masz pytania dotyczące moich ofert, napisz śmiało.",time:"19:24"},
  {from:"me",text:"Hej, chciałabym dopytać o szczegóły oferty.",time:"19:26"}
 ]};
+
+function openReviewsPage(){
+  const sellerName=document.getElementById("publicProfileName")?.textContent||"Sprzedająca";
+  document.getElementById("reviewsPageSeller").textContent=sellerName;
+  const seller=findSellerByName(sellerName);
+  const reviews=(seller&&Array.isArray(seller.reviews))?seller.reviews:[];
+  const rating=seller&&seller.rating!=null?seller.rating:(document.getElementById("publicProfileRating")?.textContent||"—");
+  document.getElementById("reviewsPageScore").textContent=String(rating).replace(".",",");
+  document.getElementById("reviewsPageCount").textContent=reviews.length+(reviews.length===1?" opinia":" opinie");
+  const list=document.getElementById("reviewsPageList");
+  list.innerHTML="";
+  if(!reviews.length){
+    list.innerHTML='<div class="profile-empty-tab">Ta sprzedająca nie ma jeszcze opinii.</div>';
+  }else{
+    reviews.forEach(review=>{
+      const card=document.createElement("article");
+      card.className="review-full-card";
+      card.innerHTML='<div class="review-full-top"><span class="review-full-author"></span><span class="review-full-rating"></span></div><div class="review-full-text"></div><div class="review-full-date"></div>';
+      card.querySelector(".review-full-author").textContent=review.author||"Kupujący";
+      card.querySelector(".review-full-rating").textContent="★ "+(review.rating||"");
+      card.querySelector(".review-full-text").textContent=review.text||"";
+      card.querySelector(".review-full-date").textContent=review.date||"Opinia po zrealizowanym zamówieniu";
+      list.appendChild(card);
+    });
+  }
+  document.getElementById("reviewsPage").classList.add("show");
+}
+function closeReviewsPage(){
+  document.getElementById("reviewsPage").classList.remove("show");
+}
+function findSellerByName(name){
+  try{
+    const sellers=JSON.parse(localStorage.getItem(STRINGOLAND_PUBLIC_SELLERS_KEY)||"[]");
+    return sellers.find(s=>s.pseudonym===name)||null;
+  }catch(e){return null}
+}
 function openSellerMessage(){
   activeConversationSeller=document.getElementById("publicProfileName")?.textContent||"Sprzedająca";
   document.getElementById("conversationSellerName").textContent=activeConversationSeller;
@@ -1854,6 +1914,26 @@ window.addEventListener("storage",renderDiscover);
     <textarea id="conversationInput" rows="1" placeholder="Napisz wiadomość…" maxlength="1000"></textarea>
     <button type="submit">➤</button>
   </form>
+</div>
+
+<div class="reviews-page" id="reviewsPage">
+  <header class="reviews-page-header">
+    <button type="button" onclick="closeReviewsPage()">←</button>
+    <div>
+      <strong id="reviewsPageSeller">Luna</strong>
+      <span>Opinie kupujących</span>
+    </div>
+  </header>
+  <main class="reviews-page-content">
+    <section class="reviews-summary">
+      <div class="reviews-summary-score" id="reviewsPageScore">4,5</div>
+      <div>
+        <div class="reviews-summary-stars">★★★★★</div>
+        <div class="reviews-summary-label" id="reviewsPageCount">2 opinie</div>
+      </div>
+    </section>
+    <section class="reviews-list" id="reviewsPageList"></section>
+  </main>
 </div>
 </body>
 </html>
