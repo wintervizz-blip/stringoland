@@ -702,6 +702,20 @@ header .menu-btn.account-menu-visible,
 .summary-total{display:flex;justify-content:space-between;border-top:1px solid #e4dad3;margin-top:12px;padding-top:13px;font-size:14px}
 .summary-total strong{color:#8f1730;font-size:18px}
 .summary-email{margin-top:10px;font-size:9px;color:#918982}
+
+.buyer-data-info-link{display:inline-block;border:0;background:none;padding:0;margin:-3px 0 10px;color:#8f1730;font-size:10px;text-decoration:underline;cursor:pointer}
+.buyer-data-info-modal{display:none;position:fixed;inset:0;background:rgba(20,15,13,.42);z-index:260;align-items:center;justify-content:center;padding:18px}
+.buyer-data-info-modal.show{display:flex}
+.buyer-data-info-box{position:relative;width:min(650px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:15px;padding:26px;box-sizing:border-box}
+.buyer-data-info-box .close{position:absolute;right:14px;top:10px;border:0;background:none;font-size:25px;cursor:pointer}
+.buyer-data-info-eyebrow{font-size:10px;letter-spacing:1.2px;color:#8f1730}
+.buyer-data-info-box h2{font-size:22px;font-weight:500;margin:5px 0 12px}
+.buyer-data-info-box h3{font-size:12px;margin:18px 0 7px}
+.buyer-data-info-box p,.buyer-data-info-box li{font-size:11px;line-height:1.6;color:#5f5955}
+.buyer-data-info-box ul{padding-left:18px}
+.buyer-data-info-footnote{font-size:9px!important;color:#958c86!important;margin-top:20px}
+
+.buyer-data-privacy-note{margin:-3px 0 12px;padding:9px 11px;border-radius:7px;background:#faf5f6;color:#7d3041;font-size:10px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -1710,19 +1724,36 @@ function updateCheckoutSummary(){
   document.getElementById("summaryDelivery").textContent=delivery.toFixed(2).replace(".",",")+" zł";
   document.getElementById("summaryTotal").textContent=total.toFixed(2).replace(".",",")+" zł";
   document.getElementById("deliveryPrice").textContent=delivery.toFixed(2).replace(".",",")+" zł";
-  document.getElementById("summaryEmail").textContent=document.getElementById("buyerEmail")?.value.trim()||"—";
+  document.getElementById("summaryEmail").textContent=getLoggedInBuyerEmail()||"—";
   document.getElementById("summaryDurationLabel").textContent=type==="underwear"?"Czas noszenia":"Rodzaj realizacji";
+}
+
+function getLoggedInBuyerEmail(){
+  try{
+    const active=localStorage.getItem("stringoland_active_session")==="1";
+    const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+    return active && saved && saved.role==="buyer" ? (saved.email||"") : "";
+  }catch(e){return "";}
+}
+function openBuyerDataInfo(){
+  document.getElementById("buyerDataInfoModal").classList.add("show");
+}
+function closeBuyerDataInfo(){
+  document.getElementById("buyerDataInfoModal").classList.remove("show");
 }
 function placeOrder(){
   const fields=[
     ["buyerFirstName","Podaj imię."],
     ["buyerLastName","Podaj nazwisko."],
-    ["buyerPhone","Podaj numer telefonu."],
-    ["buyerEmail","Podaj adres e-mail."]
+    ["buyerPhone","Podaj numer telefonu."]
   ];
   for(const [id,msg] of fields){
     const el=document.getElementById(id);
     if(!el.value.trim()){el.focus();alert(msg);return;}
+  }
+  if(!getLoggedInBuyerEmail()){
+    alert("Aby złożyć zamówienie, musisz być zalogowany na konto kupującego.");
+    return;
   }
   if(!document.getElementById("paymentMethod").value){
     document.getElementById("paymentMethod").focus();
@@ -1788,6 +1819,8 @@ window.addEventListener("storage",renderDiscover);
       </div>
 
       <div class="checkout-section-title">Dane kupującego</div>
+      <button type="button" class="buyer-data-info-link" onclick="openBuyerDataInfo()">ⓘ Dlaczego potrzebujemy tych danych?</button>
+      <div class="buyer-data-privacy-note">🔒 Dane kupującego nie są udostępniane sprzedającej.</div>
       <div class="buyer-data-grid">
         <div>
           <label for="buyerFirstName">Imię</label>
@@ -1800,10 +1833,6 @@ window.addEventListener("storage",renderDiscover);
         <div>
           <label for="buyerPhone">Numer telefonu</label>
           <input id="buyerPhone" type="tel" placeholder="Do powiadomień o przesyłce">
-        </div>
-        <div>
-          <label for="buyerEmail">E-mail</label>
-          <input id="buyerEmail" type="email" placeholder="Twój e-mail">
         </div>
       </div>
 
@@ -1830,7 +1859,7 @@ window.addEventListener("storage",renderDiscover);
         <div class="summary-row"><span>Napiwek</span><strong id="summaryTip"></strong></div>
         <div class="summary-row"><span>Dostawa</span><strong id="summaryDelivery"></strong></div>
         <div class="summary-total"><span>Do zapłaty</span><strong id="summaryTotal"></strong></div>
-        <div class="summary-email">Potwierdzenie zamówienia: <strong id="summaryEmail">—</strong></div>
+        <div class="summary-email">Potwierdzenie zamówienia na e-mail konta: <strong id="summaryEmail">—</strong></div>
       </div>
 
       <button class="offer-detail-button" id="placeOrderButton" type="button" onclick="placeOrder()">ZŁÓŻ ZAMÓWIENIE</button>
@@ -1926,6 +1955,42 @@ window.addEventListener("storage",renderDiscover);
     </section>
     <section class="reviews-list" id="reviewsPageList"></section>
   </main>
+</div>
+
+<div class="buyer-data-info-modal" id="buyerDataInfoModal">
+  <div class="buyer-data-info-box">
+    <button class="close" type="button" onclick="closeBuyerDataInfo()">×</button>
+    <div class="buyer-data-info-eyebrow">TWOJE DANE</div>
+    <h2>Dane potrzebne do realizacji zamówienia</h2>
+    <p>Dbamy o to, aby podczas zakupu podawać tylko dane potrzebne do prawidłowej realizacji zamówienia.</p>
+
+    <h3>Jakie dane podajesz?</h3>
+    <ul>
+      <li><strong>Imię i nazwisko</strong> — potrzebne do prawidłowej realizacji i identyfikacji odbiorcy przesyłki.</li>
+      <li><strong>Numer telefonu</strong> — potrzebny do powiadomień związanych z dostawą.</li>
+      <li><strong>E-mail konta</strong> — jest pobierany automatycznie z Twojego zalogowanego konta; nie musisz wpisywać go ponownie. Służy m.in. do potwierdzenia zamówienia i komunikacji dotyczącej zakupu.</li>
+    </ul>
+
+    <h3>Po co je przetwarzamy?</h3>
+    <p>Dane wykorzystujemy przede wszystkim do przyjęcia i realizacji zamówienia, obsługi dostawy, kontaktu w sprawie zamówienia, obsługi płatności oraz realizacji obowiązków prawnych, np. księgowych i podatkowych.</p>
+
+    <h3>Kto może otrzymać dane?</h3>
+    <p>Tylko podmioty, które potrzebują ich do realizacji konkretnego zamówienia lub obowiązków prawnych — np. operator dostawy, operator płatności, dostawcy usług IT oraz podmioty obsługujące księgowość, jeżeli jest to niezbędne. Nie udostępniamy sprzedającej Twoich danych kontaktowych poza zakresem niezbędnym do realizacji zamówienia.</p>
+
+    <h3>Czy sprzedająca zobaczy moje dane?</h3>
+    <p><strong>Nie.</strong> Dane podane przy zamówieniu — imię, nazwisko, numer telefonu i e-mail konta — nie są wyświetlane sprzedającej. Sprzedająca nie otrzymuje również Twojego numeru telefonu ani prywatnego adresu e-mail. Komunikacja między kupującym i sprzedającą odbywa się przez wiadomości Stringoland.</p>
+
+    <h3>Czy zakupy są anonimowe?</h3>
+    <p>Zakupy nie są publiczne. Inni użytkownicy nie widzą, co kupujesz ani z jakiego konta dokonano zakupu. Stringoland musi jednak posiadać dane niezbędne do realizacji zamówienia i wykonania obowiązków prawnych. Dane są udostępniane wyłącznie podmiotom, którym są rzeczywiście potrzebne do realizacji zamówienia lub obowiązków prawnych, zgodnie z zasadami opisanymi w Polityce prywatności.</p>
+
+    <h3>Jak długo przechowujemy dane?</h3>
+    <p>Dane przechowujemy przez okres potrzebny do realizacji konkretnego celu, a gdy obowiązek przechowywania wynika z prawa — przez okres wymagany tymi przepisami. Po jego upływie dane są usuwane lub odpowiednio ograniczane, zgodnie z obowiązującymi zasadami.</p>
+
+    <h3>Twoje prawa</h3>
+    <p>Masz m.in. prawo dostępu do danych, ich sprostowania, usunięcia w przypadkach przewidzianych prawem, ograniczenia przetwarzania, przenoszenia danych oraz wniesienia sprzeciwu, a także prawo wniesienia skargi do Prezesa UODO.</p>
+
+    <p class="buyer-data-info-footnote">Szczegółowe zasady przetwarzania danych znajdziesz w Polityce prywatności Stringoland.</p>
+  </div>
 </div>
 </body>
 </html>
