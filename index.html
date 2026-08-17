@@ -716,6 +716,12 @@ header .menu-btn.account-menu-visible,
 .buyer-data-info-footnote{font-size:9px!important;color:#958c86!important;margin-top:20px}
 
 .buyer-data-privacy-note{margin:-3px 0 12px;padding:9px 11px;border-radius:7px;background:#faf5f6;color:#7d3041;font-size:10px;line-height:1.4}
+
+.digital-delivery-note{display:none;margin-top:12px;padding:10px 11px;border-radius:7px;background:#f7f1ee;color:#6d625c;font-size:10px;line-height:1.45}
+.order-fulfillment-note{margin-top:18px;padding:10px 11px;border:1px solid #eee1da;border-radius:7px;background:#fffaf7;color:#81766f;font-size:9px;line-height:1.45}
+.conversation-attach{width:42px;height:42px;flex:0 0 42px;border:1px solid #ddd4cd;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#8f1730;font-size:20px;cursor:pointer;box-sizing:border-box}
+.conversation-attachment{max-width:75%;padding:8px;border-radius:12px;background:#f3eeea;font-size:10px;color:#5f5955}
+.conversation-attachment img,.conversation-attachment video{display:block;max-width:220px;max-height:220px;border-radius:8px;margin-bottom:5px}
 </style>
 </head>
 <body>
@@ -1641,6 +1647,12 @@ function openOfferDetail(offer){
   renderDurationOptions();
   renderAddonOptions();
   updateCheckoutSummary();
+  const fulfillmentNote=document.getElementById("orderFulfillmentNote");
+  if(fulfillmentNote){
+    fulfillmentNote.textContent=["video","photo","custom_photo"].includes(type)
+      ?"Po złożeniu zamówienia sprzedająca otrzyma powiadomienie. Po zaakceptowaniu zamówienia będzie miała maksymalnie 7 dni na przekazanie materiału w zamówieniu lub przez czat."
+      :"Po złożeniu zamówienia sprzedająca otrzyma powiadomienie i będzie musiała je zaakceptować. Po akceptacji rozpocznie się czas realizacji.";
+  }
 
   const image=document.getElementById("offerDetailImage");
   if(offer.image && /^data:image\//.test(offer.image)){
@@ -1705,7 +1717,10 @@ function selectedAddonTotal(){
   ];
   return addons.filter(a=>selectedAddons.includes(a.id)).reduce((sum,a)=>sum+Number(a.price||0),0);
 }
-function deliveryCost(){return 15;}
+function deliveryCost(){
+  const type=currentOffer?.type||"underwear";
+  return ["video","photo","custom_photo"].includes(type)?0:15;
+}
 function updateOfferPrice(){updateCheckoutSummary();}
 function updateCheckoutSummary(){
   if(!currentOffer)return;
@@ -1716,6 +1731,11 @@ function updateCheckoutSummary(){
   const tip=Math.max(0,Number(document.getElementById("tipAmount")?.value||0));
   const delivery=deliveryCost();
   const total=base+addons+tip+delivery;
+  const physical=!["video","photo","custom_photo"].includes(type);
+  const deliverySection=document.getElementById("deliverySection");
+  const digitalNote=document.getElementById("digitalDeliveryNote");
+  if(deliverySection) deliverySection.style.display=physical?"block":"none";
+  if(digitalNote) digitalNote.style.display=physical?"none":"block";
   document.getElementById("summarySeller").textContent=currentOffer.sellerName||"Sprzedająca";
   document.getElementById("summaryBase").textContent=base.toFixed(2).replace(".",",")+" zł";
   document.getElementById("summaryDuration").textContent=type==="underwear"?selectedDuration+" "+(selectedDuration===1?"dzień":"dni"):"—";
@@ -1760,7 +1780,72 @@ function placeOrder(){
     alert("Wybierz sposób płatności.");
     return;
   }
-  alert("Zamówienie jest gotowe do kolejnego etapu. Prawdziwa płatność i wysyłka zostaną podłączone później.");
+  const buyerEmail=getLoggedInBuyerEmail();
+  const order={
+    id:"SL-"+Date.now(),
+    seller:currentOffer.sellerName||"Sprzedająca",
+    buyerPseudonym:(JSON.parse(localStorage.getItem("stringoland_test_user")||"{}")||{}).pseudonym||"Kupujący",
+    buyerEmail,
+    offerTitle:currentOffer.title||"Oferta",
+    type:currentOffer.type||"underwear",
+    status:"awaiting_seller_acceptance",
+    createdAt:new Date().toISOString(),
+    acceptanceDeadline:null,
+    delivery:deliveryCost(),
+    amount:Number(document.getElementById("summaryTotal").textContent.replace(",",".").replace(" zł",""))||0
+  };
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  orders.push(order);
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  alert("Zamówienie zostało wysłane do sprzedającej. Otrzyma ona informację o zakupie i będzie musiała je zaakceptować.");
+}
+
+function acceptSellerOrder(orderId){
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const order=orders.find(o=>o.id===orderId);
+  if(!order)return;
+  order.status="accepted";
+  order.acceptedAt=new Date().toISOString();
+  order.acceptanceDeadline=new Date(Date.now()+7*24*60*60*1000).toISOString();
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+}
+function checkSellerOrderDeadlines(){
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const now=Date.now();
+  let changed=false;
+  orders.forEach(order=>{
+    if(order.status==="accepted" && order.acceptanceDeadline && now>=new Date(order.acceptanceDeadline).getTime()){
+      order.status="cancelled";
+      order.cancellationReason="Przekroczony czas realizacji — 7 dni.";
+      order.refundStatus="to_buyer";
+      changed=true;
+    }
+  });
+  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+}
+checkSellerOrderDeadlines();
+setInterval(checkSellerOrderDeadlines,60000);
+
+function handleConversationAttachment(event){
+  const files=[...(event.target.files||[])];
+  const body=document.getElementById("conversationBody");
+  files.slice(0,4).forEach(file=>{
+    if(file.size>25*1024*1024){alert("Plik jest za duży. Maksymalny rozmiar demonstracyjny to 25 MB.");return;}
+    const bubble=document.createElement("div");
+    bubble.className="conversation-attachment";
+    const url=URL.createObjectURL(file);
+    if(file.type.startsWith("image/")){
+      const img=document.createElement("img"); img.src=url; bubble.appendChild(img);
+    }else if(file.type.startsWith("video/")){
+      const video=document.createElement("video"); video.src=url; video.controls=true; bubble.appendChild(video);
+    }
+    const label=document.createElement("div");
+    label.textContent="Załącznik: "+file.name;
+    bubble.appendChild(label);
+    body.appendChild(bubble);
+  });
+  body.scrollTop=body.scrollHeight;
+  event.target.value="";
 }
 function closeOfferDetail(){
   document.getElementById("offerDetailModal").classList.remove("show");
@@ -1836,12 +1921,16 @@ window.addEventListener("storage",renderDiscover);
         </div>
       </div>
 
-      <div class="checkout-section-title">Dostawa</div>
-      <div class="delivery-choice selected">
+      <div id="deliverySection">
+        <div class="checkout-section-title">Dostawa</div>
+        <div class="delivery-choice selected">
         <span>📦 InPost Paczkomat</span>
         <strong id="deliveryPrice">—</strong>
       </div>
-      <p class="checkout-small-note">Na tym etapie pokazujemy InPost jako jedyną planowaną metodę dostawy. Dokładną cenę podłączymy do właściwego operatora dostaw.</p>
+        <p class="checkout-small-note">Na tym etapie pokazujemy InPost jako jedyną planowaną metodę dostawy. Dokładną cenę podłączymy do właściwego operatora dostaw.</p>
+      </div>
+
+      <div class="digital-delivery-note" id="digitalDeliveryNote">⚡ Materiał cyfrowy zostanie przekazany po zaakceptowaniu zamówienia przez sprzedającą. Nie jest wymagana dostawa fizyczna.</div>
 
       <div class="checkout-section-title">Sposób płatności</div>
       <select id="paymentMethod" class="payment-select">
@@ -1862,6 +1951,7 @@ window.addEventListener("storage",renderDiscover);
         <div class="summary-email">Potwierdzenie zamówienia na e-mail konta: <strong id="summaryEmail">—</strong></div>
       </div>
 
+      <div class="order-fulfillment-note" id="orderFulfillmentNote">Po złożeniu zamówienia sprzedająca otrzyma powiadomienie i będzie musiała je zaakceptować. Po akceptacji rozpocznie się czas realizacji.</div>
       <button class="offer-detail-button" id="placeOrderButton" type="button" onclick="placeOrder()">ZŁÓŻ ZAMÓWIENIE</button>
       <p class="offer-detail-note">Przed złożeniem zamówienia sprawdź wszystkie dane i wybrane opcje.</p>
     </div>
@@ -1932,6 +2022,10 @@ window.addEventListener("storage",renderDiscover);
   </div>
   <div class="conversation-body" id="conversationBody"></div>
   <form class="conversation-compose" onsubmit="sendConversationMessage(event)">
+    <label class="conversation-attach" title="Dodaj zdjęcie lub wideo">
+      ＋
+      <input id="conversationAttachment" type="file" accept="image/*,video/*" multiple hidden onchange="handleConversationAttachment(event)">
+    </label>
     <textarea id="conversationInput" rows="1" placeholder="Napisz wiadomość…" maxlength="1000"></textarea>
     <button type="submit">➤</button>
   </form>
