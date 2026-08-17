@@ -4,8 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>STRINGOLAND — platforma</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>document.addEventListener("DOMContentLoaded",()=>document.getElementById("buyerEmail")?.addEventListener("input",updateCheckoutSummary));</script>
+  <script>document.addEventListener("DOMContentLoaded",()=>document.getElementById("buyerEmail")?.addEventListener("input",updateCheckoutSummary));</script>
   <style>
     :root{
       --ink:#191616;--muted:#5f5954;--cream:#f3eeea;--line:#d8d0cb;
@@ -3230,7 +3229,7 @@ function openBuyerCredibility(){
 }
 
 
-function updateConnectionState(){
+function updateConnectionState(){if(!STRINGOLAND_API_BASE){const el=document.getElementById("connectionState");if(el)el.textContent="Tryb demonstracyjny — dane lokalne";return}
   let el=document.getElementById("connectionState");
   if(!el){
     el=document.createElement("div");el.id="connectionState";el.setAttribute("role","status");document.body.appendChild(el);
@@ -3471,10 +3470,24 @@ async function saveProfile(){
   msg.textContent="Zapisywanie...";
   const display_name=document.getElementById("profileName").value.trim();
   const bio=document.getElementById("profileBio").value.trim();
-  const {data,error}=await supabaseClient.auth.updateUser({data:{display_name,bio}});
-  if(error){msg.textContent=error.message;return}
-  msg.textContent="Profil zapisany ✓";
-  fillProfile(data.user);
+  const active=getActiveUser();
+  try{
+    if(typeof supabaseClient!=="undefined" && supabaseClient){
+      const {data,error}=await supabaseClient.auth.updateUser({data:{display_name,bio}});
+      if(error){msg.textContent=error.message;return}
+      msg.textContent="Profil zapisany ✓"; fillProfile(data.user); return;
+    }
+    if(!active){msg.textContent="Zaloguj się, aby edytować profil.";return}
+    const accounts=readLSJson("stringoland_accounts",[]);
+    const i=accounts.findIndex(a=>a.id===active.id||a.pseudonym===active.pseudonym);
+    if(i<0){msg.textContent="Nie znaleziono konta.";return}
+    accounts[i].pseudonym=display_name||accounts[i].pseudonym;
+    accounts[i].bio=bio;
+    if(!safeWriteLocal("stringoland_accounts",accounts))return;
+    persistActiveUser(accounts[i]); fillProfile({email:accounts[i].email,user_metadata:{display_name:accounts[i].pseudonym,bio}});
+    msg.textContent="Profil zapisany ✓";
+    refreshAuthHeader();
+  }catch(e){console.error(e);msg.textContent="Nie udało się zapisać profilu."}
 }
 async 
 function resetStringolandDemo(){
@@ -3482,20 +3495,39 @@ function resetStringolandDemo(){
   [
     "stringoland_test_user","stringoland_accounts","stringoland_orders",
     "stringoland_notifications","stringoland_reviews","stringoland_buyer_credibility",
-    "stringoland_blocks","stringoland_reports"
+    "stringoland_blocks","stringoland_reports","stringoland_public_sellers",
+    "stringoland_payout_requests","stringoland_admin_audit","stringoland_user_activity",
+    "stringoland_conversations","stringoland_messages","stringoland_buyer_reviews", "stringoland_seller_verifications","stringoland_favorites_KupujacyDemo","stringoland_favorites_SprzedajacaDemo",
+    "stringoland_pending_verification","stringoland_active_session","stringoland_api_token",
+    "stringoland_session"
   ].forEach(k=>localStorage.removeItem(k));
   try{indexedDB.deleteDatabase("stringoland_media_db")}catch(e){}
   location.reload();
 }
 function createDemoAccounts(){
-  const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+  const accounts=readLSJson("stringoland_accounts",[]);
   const demos=[
-    {id:"demo_buyer",email:"kupujacy@example.test",password:"demo1234",pseudonym:"KupujacyDemo",role:"buyer"},
-    {id:"demo_seller",email:"sprzedajaca@example.test",password:"demo1234",pseudonym:"SprzedajacaDemo",role:"seller",verified:true}
+    {id:"demo_buyer",email:"kupujacy@example.test",password:"demo123456789",pseudonym:"KupujacyDemo",role:"buyer",verifiedEmail:true,verifiedSeller:true,createdAt:new Date().toISOString()},
+    {id:"demo_seller",email:"sprzedajaca@example.test",password:"demo123456789",pseudonym:"SprzedajacaDemo",role:"seller",verifiedEmail:true,verifiedSeller:true,createdAt:new Date().toISOString()},
+    {id:"demo_admin",email:"admin@example.test",password:"demo123456789",pseudonym:"AdministratorDemo",role:"admin",verifiedEmail:true,verifiedSeller:true,createdAt:new Date().toISOString()}
   ];
-  demos.forEach(d=>{if(!accounts.some(a=>a.id===d.id))accounts.push(d)});
+  demos.forEach(d=>{const i=accounts.findIndex(a=>a.id===d.id);if(i>=0)accounts[i]={...accounts[i],...d};else accounts.push(d)});
   if(!safeWriteLocal("stringoland_accounts",accounts))return;
-  alert("Konta demonstracyjne utworzone. Kupujący: kupujacy@example.test / demo1234. Sprzedająca: sprzedajaca@example.test / demo1234.");
+
+  const verifications=readLSJson("stringoland_seller_verifications",[]);
+  const vi=verifications.findIndex(v=>v.seller==="SprzedajacaDemo");
+  const vv={seller:"SprzedajacaDemo",status:"approved",submittedAt:new Date().toISOString(),reviewedAt:new Date().toISOString(),reviewedBy:"AdministratorDemo",reviewNote:"Konto demonstracyjne"};
+  if(vi>=0)verifications[vi]={...verifications[vi],...vv};else verifications.push(vv);
+  safeWriteLocal("stringoland_seller_verifications",verifications);
+
+  const sellers=getPublicSellers();
+  if(!sellers.some(x=>x.pseudonym==="SprzedajacaDemo")){
+    sellers.push({pseudonym:"SprzedajacaDemo",verified:true,active:true,age:28,likes:0,rating:5,reviews:[],photos:[],offers:[
+      {title:"Oferta demonstracyjna",description:"Przykładowa oferta do testowania całego przepływu zakupowego.",price:49,type:"photo",available:true,sellerName:"SprzedajacaDemo"}
+    ]});
+    safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers);
+  }
+  alert("Konta demonstracyjne gotowe:\nKupująca: kupujacy@example.test / demo123456789\nSprzedająca: sprzedajaca@example.test / demo123456789\nAdministrator: admin@example.test / demo123456789");
 }
 async 
 
