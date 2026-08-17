@@ -1255,7 +1255,7 @@ button{min-height:38px}
     <div><div class="eyebrow">Rozmowa</div><h1 id="conversationTitle">Sprzedająca</h1></div>
   </div>
   <div class="conversation-shell">
-    <div class="chat-policy"><button class="small-btn" style="float:right" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')"><button class="small-btn" onclick="blockCurrentConversationUser()">Zablokuj</button>Zgłoś</button>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
+    <div class="chat-policy"><span class="chat-safety-actions"><button class="small-btn" onclick="blockCurrentConversationUser()">Zablokuj</button><button class="small-btn" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')">Zgłoś</button></span>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
     <div id="conversationMessages" class="conversation-messages"></div>
     <div class="conversation-compose">
       <p class="chat-safety-note">Nie podawaj numeru telefonu, adresu e-mail ani innych danych osobowych w wiadomościach.</p><textarea id="conversationInput" placeholder="Napisz wiadomość…"></textarea>
@@ -1881,6 +1881,25 @@ function validateSellerOffer(raw){
   if(!o.description)errors.push("Dodaj opis oferty.");
   return {ok:!errors.length,offer:o,errors};
 }
+async 
+async function compressOfferImage(file){
+  const src=await readFileAsDataURL(file);
+  if(!src)return "";
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1800,scale=Math.min(1,max/Math.max(img.width,img.height));
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.max(1,Math.round(img.width*scale));
+      canvas.height=Math.max(1,Math.round(img.height*scale));
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      resolve(canvas.toDataURL("image/jpeg",.8));
+    };
+    img.onerror=()=>resolve("");
+    img.src=src;
+  });
+}
 async function saveSellerOffer(index){
   const __sellerGuard=getActiveUser();
   if(__sellerGuard?.role==="seller"&&!sellerIsVerified(__sellerGuard.pseudonym)){openSellerVerification();return}
@@ -1904,8 +1923,8 @@ async function saveSellerOffer(index){
     if(!file.type.startsWith("image/"))continue;
     if(file.size>2*1024*1024){alert(`Zdjęcie ${file.name} jest za duże. Maksymalnie 2 MB.`);continue}
     try{
-      const src=await readFileAsDataURL(file);
-      newMedia.push({id:"media_"+Date.now()+"_"+newMedia.length,src,name:file.name,type:"photo"});
+      const src=await compressOfferImage(file);
+      if(src)newMedia.push({id:"media_"+Date.now()+"_"+newMedia.length,src,name:file.name,type:"photo"});
     }catch(e){console.warn(e)}
   }
   const merged=[...existingMedia,...newMedia].slice(0,6);
@@ -1999,7 +2018,7 @@ function renderAdminPanel(){
   const box=document.getElementById("adminPanelContent");if(!box)return;
   const st=getAdminStats();
   box.innerHTML=`<div class="admin-dashboard">
-    <div class="admin-dashboard-head"><div><div class="eyebrow">Centrum zarządzania</div><h1>Panel administracyjny</h1><p>Kontrola sprzedających, zamówień, wypłat i bezpieczeństwa.</p></div><div style="display:flex;gap:7px"><button class="small-btn" onclick="openAdminAudit()">Dziennik</button><button class="small-btn" onclick="go('home')">Wróć do strony</button></div></div>
+    <div class="admin-dashboard-head"><div><div class="eyebrow">Centrum zarządzania</div><h1>Panel administracyjny</h1><p>Kontrola sprzedających, zamówień, wypłat i bezpieczeństwa.</p><small class="admin-export-note">Kopia danych JSON jest generowana lokalnie w tej przeglądarce.</small></div><div style="display:flex;gap:7px"><button class="small-btn" onclick="openAdminAudit()">Dziennik</button><button class="small-btn" onclick="go('home')">Wróć do strony</button></div></div>
     <div class="admin-kpi-grid"><div class="admin-kpi"><span>Sprzedaż brutto</span><b>${formatPLN(st.grossSales)}</b><small>zakończone zamówienia</small></div>
       <div class="admin-kpi"><span>Prowizja platformy</span><b>${formatPLN(st.platformCommission)}</b><small>24% od sprzedaży</small></div>
       <button class="admin-kpi" onclick="openAdminVerificationPanel()"><span>Weryfikacja</span><b>${st.pending}</b><small>oczekujących</small></button>
@@ -2106,9 +2125,32 @@ function openAdminSellerProfile(pseudonym){
 function openAdminPayouts(){
   const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
   let modal=document.getElementById("adminPayoutsModal");if(!modal){modal=document.createElement("div");modal.id="adminPayoutsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.status==="pending").sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
-  modal.innerHTML=`<div class="admin-verification-card"><button class="modal-close" onclick="closeModalById('adminPayoutsModal')">×</button><div class="eyebrow">Finanse</div><h2>Wypłaty do obsłużenia</h2><p class="verification-intro">Wypłaty są przygotowane po odliczeniu prowizji 24%. Administrator może oznaczyć zlecenie jako wypłacone.</p>${payouts.length?payouts.map(x=>`<article class="admin-payout-row"><div><strong>${escapeHtml(x.seller)}</strong><b>${formatPLN(x.amount)}</b><small>•••• ${escapeHtml(x.accountLast4||"")} · ${new Date(x.createdAt).toLocaleString("pl-PL")}</small></div><button class="primary" onclick="adminMarkPayoutPaid('${String(x.id).replace(/'/g,"\\'")}')">Oznacz jako wypłacone</button></article>`).join(""):`<div class="empty-state"><p>Brak oczekujących wypłat.</p></div>`}</div>`;
+  const all=readLSJson("stringoland_payout_requests",[]).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  const pending=all.filter(x=>x.status==="pending"), history=all.filter(x=>x.status!=="pending").slice(0,20);
+  modal.innerHTML=`<div class="admin-verification-card admin-payouts-modal"><button class="modal-close" onclick="closeModalById('adminPayoutsModal')">×</button>
+    <div class="eyebrow">Finanse</div><h2>Wypłaty</h2>
+    <p class="verification-intro">Wypłaty są pomniejszone o prowizję 24%. Każda decyzja administratora zostaje zapisana w dzienniku.</p>
+    <h3>Do obsłużenia (${pending.length})</h3>
+    ${pending.length?pending.map(x=>`<article class="admin-payout-row"><div><strong>${escapeHtml(x.seller)}</strong><b>${formatPLN(x.amount)}</b><small>•••• ${escapeHtml(x.accountLast4||"")} · ${x.createdAt?new Date(x.createdAt).toLocaleString("pl-PL"):"—"}</small></div><div class="admin-payout-actions"><button class="small-btn danger-btn" onclick="adminRejectPayout('${String(x.id).replace(/'/g,"\\'")}')">Odrzuć</button><button class="primary" onclick="adminMarkPayoutPaid('${String(x.id).replace(/'/g,"\\'")}')">Oznacz jako wypłacone</button></div></article>`).join(""):`<div class="empty-state"><p>Brak oczekujących wypłat.</p></div>`}
+    <h3>Ostatnie decyzje</h3>
+    ${history.length?`<div class="admin-payout-history">${history.map(x=>`<article><div><b>${escapeHtml(x.seller)}</b><small>${x.createdAt?new Date(x.createdAt).toLocaleString("pl-PL"):"—"}</small></div><div><b>${formatPLN(x.amount)}</b><span>${x.status==="paid"?"Wypłacona":"Odrzucona"}</span>${x.reason?`<small>${escapeHtml(x.reason)}</small>`:""}</div></article>`).join("")}</div>`:`<div class="empty-state"><p>Brak historii.</p></div>`}
+  </div>`;
   modal.classList.add("show");syncModalScrollLock();
+}
+
+function adminRejectPayout(id){
+  const u=getActiveUser();if(!u||u.role!=="admin")return;
+  const payouts=readLSJson("stringoland_payout_requests",[]),i=payouts.findIndex(x=>x.id===id);if(i<0)return;
+  const reason=prompt("Powód odrzucenia wypłaty:","Nie udało się zrealizować przelewu.");
+  if(reason===null)return;
+  const clean=String(reason||"").trim().slice(0,500);
+  if(!clean){alert("Podaj powód odrzucenia.");return}
+  const item=payouts[i];
+  payouts[i]={...item,status:"rejected",reason:clean,updatedAt:new Date().toISOString(),rejectedAt:new Date().toISOString()};
+  if(!safeWriteLocal("stringoland_payout_requests",payouts)){alert("Nie udało się zapisać decyzji.");return}
+  addAdminAudit("Odrzucenie wypłaty",`${item.seller} · ${formatPLN(item.amount)} · ${clean}`);
+  addNotification(item.seller,`Wypłata ${formatPLN(item.amount)} została odrzucona. Powód: ${clean}`,"payout");
+  openAdminPayouts();
 }
 function adminMarkPayoutPaid(id){
   const u=getActiveUser();if(!u||u.role!=="admin")return;
@@ -2264,10 +2306,18 @@ function openSellerWalletBreakdown(){
 }
 function openSellerPayoutHistory(){
   const u=requireSeller();if(!u)return;
-  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.seller===u.pseudonym).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.seller===u.pseudonym).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   let modal=document.getElementById("sellerPayoutHistoryModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerPayoutHistoryModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="seller-wallet-card"><button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerPayoutHistoryModal').classList.remove('show');syncModalScrollLock()">×</button><div class="eyebrow">Finanse</div><h2>Historia wypłat</h2>${payouts.length?payouts.map(x=>`<div class="payout-history-row"><b>${formatPLN(x.amount)}</b><span>${x.status==="paid"?"Wypłacona":"Oczekuje"}</span><small>${new Date(x.createdAt).toLocaleDateString("pl-PL")}</small></div>`).join(""):'<div class="empty-state"><p>Nie masz jeszcze zleconych wypłat.</p></div>'}</div>`;
+  const statusLabel=x=>x.status==="paid"?"Wypłacona":x.status==="rejected"?"Odrzucona":"Oczekuje";
+  modal.innerHTML=`<div class="seller-wallet-card"><button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerPayoutHistoryModal').classList.remove('show');syncModalScrollLock()">×</button>
+    <div class="eyebrow">Finanse</div><h2>Historia wypłat</h2>
+    <p class="info">Tutaj znajdziesz wszystkie zlecenia wypłat i decyzje administratora.</p>
+    ${payouts.length?payouts.map(x=>`<article class="payout-history-row payout-history-detailed">
+      <div><b>${formatPLN(x.amount)}</b><small>${x.createdAt?new Date(x.createdAt).toLocaleString("pl-PL"):"—"} · •••• ${escapeHtml(x.accountLast4||"")}</small></div>
+      <div><span class="payout-status ${x.status}">${statusLabel(x)}</span>${x.status==="rejected"&&x.reason?`<small class="payout-rejection">Powód: ${escapeHtml(x.reason)}</small>`:""}${x.status==="paid"&&x.paidAt?`<small>Zrealizowano: ${new Date(x.paidAt).toLocaleString("pl-PL")}</small>`:""}</div>
+    </article>`).join(""):'<div class="empty-state"><p>Nie masz jeszcze zleconych wypłat.</p></div>'}
+  </div>`;
   modal.classList.add("show");syncModalScrollLock();
 }
 
@@ -2356,19 +2406,32 @@ function setSellerVerificationStatus(seller,status,note=""){
     "verification");
   return true;
 }
+
+function getVerificationAgeLabel(v){
+  if(!v?.submittedAt)return "Brak daty";
+  const ms=Math.max(0,Date.now()-new Date(v.submittedAt).getTime());
+  const hours=Math.floor(ms/3600000);
+  if(hours<1)return "przed chwilą";
+  if(hours<24)return `${hours} h`;
+  const days=Math.floor(hours/24),rest=hours%24;
+  return `${days} d${rest?` ${rest} h`:""}`;
+}
 function openAdminVerificationPanel(){
   const u=getActiveUser();
   if(!u||u.role!=="admin"){alert("Panel weryfikacji jest dostępny wyłącznie administratorowi.");return}
   let modal=document.getElementById("adminVerificationModal");
   if(!modal){modal=document.createElement("div");modal.id="adminVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  const requests=getAdminVerificationRequests(),pending=requests.filter(x=>x.status==="pending");
+  const requests=getAdminVerificationRequests().sort((a,b)=>{
+    const ap=a.status==="pending"?0:1,bp=b.status==="pending"?0:1;
+    return ap-bp||new Date(b.submittedAt||0)-new Date(a.submittedAt||0);
+  }),pending=requests.filter(x=>x.status==="pending");
   modal.innerHTML=`<div class="admin-verification-card">
     <button class="modal-close" aria-label="Zamknij" onclick="closeModalById('adminVerificationModal')">×</button>
     <div class="eyebrow">Panel administratora</div><h2>Weryfikacja sprzedających</h2>
     <p class="verification-intro">Każdy wniosek jest rozpatrywany ręcznie. Po 1 dniu nic nie zostaje zaakceptowane automatycznie.</p>
     <div class="admin-verification-summary"><b>${pending.length}</b><span>oczekujących wniosków</span><small>standardowy czas rozpatrzenia: do 1 dnia roboczego</small></div>
     <div class="admin-verification-list">${requests.length?requests.map(v=>`
-      <article class="admin-verification-item"><div><strong>${escapeHtml(v.seller)}</strong><span>${escapeHtml(getSellerVerificationLabel(v.status))}</span><small>${v.submittedAt?new Date(v.submittedAt).toLocaleString("pl-PL"):"—"}</small></div>
+      <article class="admin-verification-item"><div><strong>${escapeHtml(v.seller)}</strong><span>${escapeHtml(getSellerVerificationLabel(v.status))}${v.status==="pending"?` · oczekuje ${escapeHtml(getVerificationAgeLabel(v))}`:""}</span><small>${v.submittedAt?new Date(v.submittedAt).toLocaleString("pl-PL"):"—"}</small></div>
       <button class="small-btn" onclick="openAdminVerificationRequest('${String(v.seller).replace(/'/g,"\\'")}')">Sprawdź wniosek</button></article>`).join(""):`<div class="inline-state">Brak wniosków.</div>`}</div>
   </div>`;
   modal.classList.add("show");syncModalScrollLock();
@@ -2516,11 +2579,12 @@ function saveSellerProfileEditor(){
   if((payoutOwner||payoutBank||payoutAccount) && (!payoutOwner||!payoutBank||!isValidBankAccount(payoutAccount))){alert("Jeżeli uzupełniasz dane do wypłaty, wypełnij wszystkie pola i podaj prawidłowy rachunek.");return}
   me.age=age;me.bio=bio;me.photos=Array.isArray(me.photos)?me.photos.slice(0,8):[];me.photo=me.photos[0]||"";
   if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać profilu.");return}
-  saveSellerPayoutSettings({
+  const payoutSaved=saveSellerPayoutSettings({
     ownerName:(document.getElementById("payoutOwnerName")?.value||"").trim(),
     bankName:(document.getElementById("payoutBankName")?.value||"").trim(),
     accountNumber:payoutAccount
   });
+  if(payoutSaved===false){alert("Profil zapisano częściowo, ale nie udało się zapisać danych do wypłaty.");return}
   document.getElementById("sellerProfileEditorModal")?.classList.remove("show");syncModalScrollLock();renderSellerPanel();
   alert("Profil został zapisany.");
 }
@@ -2559,6 +2623,47 @@ function submitOrderReview(orderId){
   if(oi>=0)orders[oi]=o;
   if(!safeWriteLocal("stringoland_orders",orders)){alert("Opinia została zapisana, ale nie udało się zaktualizować historii zamówienia.");return}
   document.getElementById("orderReviewModal")?.classList.remove("show");syncModalScrollLock();addNotification(o.seller,"Kupujący wystawił opinię za zamówienie.",orderId);alert("Opinia została dodana.");
+}
+
+function openBuyerRating(orderId){
+  const u=requireSeller();if(!u)return;
+  const o=getLocalOrders().find(x=>x.id===orderId&&x.seller===u.pseudonym);
+  if(!o||o.status!=="completed"){alert("Ocena kupującego będzie dostępna po zakończeniu zamówienia.");return}
+  const ratings=readLSJson("stringoland_buyer_reviews",[]);
+  if(ratings.some(r=>r.orderId===orderId)){alert("Ten kupujący został już oceniony.");return}
+  let modal=document.getElementById("buyerRatingModal");
+  if(!modal){modal=document.createElement("div");modal.id="buyerRatingModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="reviews-card"><button aria-label="Zamknij" class="modal-close" onclick="closeModalById('buyerRatingModal')">×</button>
+    <div class="eyebrow">Ocena kupującego</div><h2>${escapeHtml(o.buyer||"Kupujący")}</h2>
+    <p class="info">Ocena wpływa na wiarygodność kupującego i pomaga innym sprzedającym.</p>
+    <div class="review-stars-input buyer-rating-stars">${[1,2,3,4,5].map(n=>`<button type="button" onclick="selectBuyerRating(${n})">★</button>`).join("")}</div>
+    <input type="hidden" id="selectedBuyerRating" value="0">
+    <textarea id="buyerRatingBody" maxlength="800" placeholder="Krótka opinia (opcjonalnie)"></textarea>
+    <button class="primary" onclick="submitBuyerRating('${String(orderId).replace(/'/g,"\\'")}')">Opublikuj ocenę</button>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function selectBuyerRating(n){
+  const el=document.getElementById("selectedBuyerRating");if(el)el.value=n;
+  document.querySelectorAll(".buyer-rating-stars button").forEach((b,i)=>b.classList.toggle("selected",i<n));
+}
+function submitBuyerRating(orderId){
+  const u=requireSeller();if(!u)return;
+  const rating=Number(document.getElementById("selectedBuyerRating")?.value||0);
+  if(!rating){alert("Wybierz ocenę.");return}
+  const orders=getLocalOrders(),o=orders.find(x=>x.id===orderId&&x.seller===u.pseudonym);
+  if(!o||o.status!=="completed"){alert("Ocena jest dostępna po zakończeniu zamówienia.");return}
+  const ratings=readLSJson("stringoland_buyer_reviews",[]);
+  if(ratings.some(r=>r.orderId===orderId)){alert("Ten kupujący został już oceniony.");return}
+  const body=(document.getElementById("buyerRatingBody")?.value||"").trim().slice(0,800);
+  ratings.push({id:"buyer_review_"+Date.now(),orderId,buyer:o.buyer,seller:u.pseudonym,score:rating,body,createdAt:new Date().toISOString()});
+  if(!safeWriteLocal("stringoland_buyer_reviews",ratings)){alert("Nie udało się zapisać oceny.");return}
+  o.buyerReviewedAt=new Date().toISOString();
+  const i=orders.findIndex(x=>x.id===orderId);if(i>=0)orders[i]=o;
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Ocena została zapisana, ale nie udało się zaktualizować zamówienia.");return}
+  closeModalById("buyerRatingModal");
+  addNotification(o.buyer,"Sprzedająca wystawiła Ci ocenę wiarygodności.",orderId);
+  renderSellerOrders();
 }
 function acceptLocalOrder(id){
   const u=getActiveUser();
@@ -3289,8 +3394,9 @@ function reportChatUser(target,reason){
   const u=getActiveUser();
   if(!u||!target)return;
   const reports=getReports();
-  reports.push({id:"report_"+Date.now(),reporter:u.pseudonym,target,type:"chat",reason:sanitizeChatText(reason||"Nieodpowiednie zachowanie"),status:"new",createdAt:new Date().toISOString()});
+  reports.push({id:"report_"+Date.now(),reporter:u.pseudonym,reporterRole:u.role||"",target,type:"chat",reason:sanitizeChatText(reason||"Nieodpowiednie zachowanie"),status:"new",createdAt:new Date().toISOString()});
   if(!saveReports(reports)){alert("Nie udało się zapisać zgłoszenia.");return}
+  notifyAdmins(`Nowe zgłoszenie użytkownika ${u.pseudonym} dotyczące ${target}.`);
   alert("Zgłoszenie zostało zapisane.");
 }
 
@@ -4167,6 +4273,8 @@ async function savePrivateMedia(file,owner,orderId,type){
 }
 
 async function deletePrivateMedia(mediaId,owner){
+  const current=getActiveUser();
+  if(!current||current.role!=="buyer"||current.pseudonym!==owner)throw new Error("Brak dostępu do materiału");
   const db=await mediaDb();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(MEDIA_STORE,"readwrite"),store=tx.objectStore(MEDIA_STORE);
@@ -4180,11 +4288,17 @@ async function deletePrivateMedia(mediaId,owner){
   });
 }
 async function getPrivateMedia(owner){
+  const current=getActiveUser();
+  if(!current||current.role!=="buyer"||current.pseudonym!==owner)return [];
   const db=await mediaDb();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(MEDIA_STORE,"readonly"), req=tx.objectStore(MEDIA_STORE).getAll();
     req.onsuccess=()=>resolve(req.result.filter(x=>x.owner===owner));req.onerror=()=>reject(req.error);
   });
+}
+
+function getBuyerOwnedOrderIds(pseudonym){
+  return new Set(getLocalOrders().filter(o=>o.buyer===pseudonym).map(o=>o.id));
 }
 async function openBuyerCollectionPrivate(){
   const u=getActiveUser();
@@ -4192,7 +4306,8 @@ async function openBuyerCollectionPrivate(){
   document.querySelectorAll(".page").forEach(el=>el.style.display="none");
   const page=document.getElementById("collection");if(page)page.style.display="block";
   const box=document.getElementById("collectionContent");if(!box)return;
-  const items=await getPrivateMedia(u.pseudonym);
+  const ownedOrders=getBuyerOwnedOrderIds(u.pseudonym);
+  const items=(await getPrivateMedia(u.pseudonym)).filter(m=>!m.orderId||ownedOrders.has(m.orderId));
   box.innerHTML=`<div class="panel-card"><div class="eyebrow">Prywatna kolekcja</div><h2>Moje multimedia</h2>
     ${items.length?`<div class="private-media-grid">${items.map((m,i)=>`<article class="private-media-item" data-media="${i}"><div class="private-media-preview" id="mediaPreview${i}"></div><b>${escapeHtml(m.name)}</b><small>${m.type==="video"?"Wideo":"Zdjęcie"} · ${new Date(m.createdAt).toLocaleDateString("pl-PL")}</small></article>`).join("")}</div>`:"<p class='info'>Nie masz jeszcze zakupionych multimediów.</p>"}
   </div>`;
@@ -4211,6 +4326,24 @@ function addAdminAudit(action,details=""){
   const logs=readLSJson("stringoland_admin_audit",[]);
   logs.unshift({id:"audit_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),admin:u.pseudonym,action:String(action),details:String(details).slice(0,500),createdAt:new Date().toISOString()});
   safeWriteLocal("stringoland_admin_audit",logs.slice(0,500));
+}
+
+function exportAdminData(){
+  const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
+  const payload={
+    exportedAt:new Date().toISOString(),
+    sellers:getPublicSellers(),
+    verifications:getAdminVerificationRequests(),
+    orders:getLocalOrders().map(normalizeOrder),
+    payouts:readLSJson("stringoland_payout_requests",[]),
+    reports:getReports(),
+    audit:readLSJson("stringoland_admin_audit",[]),
+    activity:readLSJson("stringoland_user_activity",{})
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`stringoland-admin-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  addAdminAudit("Eksport danych administracyjnych","Kopia JSON");
 }
 function openAdminAudit(){
   const u=getActiveUser();if(!u||u.role!=="admin"){alert("Brak uprawnień.");return}
@@ -4757,8 +4890,13 @@ function openModerationQueue(){
 }
 function resolveReport(id){
   const u=getActiveUser();if(!u||u.role!=="admin")return;
-  const reports=getReports();const r=reports.find(x=>x.id===id);if(!r)return;
-  r.status="resolved";r.resolvedAt=new Date().toISOString();saveReports(reports);addAdminAudit("Zamknięcie zgłoszenia",r.target||r.id);openModerationQueue();
+  const reports=getReports(),r=reports.find(x=>x.id===id);if(!r)return;
+  const note=prompt("Notatka do zgłoszenia (opcjonalnie):","Zgłoszenie zostało sprawdzone przez administratora.")??"";
+  r.status="resolved";r.resolvedAt=new Date().toISOString();r.resolutionNote=String(note).trim().slice(0,500);r.resolvedBy=u.pseudonym;
+  if(!saveReports(reports)){alert("Nie udało się zapisać decyzji.");return}
+  addAdminAudit("Rozpatrzenie zgłoszenia",`${r.target||r.id}${r.resolutionNote?" · "+r.resolutionNote:""}`);
+  if(r.reporter)addNotification(r.reporter,`Twoje zgłoszenie dotyczące ${r.target||"użytkownika"} zostało rozpatrzone przez administratora.`,"report");
+  openModerationQueue();
 }
 
 
@@ -4972,7 +5110,7 @@ window.addEventListener("storage",renderDiscover);
           <input id="buyerLastNameLegacy" type="text" placeholder="Nazwisko">
         </div>
         <div>
-          <label for="buyerPhone">Numer telefonu</label>
+          <label for="buyerPhoneLegacy">Numer telefonu</label>
           <input id="buyerPhoneLegacy" type="tel" placeholder="Do powiadomień o przesyłce">
         </div>
       </div>
