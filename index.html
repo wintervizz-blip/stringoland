@@ -758,6 +758,13 @@ header{background:rgba(255,255,255,.97)!important;border-bottom:1px solid #d8d0c
 .link,.discover-back,.public-profile-back,.profile-view-link{color:#8a1830!important}
 .footer-logo{color:#191616!important}.footer-tagline{color:#8a1830!important}
 .side-menu{background:#fbf7f2!important}.side-menu-logo{color:#191616!important}
+
+<style>
+.seller-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.seller-admin-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid #e9e2dd}
+.seller-admin-row:last-child{border-bottom:0}
+.seller-admin-row small{display:block;color:#8b817b;font-size:9px;margin-top:4px}
+@media(max-width:800px){.seller-panel-grid{grid-template-columns:1fr}}
 </style>
 
 <style id="stringoland-colors-final">
@@ -879,8 +886,50 @@ h1,h2,h3,.hero h1,.section-title,.subhead h1,.profile-info h1,
 .trust-strip{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}
 .trust-strip span{font-size:8px;color:#6f6762;border:1px solid #d0ccc8;background:#fff;padding:7px 10px;border-radius:16px}
 </style>
+
+<style>
+.buyer-order-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid #e9e2dd}
+.buyer-order-row:last-child{border-bottom:0}.buyer-order-row small{display:block;color:#8b817b;font-size:9px;margin-top:4px}
+.buyer-order-right{display:flex;align-items:center;gap:10px}.collection-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.collection-item{border:1px solid #e9e2dd;border-radius:12px;padding:12px;background:#fff}
+.collection-thumb{height:130px;background:#f0ece9;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#a31f3a;font-size:11px;margin-bottom:9px}
+.collection-item small{display:block;color:#8b817b;font-size:8px;margin-top:4px}
+@media(max-width:700px){.collection-grid{grid-template-columns:1fr 1fr}.buyer-order-row{align-items:flex-start;flex-direction:column}.buyer-order-right{width:100%;justify-content:space-between}}
+</style>
+
+<style>
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.admin-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 0;border-bottom:1px solid #e9e2dd}
+.admin-row:last-child{border-bottom:0}.admin-row small{display:block;color:#8b817b;font-size:8px;margin-top:4px}
+.admin-status{font-size:8px;color:#a31f3a}.admin-stat-grid h2{margin:5px 0 0;font-family:Georgia,serif}
+@media(max-width:800px){.admin-stat-grid{grid-template-columns:1fr 1fr}}
+</style>
 </head>
 <body>
+<div id="adminPanel" class="page" style="display:none">
+  <div class="subhead"><button class="small-btn" onclick="go('home')">← Strona główna</button><div><div class="eyebrow">Administracja</div><h1>Panel administracyjny</h1></div></div>
+  <div id="adminPanelContent" class="content-wrap"></div>
+</div>
+
+<div id="collection" class="page" style="display:none"><div class="subhead"><h1>Kolekcja</h1></div><div id="collectionContent" class="content-wrap"></div></div>
+
+<div id="conversation" class="page" style="display:none">
+  <div class="subhead"><button class="small-btn" onclick="go('buyerMessages')">← Wiadomości</button>
+    <div><div class="eyebrow">Rozmowa</div><h1 id="conversationTitle">Sprzedająca</h1></div>
+  </div>
+  <div class="conversation-shell">
+    <div class="chat-policy"><button class="small-btn" style="float:right" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')">Zgłoś</button>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
+    <div id="conversationMessages" class="conversation-messages"></div>
+    <div class="conversation-compose">
+      <textarea id="conversationInput" placeholder="Napisz wiadomość…"></textarea>
+      <div class="conversation-tools">
+        <label class="media-upload">＋ zdjęcie / wideo<input id="conversationMedia" type="file" accept="image/*,video/*" hidden></label>
+        <button class="primary" onclick="sendConversationMessage()">Wyślij wiadomość</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <button class="menu-toggle" title="Menu konta" type="button" aria-label="Otwórz menu" onclick="openSideMenu()" style="display:none!important;visibility:hidden!important">
   <span></span><span></span><span></span>
@@ -1258,62 +1307,189 @@ async function submitAuth(){
   const ageEl=document.getElementById("ageConsent");
   const msg=document.getElementById("msg");
   const button=document.getElementById("authSubmit");
-  const email=emailEl?.value.trim()||"";
+  const identifier=emailEl?.value.trim()||"";
   const password=passwordEl?.value||"";
   const display_name=nameEl?.value.trim()||"";
   msg.textContent="";
+
   if(mode==="signup"){
     if(!display_name){msg.textContent="Wpisz pseudonim.";return}
-    if(!email||!email.includes("@")){msg.textContent="Wpisz prawidłowy adres e-mail.";return}
+    if(!identifier||!identifier.includes("@")){msg.textContent="Wpisz prawidłowy adres e-mail.";return}
     if(password.length<12){msg.textContent="Hasło musi mieć co najmniej 12 znaków.";return}
     if(!ageEl?.checked){msg.textContent="Potwierdź, że masz ukończone 18 lat i akceptujesz Regulamin.";return}
-  }else if(!email||!password){
-    msg.textContent="Podaj pseudonim lub e-mail oraz hasło.";return
+  }else if(!identifier||!password){
+    msg.textContent="Podaj e-mail lub pseudonim oraz hasło.";return
   }
+
   button.disabled=true;
   button.style.opacity=".65";
   button.textContent="Chwila…";
+
   try{
-    if(mode==="login"){
-      let saved=null;
-      try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
-      if(saved && (saved.pseudonym===email || saved.email===email)){
-        if(saved.password && saved.password!==password){
-          msg.textContent="Nieprawidłowe hasło.";return;
-        }
-        currentUser=saved;
-        localStorage.setItem("stringoland_active_session","1");
-        closeAuth();
-        if(typeof loadUser==="function") loadUser();
-        if(typeof updateSideMenu==="function") updateSideMenu();
+    const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+
+    if(mode==="signup"){
+      if(accounts.some(a=>a.email.toLowerCase()===identifier.toLowerCase())){
+        msg.textContent="Konto z tym adresem e-mail już istnieje.";
         return;
       }
-      // Supabase Auth accepts e-mail + hasło directly. Pseudonym login is handled
-      // by the test account above until a server-side pseudonym lookup is added.
-      if(!email.includes("@")){
-        msg.textContent="Podaj e-mail albo zaloguj się na utworzone konto testowe za pomocą pseudonimu.";
+      if(accounts.some(a=>a.pseudonym.toLowerCase()===display_name.toLowerCase())){
+        msg.textContent="Ten pseudonim jest już zajęty.";
         return;
       }
-      const result=await supabaseClient.auth.signInWithPassword({email,password});
-      if(result.error){msg.textContent=result.error.message;return}
-      closeAuth();renderSession(result.data.session?.user);
+
+      const account={
+        id:"u_"+Date.now(),
+        email:identifier.toLowerCase(),
+        password,
+        pseudonym:display_name,
+        role:accountRole,
+        verifiedEmail:false,
+        verifiedSeller:accountRole==="buyer",
+        createdAt:new Date().toISOString()
+      };
+      accounts.push(account);
+      localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+      localStorage.setItem("stringoland_test_user",JSON.stringify(account));
+      localStorage.setItem("stringoland_active_session","1");
+
+      // In this local prototype email verification is represented by a demo code.
+      // Production will replace this with a real email provider.
+      pendingVerificationEmail=account.email;
+      localStorage.setItem("stringoland_pending_verification",account.email);
+      document.getElementById("msg").textContent="Konto utworzone. W wersji demonstracyjnej kod weryfikacyjny to 123456.";
+      showEmailVerification(account.email);
       return;
     }
 
-    const result=await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole,display_name},emailRedirectTo:window.location.origin}});
-    if(result.error){msg.textContent=result.error.message;return}
+    const account=accounts.find(a=>
+      a.email.toLowerCase()===identifier.toLowerCase() ||
+      a.pseudonym.toLowerCase()===identifier.toLowerCase()
+    );
+    if(!account || account.password!==password){
+      msg.textContent="Nieprawidłowy e-mail/pseudonim lub hasło.";
+      return;
+    }
+
+    localStorage.setItem("stringoland_test_user",JSON.stringify(account));
     localStorage.setItem("stringoland_active_session","1");
+    currentUser=account;
     closeAuth();
-    renderSession(result.data.session?.user);
+    renderLocalSession(account);
+    updateSideMenu?.();
   }catch(err){
-    msg.textContent="Nie udało się połączyć z serwerem. Sprawdź internet i spróbuj ponownie.";
     console.error(err);
+    msg.textContent="Nie udało się utworzyć lub otworzyć konta.";
   }finally{
     button.disabled=false;
     button.style.opacity="";
-    button.textContent=mode==="signup"?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto"):"Zaloguj się";
+    button.textContent=mode==="signup"
+      ?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto")
+      :"Zaloguj się";
   }
 }
+
+
+function openSellerPanel(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller"){openAuth("login");return}
+  go("sellerPanel");
+  renderSellerPanel();
+}
+function renderSellerPanel(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const box=document.getElementById("sellerPanelContent");
+  if(!box)return;
+  const sellers=getPublicSellers();
+  const me=sellers.find(x=>x.pseudonym===u.pseudonym)||{pseudonym:u.pseudonym,offers:[],orders:[],rating:null,likes:0,verified:false};
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]").filter(o=>o.seller===u.pseudonym);
+  const offers=Array.isArray(me.offers)?me.offers:[];
+  box.innerHTML=`
+    <div class="seller-panel-grid">
+      <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2>
+        <p class="info">${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"} · ${orders.length} zamówień · ${me.likes||0} polubień</p>
+        <button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button>
+      </div>
+      <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2>
+        <p class="info">Twoje aktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button>
+      </div>
+      <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2>
+        <p class="info">Nowe zamówienia wymagające obsługi.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button>
+      </div>
+    </div>
+    <div class="panel-card seller-panel-offers"><div class="eyebrow">Twoje oferty</div>
+      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert.</p>"}
+    </div>`;
+}
+function openSellerProfileEditor(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const sellers=getPublicSellers(); const me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  const bio=prompt("Opis profilu:",me?.bio||"");
+  if(bio===null)return;
+  if(me){me.bio=bio;localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));}
+  renderSellerPanel();
+}
+function toggleSellerOffer(i){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const sellers=getPublicSellers(); const me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  if(!me||!me.offers?.[i])return;
+  me.offers[i].available=me.offers[i].available===false;
+  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  renderSellerPanel();
+}
+function renderSellerOrders(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]").filter(o=>o.seller===u?.pseudonym);
+  const box=document.getElementById("sellerPanelContent"); if(!box)return;
+  box.innerHTML=`<div class="panel-card"><button class="small-btn" onclick="renderSellerPanel()">← Panel</button><h2>Zamówienia</h2>
+  ${orders.length?orders.map(o=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · ${escapeHtml(o.status||"nowe")}</small></div>
+  ${o.status==="pending_seller"?`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button>`:""}</div>`).join(""):"<p class=\"info\">Brak zamówień.</p>"}</div>`;
+}
+function acceptLocalOrder(id){
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const o=orders.find(x=>x.id===id); if(!o)return;
+  o.status="accepted";o.acceptedAt=new Date().toISOString();o.deadline=new Date(Date.now()+7*86400000).toISOString();
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));renderSellerOrders();
+}
+function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+
+function renderLocalSession(account){
+  if(!account)return;
+  const actions=document.getElementById("actions");
+  if(!actions)return;
+  if(account.role==="buyer"){
+    actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
+    updateBuyerHeader();
+  }else{
+    actions.innerHTML='<button class="btn" onclick="openSellerPanel()">👤 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+  }
+}
+
+function verifyEmailCode(){
+  const code=document.getElementById("emailVerifyCode").value.trim();
+  const email=pendingVerificationEmail||localStorage.getItem("stringoland_pending_verification");
+  if(code!=="123456"){document.getElementById("msg").textContent="Nieprawidłowy kod. W wersji demonstracyjnej użyj 123456.";return}
+  const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+  const index=accounts.findIndex(a=>a.email===email);
+  if(index<0){document.getElementById("msg").textContent="Nie znaleziono konta.";return}
+  accounts[index].verifiedEmail=true;
+  if(accounts[index].role==="seller"){
+    accounts[index].verifiedSeller=false;
+    document.getElementById("verificationPanel").classList.add("show");
+  }
+  localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+  localStorage.setItem("stringoland_test_user",JSON.stringify(accounts[index]));
+  localStorage.setItem("stringoland_active_session","1");
+  document.getElementById("emailVerifyPanel").classList.remove("show");
+  document.getElementById("msg").textContent="E-mail został zweryfikowany.";
+  renderLocalSession(accounts[index]);
+}
+
+function resendEmailCode(){
+  document.getElementById("msg").textContent="Kod został ponownie wysłany. W wersji demonstracyjnej użyj 123456.";
+}
+
+
 function togglePassword(){
   const el=document.getElementById("password");
   el.type=el.type==="password"?"text":"password";
@@ -1349,6 +1525,80 @@ function openBuyerCredibility(){
 }
 function closeBuyerSection(){
   document.querySelectorAll(".buyer-section-page").forEach(el=>el.classList.remove("show"));
+}
+
+function getConversations(){
+  return JSON.parse(localStorage.getItem("stringoland_conversations")||"[]");
+}
+function saveConversations(v){localStorage.setItem("stringoland_conversations",JSON.stringify(v))}
+function getMessages(){return JSON.parse(localStorage.getItem("stringoland_messages")||"[]")}
+function saveMessages(v){localStorage.setItem("stringoland_messages",JSON.stringify(v))}
+function openConversationWithSeller(seller){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return}
+  const conversations=getConversations();
+  let c=conversations.find(x=>x.buyer===u.pseudonym&&x.seller===seller);
+  if(!c){c={id:"conv_"+Date.now(),buyer:u.pseudonym,seller,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};conversations.push(c);saveConversations(conversations)}
+  openConversation(c.id);
+}
+function openConversation(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const c=getConversations().find(x=>x.id===id);
+  if(!c||!u)return;
+  window.currentConversationId=id;
+  go("conversation");
+  const title=document.getElementById("conversationTitle"); if(title)title.textContent=c.seller;
+  renderConversationMessages(c);
+}
+function renderConversationMessages(c){
+  const list=document.getElementById("conversationMessages");
+  if(!list)return;
+  const messages=getMessages().filter(m=>m.conversationId===c.id);
+  list.innerHTML=messages.length?messages.map(m=>`
+    <div class="chat-line ${m.sender===c.buyer?"me":"them"}">
+      <div class="chat-bubble">${m.text?escapeHtml(m.text):""}
+      ${m.mediaName?`<div class="chat-media">📎 ${escapeHtml(m.mediaName)}</div>`:""}</div>
+      <small>${new Date(m.createdAt).toLocaleString("pl-PL",{dateStyle:"short",timeStyle:"short"})}</small>
+    </div>`).join(""):`<div class="chat-empty">To początek tej rozmowy.</div>`;
+  list.scrollTop=list.scrollHeight;
+}
+function sendConversationMessage(){
+  const text=document.getElementById("conversationInput")?.value.trim()||"";
+  const file=document.getElementById("conversationMedia")?.files?.[0]||null;
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const id=window.currentConversationId;
+  const c=getConversations().find(x=>x.id===id);
+  if(!u||!c||(!text&&!file))return;
+  const messages=getMessages();
+  messages.push({id:"msg_"+Date.now(),conversationId:id,sender:u.pseudonym,text,mediaName:file?.name||null,mediaType:file?.type||null,createdAt:new Date().toISOString()});
+  saveMessages(messages);
+  c.updatedAt=new Date().toISOString();
+  saveConversations(getConversations().map(x=>x.id===c.id?c:x));
+  document.getElementById("conversationInput").value="";
+  if(document.getElementById("conversationMedia"))document.getElementById("conversationMedia").value="";
+  renderConversationMessages(c);
+}
+function runOrderDeadlines(){
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  let changed=false;
+  const now=Date.now();
+  orders.forEach(o=>{
+    if(o.status==="accepted"&&o.deadline&&now>new Date(o.deadline).getTime()){
+      o.status="expired";o.expiredAt=new Date().toISOString();changed=true;
+    }
+  });
+  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+}
+setInterval(runOrderDeadlines,60000);
+runOrderDeadlines();
+
+function sellerAcceptOrderAndOpenChat(id){
+  acceptLocalOrder(id);
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const o=orders.find(x=>x.id===id); if(!o)return;
+  const conversations=getConversations();
+  let c=conversations.find(x=>x.buyer===o.buyer&&x.seller===o.seller);
+  if(!c){c={id:"conv_"+Date.now(),buyer:o.buyer,seller:o.seller,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};conversations.push(c);saveConversations(conversations)}
 }
 function openConversations(){
   const page=document.getElementById("buyerConversationsPage"), list=document.getElementById("buyerConversationList");
@@ -1402,8 +1652,12 @@ async function saveProfile(){
   msg.textContent="Profil zapisany ✓";
   fillProfile(data.user);
 }
-async function logout(){localStorage.removeItem("stringoland_active_session");if(supabaseClient) await supabaseClient.auth.signOut();location.reload()}
-supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
+async function logout(){localStorage.removeItem("stringoland_active_session");try{if(supabaseClient)await supabaseClient.auth.signOut()}catch(e){}location.reload()}
+try{
+  const active=localStorage.getItem("stringoland_active_session")==="1";
+  const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(active&&saved) renderLocalSession(saved);
+}catch(e){console.warn("Session restore failed",e)}
 </script>
 
 
@@ -2046,6 +2300,74 @@ function publishOffer(){
   closeAddOffer();
   renderDiscover();
   alert("Oferta została dodana w wersji demonstracyjnej.");
+}
+
+function placeLocalOrder(offer){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return}
+  const days=document.getElementById("selectedDuration")?.value||null;
+  const tip=Number(document.getElementById("tipAmount")?.value||0);
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const order={
+    id:"ord_"+Date.now(),
+    buyer:u.pseudonym,seller:offer.seller||offer.sellerName||"Sprzedająca",
+    title:offer.title,type:offer.type,price:Number(offer.price||0),
+    durationDays:days?Number(days):null,tip,status:"pending_seller",
+    createdAt:new Date().toISOString()
+  };
+  orders.push(order);localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  alert("Zamówienie zostało złożone. Sprzedająca otrzyma je do akceptacji.");
+  closeModal?.();go("buyerPanel");refreshBuyerStats?.();
+}
+
+function openTypedOfferCheckout(offer){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return}
+  const type=offer.type||"underwear";
+  let body="";
+  if(type==="underwear"){
+    const prices=offer.durationPrices||{};
+    const opts=[1,2,3,4,5,6,7].map(d=>`<option value="${d}">${d} ${d===1?"dzień":"dni"} — ${Number(prices[d]??(Number(offer.price||0)*d)).toFixed(2).replace(".",",")} zł</option>`).join("");
+    body=`<label>Wybierz czas noszenia<select id="checkoutDuration">${opts}</select></label>
+      <p class="checkout-note">Sprzedająca ustala osobną cenę dla każdego wariantu od 1 do 7 dni.</p>`;
+  }else if(type==="video"){
+    body=`<div class="digital-delivery-box"><b>Materiał wideo</b><p>Gotowy materiał jest przypisany do tej oferty. Po zaksięgowaniu zakupu zostanie udostępniony w Twojej Kolekcji.</p></div>`;
+  }else if(type==="photo"){
+    body=`<div class="digital-delivery-box"><b>Zdjęcia</b><p>Gotowy materiał zdjęciowy zostanie udostępniony po zakupie w Twojej Kolekcji.</p></div>`;
+  }else if(type==="custom_photo"){
+    body=`<div class="digital-delivery-box"><b>Zdjęcia na życzenie</b><p>Po zakupie sprzedająca otrzyma Twoje zamówienie i wykona materiał. Rozmowa oraz przesłanie materiałów odbywają się w czacie.</p></div>`;
+  }else if(type==="chat"){
+    body=`<div class="digital-delivery-box"><b>Usługa cyfrowa</b><p>Ta oferta nie wymaga dostawy fizycznej.</p></div>`;
+  }
+  const html=`<div class="checkout-modal-card">
+    <button class="modal-close" onclick="closeTypedCheckout()">×</button>
+    <div class="eyebrow">Zamówienie</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
+    <p class="checkout-seller">Sprzedająca: <b>${escapeHtml(offer.seller||offer.sellerName||"—")}</b></p>
+    ${body}
+    <div class="checkout-addons"><b>Usługi dodatkowe</b>
+      <label><input type="checkbox" value="photo"> Zdjęcia z realizacji</label>
+      <label><input type="checkbox" value="video"> Wideo z realizacji</label>
+      <label><input type="checkbox" value="gift"> Pudełko prezentowe</label>
+    </div>
+    <label>Napiwek dla sprzedającej <input id="checkoutTip" type="number" min="0" step="1" value="0" placeholder="0 zł"></label>
+    ${offer.deliveryRequired?`<div class="checkout-delivery"><b>Dostawa</b><p>InPost Paczkomat — dane dostawy są przekazywane operatorowi dostawy, nie sprzedającej.</p></div>`:`<div class="checkout-delivery"><b>Bez dostawy fizycznej</b><p>Ta oferta jest cyfrowa lub realizowana w czacie.</p></div>`}
+    <button class="primary checkout-submit" onclick='confirmTypedOrder(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Złóż zamówienie</button>
+  </div>`;
+  let modal=document.getElementById("typedCheckoutModal");
+  if(!modal){modal=document.createElement("div");modal.id="typedCheckoutModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=html;modal.classList.add("show");
+}
+function closeTypedCheckout(){document.getElementById("typedCheckoutModal")?.classList.remove("show")}
+function confirmTypedOrder(offer){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u)return;
+  const duration=Number(document.getElementById("checkoutDuration")?.value||0)||null;
+  const tip=Number(document.getElementById("checkoutTip")?.value||0);
+  const addons=[...document.querySelectorAll("#typedCheckoutModal input[type=checkbox]:checked")].map(x=>x.value);
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const order={id:"ord_"+Date.now(),buyer:u.pseudonym,seller:offer.seller||offer.sellerName||"Sprzedająca",title:offer.title,type:offer.type,price:Number(offer.price||0),durationDays:duration,addons,tip,status:"pending_seller",deliveryRequired:!!offer.deliveryRequired,createdAt:new Date().toISOString()};
+  orders.push(order);localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  closeTypedCheckout();alert("Zamówienie zostało złożone. Sprzedająca musi je zaakceptować.");
 }
 function openOfferDetail(offer){
   currentOffer=offer;
