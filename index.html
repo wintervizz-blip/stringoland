@@ -88,6 +88,34 @@ body{background:#fff;color:#1f1b19}
 .catalog-body{padding:13px}.catalog-title{font-size:12px;font-weight:600}.catalog-seller{font-size:9px;color:#8b817b;margin-top:4px}.catalog-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.catalog-price{color:#a31f3a;font-size:11px;font-weight:600}.catalog-badge{font-size:8px;color:#8b817b}
 @media(max-width:700px){.discover{grid-template-columns:1fr;gap:35px}.discover-points{border-left:0;border-top:1px solid #e9e2dd;padding-left:0}.catalog-grid{grid-template-columns:1fr 1fr}.seller-search{width:100%;margin-left:0}.seller-search input{width:100%}}
 @media(max-width:480px){.catalog-grid{grid-template-columns:1fr}}
+
+.buyer-credibility-inline{margin-top:14px}
+.inline-cred-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.inline-cred-score{font-size:34px;color:#a31f3a;font-weight:500}
+.inline-cred-stats{display:flex;gap:22px;border-top:1px solid #eee7e2;margin-top:16px;padding-top:12px;font-size:9px;color:#8b817b}
+.inline-cred-stats b{display:block;color:#211c1a;font-size:15px;margin-bottom:3px}
+
+/* Marketplace layout inspired by the directory structure of Majtkomat, but branded for Stringoland */
+.seller-grid{grid-template-columns:1fr!important;gap:0!important}
+.seller-card{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:18px;text-align:left!important;padding:18px 4px;border-bottom:1px solid #ebe3de}
+.seller-photo{width:78px!important;height:78px!important;margin:0!important}
+.seller-card .seller-name{font-size:17px}
+.seller-card .seller-meta{margin-top:5px}
+.seller-card .seller-stats{justify-content:flex-start;margin-top:9px;gap:22px}
+.seller-card .seller-actions{margin-top:0;justify-content:flex-end}
+.seller-card .seller-stat{text-align:left}
+.seller-card .seller-stat strong{font-size:14px}
+.seller-card .seller-stat span{font-size:8px}
+.seller-card:after{content:"Zweryfikowana";grid-column:2;grid-row:1;justify-self:start;color:#7b736d;font-size:8px;margin-top:-18px;margin-left:92px}
+.seller-toolbar{margin-bottom:8px}
+.seller-search{min-width:190px}
+.profile .stats{max-width:650px}
+.profile-tabs{display:flex;justify-content:center;gap:0;border-top:1px solid #ebe3de;border-bottom:1px solid #ebe3de;margin:28px auto 30px;max-width:720px}
+.profile-tab{border:0;background:#fff;padding:13px 20px;font-size:9px;color:#7d746e}
+.profile-tab.active{color:#a31f3a;border-bottom:2px solid #a31f3a}
+.profile-offer-meta{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+.profile-offer-seller{font-size:8px;color:#8b817b}
+.profile-view-link{font-size:8px;color:#a31f3a}
 </style>
 </head>
 <body>
@@ -189,17 +217,28 @@ body{background:#fff;color:#1f1b19}
       <div class="profile-copy">Lubię spokojną komunikację i jasne ustalenia. Każde zamówienie realizuję zgodnie z opisem oferty. Wszystkie rozmowy prowadzę tutaj, na Stringoland.</div>
       <button class="primary" onclick="openChat('Luna')">💬 WYŚLIJ WIADOMOŚĆ</button>
     </div>
+    <div class="profile-tabs">
+      <button class="profile-tab active" onclick="switchProfileTab(this,'offers')">OFERTY</button>
+      <button class="profile-tab" onclick="openReviews('Luna')">OCENY</button>
+      <button class="profile-tab" onclick="alert('Wideo sprzedającej — sekcja gotowa do podłączenia')">WIDEO</button>
+      <button class="profile-tab" onclick="alert('Zdjęcia sprzedającej — sekcja gotowa do podłączenia')">ZDJĘCIA</button>
+    </div>
     <div class="offers"><h2>Oferty</h2><div class="offer-grid">
-      <article class="offer" onclick="openOffer('underwear')"><div class="offer-image">OFERTA 01</div><h3>Używana bielizna</h3><p>Wybierz czas noszenia i usługi dodatkowe.</p><div class="offer-price">od 0 zł</div></article>
-      <article class="offer" onclick="openOffer('video')"><div class="offer-image">VIDEO</div><h3>Materiał wideo</h3><p>Gotowy materiał cyfrowy do odbioru po akceptacji.</p><div class="offer-price">50 zł</div></article>
-      <article class="offer" onclick="openOffer('custom_photo')"><div class="offer-image">PHOTO</div><h3>Zdjęcia na życzenie</h3><p>Ustalenia realizacji odbywają się przez czat.</p><div class="offer-price">80 zł</div></article>
+      <article class="offer" onclick="openOffer('underwear')"><div class="offer-image">OFERTA 01</div><h3>Używana bielizna</h3><p>Wybierz czas noszenia i usługi dodatkowe.</p><div class="profile-offer-meta"><span class="offer-price">od 0 zł</span><span class="profile-view-link">Zobacz ofertę →</span></div></article>
+      <article class="offer" onclick="openOffer('video')"><div class="offer-image">VIDEO</div><h3>Materiał wideo</h3><p>Gotowy materiał cyfrowy do odbioru po akceptacji.</p><div class="profile-offer-meta"><span class="offer-price">50 zł</span><span class="profile-view-link">Zobacz ofertę →</span></div></article>
+      <article class="offer" onclick="openOffer('custom_photo')"><div class="offer-image">PHOTO</div><h3>Zdjęcia na życzenie</h3><p>Ustalenia realizacji odbywają się przez czat.</p><div class="profile-offer-meta"><span class="offer-price">80 zł</span><span class="profile-view-link">Zobacz ofertę →</span></div></article>
     </div></div>
   </div>
 </section>
 
 <section id="buyerMessages" class="page"><div class="list-page"><button class="profile-back" onclick="go('home')">← Wróć</button><h1 class="section-title" style="text-align:left">Wiadomości</h1><p class="section-sub" style="text-align:left">Twoje rozmowy ze sprzedającymi.</p><div id="conversationList"></div></div></section>
 
-<section id="buyerPanel" class="page"><div class="panel"><button class="profile-back" onclick="go('home')">← Wróć</button><h1>Panel kupującego</h1><div class="panel-card"><p class="info">Twoje konto, zamówienia, multimedia i aktywność w jednym miejscu.</p><div class="metric-grid"><div class="metric"><strong id="mOrders">0</strong><span>Zamówienia</span></div><div class="metric"><strong id="mPaid">0 zł</strong><span>Łącznie zapłacono</span></div><div class="metric"><strong id="mMessages">0</strong><span>Wysłane wiadomości</span></div><div class="metric"><strong id="mContacts">0</strong><span>Kontakty ze sprzedającymi</span></div></div></div></div></section>
+<section id="buyerPanel" class="page"><div class="panel"><button class="profile-back" onclick="go('home')">← Wróć</button><h1>Panel kupującego</h1><div class="panel-card"><p class="info">Twoje konto, zamówienia, multimedia i aktywność w jednym miejscu.</p><div class="panel-card buyer-credibility-inline">
+      <div class="inline-cred-head"><div><div class="eyebrow" style="margin:0 0 5px">Wiarygodność</div><h2 style="margin:0;font-family:Georgia,serif;font-weight:500">Moja wiarygodność</h2></div><div class="inline-cred-score" id="panelCredScore">—%</div></div>
+      <p class="info">Twój wynik będzie budowany na podstawie ocen wystawianych przez sprzedające po zakończonych rozmowach i zamówieniach.</p>
+      <div class="inline-cred-stats"><span><b id="panelCredOrders">0</b> zamówień</span><span><b id="panelCredContacts">0</b> kontaktów</span><span><b id="panelCredMessages">0</b> wiadomości</span></div>
+    </div>
+<div class="metric-grid"><div class="metric"><strong id="mOrders">0</strong><span>Zamówienia</span></div><div class="metric"><strong id="mPaid">0 zł</strong><span>Łącznie zapłacono</span></div><div class="metric"><strong id="mMessages">0</strong><span>Wysłane wiadomości</span></div><div class="metric"><strong id="mContacts">0</strong><span>Kontakty ze sprzedającymi</span></div></div></div></div></section>
 
 <section id="collection" class="page"><div class="panel"><button class="profile-back" onclick="go('home')">← Wróć</button><h1>Kolekcja</h1><p class="info">Zakupione i otrzymane materiały cyfrowe będą gromadzone tutaj.</p><div class="collection-grid" id="collectionGrid"><div class="media"><div class="media-cover">VIDEO</div><div>Przykładowy materiał · Luna</div></div><div class="media"><div class="media-cover">PHOTO</div><div>Przykładowe zdjęcia · Luna</div></div></div></div></section>
 
@@ -222,7 +261,7 @@ body{background:#fff;color:#1f1b19}
 
 <div class="modal" id="privacyModal"><div class="modal-card"><button class="close" onclick="closeModal('privacyModal')">×</button><h2>Dane potrzebne do realizacji zamówienia</h2><p class="info">Przechowujemy tylko dane niezbędne do obsługi konkretnego zamówienia i obowiązków prawnych.</p><h3>Jakie dane?</h3><p class="info"><b>Imię i nazwisko</b> — do identyfikacji odbiorcy. <b>Telefon</b> — do powiadomień związanych z dostawą. <b>E-mail konta</b> — pobierany automatycznie z zalogowanego konta do potwierdzeń i komunikacji.</p><h3>Czy sprzedająca je zobaczy?</h3><p class="info"><b>Nie.</b> Dane kontaktowe kupującego nie są wyświetlane sprzedającej. Komunikacja odbywa się przez Stringoland.</p><h3>Kto może otrzymać dane?</h3><p class="info">Wyłącznie podmioty potrzebne do realizacji zamówienia lub obowiązków prawnych, np. dostawca, operator płatności i niezbędni dostawcy techniczni.</p><h3>Jak działa anonimowość?</h3><p class="info">Zakupy nie są publiczne dla innych użytkowników. Platforma musi jednak posiadać dane niezbędne do realizacji zamówienia i obowiązków prawnych.</p></div></div>
 
-<div class="drawer" id="buyerDrawer"><button class="drawer-close" onclick="closeDrawer()">×</button><div style="clear:both"></div><h2 id="drawerNick">Twój pseudonim</h2><div class="drawer-sub">Profil kupującego</div><button onclick="closeDrawer();go('buyerPanel')">Panel kupującego</button><button onclick="closeDrawer();go('collection')">Kolekcja</button><button onclick="closeDrawer();go('credibility');refreshBuyerStats()">Moja wiarygodność</button><button onclick="logout()">Wyloguj się</button></div>
+<div class="drawer" id="buyerDrawer"><button class="drawer-close" onclick="closeDrawer()">×</button><div style="clear:both"></div><h2 id="drawerNick">Twój pseudonim</h2><div class="drawer-sub">Profil kupującego</div><button onclick="closeDrawer();go('buyerPanel')">Panel kupującego</button><button onclick="closeDrawer();go('collection')">Kolekcja</button><button onclick="logout()">Wyloguj się</button></div>
 
 <div class="chat-page" id="chatPage"><div class="chat-head"><button onclick="closeChat()">←</button><div><strong id="chatName">Luna</strong><span>Rozmowa na Stringoland</span></div></div><div class="chat-policy">Rozmowy prowadź wyłącznie na Stringoland. Przekazywanie numerów telefonu, e-maili i innych prywatnych danych kontaktowych jest niedozwolone. Konta obchodzące te zasady mogą zostać zablokowane.</div><div class="chat-body" id="chatBody"></div><form class="chat-compose" onsubmit="sendMessage(event)"><label style="width:42px;height:42px;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--rose);cursor:pointer">＋<input type="file" accept="image/*,video/*" hidden onchange="attachMedia(event)"></label><textarea id="chatInput" rows="1" placeholder="Napisz wiadomość…"></textarea><button>➤</button></form></div>
 
@@ -278,9 +317,14 @@ function renderChat(){const b=document.getElementById("chatBody"),msgs=JSON.pars
 function sendMessage(e){e.preventDefault();const t=document.getElementById("chatInput").value.trim();if(!t)return;const a=JSON.parse(localStorage.getItem("slMessages")||"[]");a.push({seller:state.chatSeller,buyer:state.user?.pseudonym||"Kupujący",from:"me",text:t,at:Date.now()});localStorage.setItem("slMessages",JSON.stringify(a));document.getElementById("chatInput").value="";renderChat();refreshConversations()}
 function attachMedia(e){if(e.target.files.length)alert("Załącznik dodany do demonstracyjnej rozmowy: "+e.target.files[0].name)}
 function refreshConversations(){const b=document.getElementById("conversationList"),msgs=JSON.parse(localStorage.getItem("slMessages")||"[]");const sellers=[...new Set(msgs.map(m=>m.seller))];if(!sellers.length){b.innerHTML='<div class="notice">Nie masz jeszcze rozmów. Wejdź na profil sprzedającej i wybierz „Wyślij wiadomość”.</div>';return}b.innerHTML=sellers.map(s=>{const last=msgs.filter(m=>m.seller===s).at(-1);return '<div class="conversation-row" onclick="openChat(\''+s+'\')"><div class="avatar">'+s[0]+'</div><div class="conversation-row-main"><div class="conversation-row-name">'+s+'</div><div class="conversation-row-preview">'+last.text+'</div></div></div>'}).join("")}
-function refreshBuyerStats(){const u=state.user||JSON.parse(localStorage.getItem("slUser")||"null"),orders=JSON.parse(localStorage.getItem("slOrders")||"[]").filter(o=>o.buyer===u?.pseudonym),msgs=JSON.parse(localStorage.getItem("slMessages")||"[]").filter(m=>m.buyer===u?.pseudonym),contacts=new Set(msgs.map(m=>m.seller));const paid=orders.reduce((s,o)=>s+Number(o.amount||0),0);["mOrders","cOrders"].forEach(id=>document.getElementById(id).textContent=orders.length);["mPaid","cPaid"].forEach(id=>document.getElementById(id).textContent=paid.toFixed(2).replace(".",",")+" zł");["mMessages","cMessages"].forEach(id=>document.getElementById(id).textContent=msgs.length);["mContacts","cContacts"].forEach(id=>document.getElementById(id).textContent=contacts.size)}
+function refreshBuyerStats(){const u=state.user||JSON.parse(localStorage.getItem("slUser")||"null"),orders=JSON.parse(localStorage.getItem("slOrders")||"[]").filter(o=>o.buyer===u?.pseudonym),msgs=JSON.parse(localStorage.getItem("slMessages")||"[]").filter(m=>m.buyer===u?.pseudonym),contacts=new Set(msgs.map(m=>m.seller));const paid=orders.reduce((s,o)=>s+Number(o.amount||0),0);["mOrders","cOrders"].forEach(id=>document.getElementById(id).textContent=orders.length);["mPaid","cPaid"].forEach(id=>document.getElementById(id).textContent=paid.toFixed(2).replace(".",",")+" zł");["mMessages","cMessages"].forEach(id=>document.getElementById(id).textContent=msgs.length);["mContacts","cContacts"].forEach(id=>document.getElementById(id).textContent=contacts.size);const ps=document.getElementById("panelCredScore"),po=document.getElementById("panelCredOrders"),pc=document.getElementById("panelCredContacts"),pm=document.getElementById("panelCredMessages");if(ps)ps.textContent="—%";if(po)po.textContent=orders.length;if(pc)pc.textContent=contacts.size;if(pm)pm.textContent=msgs.length}
 document.addEventListener("DOMContentLoaded",()=>{renderHeader();refreshConversations();refreshBuyerStats()});
 
+function switchProfileTab(btn,section){
+  document.querySelectorAll(".profile-tab").forEach(x=>x.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelector(".offers")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
 const catalogData=[
  {type:"underwear",title:"Używana bielizna — wybierz czas noszenia",seller:"Luna",price:"od 0 zł",badge:"Fizyczna"},
  {type:"underwear",title:"Delikatne stringi — warianty 1–7 dni",seller:"Nika",price:"od 45 zł",badge:"Fizyczna"},
