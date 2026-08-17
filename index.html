@@ -1029,8 +1029,128 @@ body{background:var(--sl-bg);color:var(--sl-ink)}
 .footer-inner button{border:0;background:none;color:#ddd3cd;font-size:8px;margin-left:12px;cursor:pointer}
 @media(max-width:650px){.site-utility-inner{align-items:flex-start;padding-top:9px;padding-bottom:9px;flex-direction:column}.site-utility-links{width:100%;overflow:auto;flex-wrap:nowrap}.footer-inner{flex-direction:column;align-items:flex-start}}
 </style>
+<style>
+/* VISUAL CONSISTENCY PASS */
+:root{
+  --sl-bg:#e9e5e2;
+  --sl-paper:#fff;
+  --sl-paper-soft:#f7f3f1;
+  --sl-ink:#342e2a;
+  --sl-muted:#817771;
+  --sl-accent:#8f1f38;
+  --sl-accent-dark:#74162c;
+  --sl-border:#ded6d1;
+  --sl-radius:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sl-bg);color:var(--sl-ink);font-family:Arial,Helvetica,sans-serif;font-size:12px}
+button,input,select,textarea{font:inherit}
+button{transition:background .15s ease,border-color .15s ease,transform .08s ease}
+button:active{transform:translateY(1px)}
+h1,h2,h3{color:var(--sl-ink);letter-spacing:-.01em}
+h1,h2{font-family:Georgia,"Times New Roman",serif}
+h1{font-size:29px;line-height:1.1;margin:0 0 10px}
+h2{font-size:22px;line-height:1.15;margin:0 0 10px}
+h3{font-size:14px}
+.page{min-height:calc(100vh - 52px)}
+.content-wrap{max-width:1180px;margin:0 auto;padding:28px 18px 50px}
+.panel-card,.seller-card,.buyer-card,.offer-card,.admin-card{
+  background:var(--sl-paper);
+  border:1px solid var(--sl-border);
+  border-radius:var(--sl-radius);
+  box-shadow:0 8px 28px rgba(47,39,35,.05);
+}
+.panel-card{padding:20px}
+.btn,.primary,.secondary,.small-btn{
+  border-radius:8px;
+  border:1px solid var(--sl-border);
+  background:#fff;
+  color:var(--sl-ink);
+  cursor:pointer;
+}
+.primary{background:var(--sl-accent);border-color:var(--sl-accent);color:#fff}
+.primary:hover{background:var(--sl-accent-dark);border-color:var(--sl-accent-dark)}
+.secondary:hover,.small-btn:hover,.btn:hover{background:#f3efec}
+input,select,textarea{
+  border:1px solid #d8d0cb!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:var(--sl-ink)!important;
+}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid rgba(143,31,56,.12);
+  border-color:var(--sl-accent)!important;
+}
+.eyebrow{color:var(--sl-accent);font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.info{color:var(--sl-muted);line-height:1.55}
+.subhead{max-width:1180px;margin:0 auto;padding:24px 18px 8px;display:flex;gap:16px;align-items:flex-start}
+.modal-overlay{background:rgba(38,31,28,.55)!important;backdrop-filter:blur(2px)}
+.modal-close{color:var(--sl-muted)!important}
+.status-badge,.admin-status{border-radius:999px;padding:5px 9px;background:#f2ece9;color:var(--sl-muted);font-size:8px}
+@media(max-width:700px){
+  .content-wrap{padding:20px 13px 38px}
+  .subhead{padding:18px 13px 6px}
+  h1{font-size:25px}
+  h2{font-size:20px}
+}
+</style>
+<style>
+/* DETAIL POLISH PASS */
+button:disabled{opacity:.5;cursor:not-allowed}
+.site-utility-links button[aria-current="page"]{color:var(--sl-accent);background:#f3efec}
+.site-utility-links button,.footer-inner button{white-space:nowrap}
+label{color:var(--sl-ink)}
+small{color:var(--sl-muted)}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid var(--sl-border);padding:10px 8px;text-align:left;font-size:9px}
+th{color:var(--sl-muted);font-weight:600}
+hr{border:0;border-top:1px solid var(--sl-border);margin:18px 0}
+::placeholder{color:#aaa09a!important}
+a{color:var(--sl-accent)}
+.page > .hero,.page > .content-wrap{position:relative}
+.empty-state{padding:34px 18px;text-align:center;color:var(--sl-muted);border:1px dashed var(--sl-border);border-radius:var(--sl-radius);background:rgba(255,255,255,.55)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--sl-paper);border:1px solid var(--sl-border);border-radius:var(--sl-radius);padding:15px}
+.kpi strong{display:block;font:22px Georgia,serif;margin-top:5px;color:var(--sl-ink)}
+.kpi span{font-size:8px;color:var(--sl-muted);text-transform:uppercase;letter-spacing:.08em}
+@media(max-width:800px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<style>
+.utility-active{color:var(--sl-accent)!important;background:#f3efec!important}
+</style>
+<style>
+.runtime-error-toast{display:none;position:fixed;left:15px;right:15px;bottom:15px;z-index:9999;background:#fff3f3;border:1px solid #d9a8ae;color:#74162c;padding:11px 14px;border-radius:9px;font-size:9px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+</style>
+<style>
+.buyer-order-card{display:flex;justify-content:space-between;gap:18px;padding:16px;border:1px solid #ded6d1;border-radius:12px;background:#fff;margin-bottom:10px}.buyer-order-card h3{margin:4px 0 8px}.buyer-order-card p{margin:4px 0;color:#817771;font-size:9px}.buyer-order-side{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:145px}.buyer-order-side small{font-size:8px;color:#817771}.dashboard-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.collection-preview{height:130px;border-radius:8px;overflow:hidden;background:#f3efec;margin-bottom:8px}.collection-preview img,.collection-preview video{width:100%;height:100%;object-fit:cover}
+@media(max-width:620px){.buyer-order-card{flex-direction:column}.buyer-order-side{align-items:flex-start}.buyer-order-side .small-btn{width:100%}}
+</style>
+<style>
+.seller-order-detail-card{width:min(600px,calc(100vw - 30px));background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}.seller-order-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.seller-order-detail-grid>div{padding:11px;background:#f7f3f1;border-radius:8px}.seller-order-detail-grid span{display:block;color:#817771;font-size:8px;margin-bottom:4px}.seller-order-detail-grid b{font-size:10px}.privacy-boundary{font-size:8px;color:#817771;border-top:1px solid #ded6d1;padding-top:12px}.seller-kpis{margin:14px 0}
+@media(max-width:600px){.seller-order-detail-grid{grid-template-columns:1fr}}
+</style>
+<style>
+.chat-safety-note{font-size:8px;line-height:1.4;color:#817771;background:#f7f3f1;border-radius:8px;padding:8px 10px;margin:7px 0}
+.chat-media-btn{display:inline-flex;align-items:center;justify-content:center}
+</style>
+<style>
+.checkout-private-box{margin:14px 0;padding:13px;background:#f7f3f1;border:1px solid #ded6d1;border-radius:10px}.checkout-private-box label{display:block;font-size:8px;margin:8px 0}.checkout-private-box input{width:100%;box-sizing:border-box;padding:9px;margin-top:4px}.checkout-private-box p{font-size:8px;color:#817771;line-height:1.45;margin:9px 0 0}
+</style>
+<style>
+.status-label-pill{display:inline-block;border-radius:999px;padding:4px 8px;background:#f2ece9;color:#817771;font-size:8px}
+.notification-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid #ded6d1}.notification-item.read{opacity:.65}.notification-dot{width:7px;height:7px;border-radius:50%;background:#8f1f38;margin-top:5px;flex:0 0 auto}.notification-item p{margin:4px 0;color:#817771;font-size:9px}.notification-item small{font-size:8px;color:#aaa09a}
+</style>
+<style>
+.seller-rating-link{border:0;background:transparent;color:#8f1f38;padding:0;cursor:pointer;font-size:9px;text-decoration:underline}
+.seller-rating-link:hover{color:#74162c}
+</style>
+<style>
+.notification-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+</style>
 </head>
 <body>
+<div id="runtimeErrorToast" class="runtime-error-toast" aria-live="polite"></div>
+<!-- consistency: duplicate form IDs removed; canonical checkout fields are buyerFirstName/buyerLastName/buyerPhone -->
 <div id="siteUtilityBar" class="site-utility-bar">
   <div class="site-utility-inner">
     <button class="brand-mini" type="button" onclick="go('home')">STRINGOLAND</button>
@@ -1069,7 +1189,7 @@ body{background:var(--sl-bg);color:var(--sl-ink)}
     <div class="chat-policy"><button class="small-btn" style="float:right" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')"><button class="small-btn" onclick="blockCurrentConversationUser()">Zablokuj</button>Zgłoś</button>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
     <div id="conversationMessages" class="conversation-messages"></div>
     <div class="conversation-compose">
-      <textarea id="conversationInput" placeholder="Napisz wiadomość…"></textarea>
+      <p class="chat-safety-note">Nie podawaj numeru telefonu, adresu e-mail ani innych danych osobowych w wiadomościach.</p><textarea id="conversationInput" placeholder="Napisz wiadomość…"></textarea>
       <div class="conversation-tools">
         <label class="media-upload">＋ zdjęcie / wideo<input id="conversationMedia" type="file" accept="image/*,video/*" hidden></label>
         <button class="primary" onclick="sendConversationMessage()">Wyślij wiadomość</button>
@@ -1360,6 +1480,10 @@ let accountRole = "buyer";
 let sellerStep = false;
 let pendingVerificationEmail = "";
 
+
+function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim())}
+function isValidPassword(v){return String(v||"").length>=8}
+function normalizePseudonym(v){return String(v||"").trim().replace(/\s+/g," ").slice(0,40)}
 function openAuth(m){mode=m;if(m==="signup")selectRole("buyer");document.getElementById("emailVerifyPanel").classList.remove("show");document.getElementById("verificationPanel").classList.remove("show");updateAuth();document.getElementById("authModal").classList.add("show")}
 function closeAuth(){document.getElementById("authModal").classList.remove("show");document.getElementById("msg").textContent=""}
 function toggleAuth(){mode=mode==="signup"?"login":"signup";updateAuth()}
@@ -1547,6 +1671,33 @@ function sellerCreateOfferDemo(){
   openAddOffer();
 }
 window.openSellerDashboard=openSellerPanel;
+
+
+function markCurrentUtility(label){
+  document.querySelectorAll(".site-utility-links button").forEach(b=>{
+    b.classList.toggle("utility-active",b.textContent.trim()===label);
+  });
+}
+function setActiveUtilityLink(label){
+  document.querySelectorAll(".site-utility-links button").forEach(b=>{
+    const active=b.textContent.trim()===label;
+    if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");
+  });
+}
+function go(target){
+  const map={home:"home",sellers:"sellers"};
+  if(target==="home"||target==="sellers"){
+    closeAllPages();
+    const el=document.getElementById(map[target]);
+    if(el){el.style.display="block";el.classList.add("active")}
+    return;
+  }
+  if(target==="login"){openAuth("login");return}
+}
+function closeTopModal(){
+  const shown=[...document.querySelectorAll(".modal-overlay.show")];
+  if(shown.length)shown[shown.length-1].classList.remove("show");
+}
 function closeAllPages(){
   document.querySelectorAll(".page").forEach(el=>{el.style.display="none";el.classList.remove("active")});
   document.querySelectorAll(".modal-overlay").forEach(el=>el.classList.remove("show"));
@@ -1590,9 +1741,12 @@ function renderSellerPanel(){
   }
   const orders=getLocalOrders().filter(o=>o.seller===u.pseudonym);
   const offers=Array.isArray(me.offers)?me.offers:[];
+  const pending=orders.filter(o=>o.status==="pending_seller").length;
+  const active=orders.filter(o=>["accepted","in_progress"].includes(o.status)).length;
+  const completed=orders.filter(o=>o.status==="completed").length;
   box.innerHTML=`
     <div class="subhead seller-panel-head"><div><div class="eyebrow">Konto sprzedającej</div><h1>Panel sprzedającej</h1><p>${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"}</p></div><button class="small-btn" onclick="logout()">Wyloguj się</button></div>
-    <div class="seller-dashboard-actions"><button class="primary" onclick="sellerCreateOfferDemo()">＋ Dodaj ofertę</button><button class="secondary" onclick="renderSellerOrders()">Zamówienia</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj profil</button></div><div class="seller-panel-grid">
+    <div id="sellerKpiGrid" class="kpi-grid seller-kpis"></div><div class="kpi-grid seller-kpis"><div class="kpi"><span>Wszystkie zamówienia</span><strong>${orders.length}</strong></div><div class="kpi"><span>Nowe</span><strong>${pending}</strong></div><div class="kpi"><span>W realizacji</span><strong>${active}</strong></div><div class="kpi"><span>Zakończone</span><strong>${completed}</strong></div></div><div class="seller-dashboard-actions"><button class="primary" onclick="sellerCreateOfferDemo()">＋ Dodaj ofertę</button><button class="secondary" onclick="renderSellerOrders()">Zamówienia</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj profil</button></div><div class="seller-panel-grid">
       <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2><p class="info">${orders.length} zamówień · ${me.likes||0} polubień</p><button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button></div>
       <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2><p class="info">Aktywne i nieaktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button></div>
       <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2><p class="info">Zarządzaj zamówieniami kupujących.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button></div>
@@ -1651,14 +1805,31 @@ function toggleSellerOffer(i){
   localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));renderSellerPanel();
 }
 
+
+function acceptLocalOrder(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const orders=getLocalOrders();
+  const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
+  if(!o)return;
+  o.status="accepted";
+  o.acceptedAt=new Date().toISOString();
+  o.startedAt=new Date().toISOString();
+  o.deadline=new Date(Date.now()+7*86400000).toISOString();
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  addNotification(o.buyer,"Sprzedająca zaakceptowała zamówienie. Termin realizacji: 7 dni.",o.id);
+  renderSellerOrders();
+}
 function sellerDeclineOrder(id){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller")return;
   const orders=getLocalOrders();
   const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
   if(!o)return;
+  if(!confirm("Odrzucić to zamówienie?"))return;
   o.status="declined";o.declinedAt=new Date().toISOString();
   localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  addNotification(o.buyer,"Sprzedająca odrzuciła zamówienie: "+o.title,o.id);
   renderSellerOrders();
 }
 
@@ -1667,6 +1838,7 @@ async function sellerAttachOrderMedia(id){
   if(!u||u.role!=="seller")return;
   const o=getLocalOrders().find(x=>x.id===id&&x.seller===u.pseudonym);
   if(!o){alert("Nie znaleziono zamówienia.");return}
+  if(!["video","photo","custom_photo"].includes(o.type)){alert("Ta funkcja dotyczy tylko ofert cyfrowych.");return}
   const input=document.createElement("input");input.type="file";input.accept="image/*,video/*";input.multiple=true;
   input.onchange=async()=>{
     for(const file of [...input.files]){
@@ -1685,11 +1857,81 @@ function sellerCompleteOrder(id){
   const orders=getLocalOrders();
   const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
   if(!o||!["accepted","in_progress"].includes(o.status))return;
+  if(o.type==="video"||o.type==="photo"||o.type==="custom_photo"){
+    alert("Przy ofercie cyfrowej najpierw dodaj materiał. Użyj „Dodaj zdjęcie / wideo”.");
+    return;
+  }
   o.status="completed";o.completedAt=new Date().toISOString();
   localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(["accepted","in_progress"].includes(o.status)){o.status="in_progress";o.mediaDeliveredAt=new Date().toISOString();localStorage.setItem("stringoland_orders",JSON.stringify(orders));addNotification(o.buyer,"Sprzedająca dodała materiał do Twojego zamówienia.",o.id);}
+  addNotification(o.buyer,"Zamówienie zostało oznaczone jako zrealizowane.",o.id);
   renderSellerOrders();
 }
+
+
+function sellerSafeBuyerLabel(order){
+  return escapeHtml(order?.buyer||"Kupujący");
+}
+function openSellerOrderDetails(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const o=getLocalOrders().find(x=>x.id===id&&x.seller===u?.pseudonym);
+  if(!o)return;
+  let modal=document.getElementById("sellerOrderDetailsModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerOrderDetailsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const addons=(o.addons||[]).map(a=>a.key||a).join(", ");
+  modal.innerHTML=`<div class="seller-order-detail-card"><button class="modal-close" onclick="document.getElementById('sellerOrderDetailsModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Szczegóły zamówienia</div><h2>${escapeHtml(o.title||"Zamówienie")}</h2>
+    <div class="seller-order-detail-grid">
+      <div><span>Kupujący</span><b>${escapeHtml(o.buyer||"—")}</b></div>
+      <div><span>Status</span><b>${escapeHtml(o.status||"—")}</b></div>
+      <div><span>Kwota</span><b>${Number(o.total||0).toFixed(2).replace(".",",")} zł</b></div>
+      ${o.selectedDuration?`<div><span>Czas noszenia</span><b>${o.selectedDuration} dni</b></div>`:""}
+      ${addons?`<div><span>Dodatki</span><b>${escapeHtml(addons)}</b></div>`:""}
+      ${o.tip?`<div><span>Napiwek</span><b>${Number(o.tip).toFixed(2).replace(".",",")} zł</b></div>`:""}
+      <div><span>Dostawa</span><b>${o.deliveryRequired?"InPost Paczkomat":"Brak — oferta cyfrowa/usługa"}</b></div>
+    </div>
+    <p class="privacy-boundary">Dane kontaktowe kupującego nie są udostępniane sprzedającej. Kontakt odbywa się przez portal.</p>
+  </div>`;
+  modal.classList.add("show");
+}
+function openBuyerCredibilityForSeller(buyer){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  let modal=document.getElementById("sellerCredibilityModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerCredibilityModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="reviews-card"><button class="modal-close" onclick="document.getElementById('sellerCredibilityModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Wiarygodność kupującego</div><h2>${escapeHtml(buyer)}</h2>
+    <p class="info">Oceń, na ile kontakt i zachowanie kupującego były wiarygodne.</p>
+    <label>Ocena: <input id="buyerCredibilityInput" type="number" min="0" max="100" step="1" placeholder="0–100"></label>
+    <button class="primary" onclick="submitBuyerCredibility('${String(buyer).replace(/'/g,"\\'")}')">Zapisz ocenę</button>
+  </div>`;
+  modal.classList.add("show");
+}
+function submitBuyerCredibility(buyer){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const score=Math.max(0,Math.min(100,Number(document.getElementById("buyerCredibilityInput")?.value||0)));
+  const all=JSON.parse(localStorage.getItem("stringoland_buyer_reviews")||"[]");
+  all.push({id:"cred_"+Date.now(),buyer,score,seller:u.pseudonym,createdAt:new Date().toISOString()});
+  localStorage.setItem("stringoland_buyer_reviews",JSON.stringify(all));
+  document.getElementById("sellerCredibilityModal")?.classList.remove("show");
+  addNotification(buyer,"Sprzedająca wystawiła Ci ocenę wiarygodności.");
+}
+
+function expireOverdueOrders(){
+  const orders=getLocalOrders();
+  let changed=false;
+  const now=Date.now();
+  orders.forEach(o=>{
+    if(["accepted","in_progress"].includes(o.status)&&o.deadline&&new Date(o.deadline).getTime()<now){
+      o.status="expired";o.expiredAt=new Date().toISOString();changed=true;
+      addNotification(o.buyer,"Termin realizacji zamówienia minął. Zamówienie zostało anulowane.",o.id);
+    }
+  });
+  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+}
 function renderSellerOrders(){
+  expireOverdueOrders();
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   const orders=getLocalOrders().filter(o=>o.seller===u?.pseudonym);
   const box=document.getElementById("sellerPanelContent");if(!box)return;
@@ -1699,7 +1941,7 @@ function renderSellerOrders(){
     let actions="";
     if(o.status==="pending_seller") actions=`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button><button class="small-btn danger-btn" onclick="sellerDeclineOrder('${o.id}')">Odrzuć</button>`;
     if(o.status==="accepted"||o.status==="in_progress") actions=`<button class="primary" onclick="sellerAttachOrderMedia('${o.id}')">Dodaj zdjęcie / wideo</button><button class="small-btn" onclick="sellerCompleteOrder('${o.id}')">Oznacz jako zrealizowane</button>`;
-    return `<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · Status: ${escapeHtml(o.status||"nowe")} · Termin: ${deadline}</small></div><div class="order-actions">${actions}</div></div>`;
+    return `<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · Status: ${escapeHtml(o.status||"nowe")} · Termin: ${deadline}</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOrderDetails('${o.id}')">Szczegóły</button>${o.buyer?`<button class="small-btn" onclick="openBuyerCredibilityForSeller('${String(o.buyer).replace(/'/g,"\'")}')">Wiarygodność</button>`:""}${actions}</div></div>`;
   }).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
 }
 
@@ -1745,6 +1987,14 @@ function togglePassword(){
   el.type=el.type==="password"?"text":"password";
 }
 
+function requireBuyer(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return null} return u;
+}
+function requireSeller(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller"){openAuth("login");return null} return u;
+}
 function getBuyerAccount(){
   try{return JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){return null}
 }
@@ -1755,14 +2005,51 @@ function updateBuyerHeader(){
 }
 function openBuyerProfileMenu(){updateBuyerHeader();document.getElementById("buyerProfileMenu").classList.add("show")}
 function closeBuyerProfileMenu(){document.getElementById("buyerProfileMenu").classList.remove("show")}
-function openBuyerDashboard(){closeBuyerProfileMenu();closeBuyerSection();document.getElementById("buyerDashboardPage").classList.add("show")}
-function openBuyerCollection(){
+
+function openBuyerOrders(){
   closeBuyerProfileMenu();closeBuyerSection();
-  const box=document.getElementById("buyerCollectionContent");
-  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
-  const media=orders.filter(o=>["video","photo","custom_photo"].includes(o.type)&&o.status==="completed");
-  box.innerHTML=media.length?media.map(o=>'<div class="collection-item"><strong>'+escapeHtml(o.offerTitle||"Materiał")+'</strong><span>'+escapeHtml(o.seller||"Sprzedająca")+'</span></div>').join(""):'<h2>Twoja kolekcja</h2><p>Po zakupie i otrzymaniu zdjęć lub filmów będą pojawiały się tutaj.</p>';
+  const u=getBuyerAccount();
+  const box=document.getElementById("buyerOrdersContent");
+  if(!box)return;
+  const orders=getLocalOrders().filter(o=>o.buyer===u?.pseudonym).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  box.innerHTML=orders.length?orders.map(o=>{
+    const statusLabels={pending_seller:"Oczekuje na akceptację",accepted:"Zaakceptowane",in_progress:"W realizacji",completed:"Zakończone",declined:"Odrzucone",expired:"Anulowane po terminie"};
+    const canReview=o.status==="completed";
+    return `<article class="buyer-order-card">
+      <div><div class="eyebrow">Zamówienie</div><h3>${escapeHtml(o.title||"Oferta")}</h3>
+      <p><span>Sprzedająca:</span> <b>${escapeHtml(o.seller||"—")}</b></p>
+      ${o.selectedDuration?`<p><span>Czas:</span> ${o.selectedDuration} ${o.selectedDuration===1?"dzień":"dni"}</p>`:""}
+      <p><span>Kwota:</span> <b>${Number(o.total||0).toFixed(2).replace(".",",")} zł</b></p>
+      </div>
+      <div class="buyer-order-side"><span class="status-badge">${statusLabels[o.status]||o.status}</span>
+      ${o.deadline&&["accepted","in_progress"].includes(o.status)?`<small>Termin: ${new Date(o.deadline).toLocaleDateString("pl-PL")}</small>`:""}
+      ${canReview?`<button class="small-btn review-after-order" onclick="openOrderReview('${String(o.id).replace(/'/g,"\\'")}')">Oceń zamówienie</button>`:""}
+      </div>
+    </article>`;
+  }).join(""):`<div class="empty-state"><h3>Nie masz jeszcze zamówień</h3><p>Po zakupie zamówienia pojawią się tutaj.</p></div>`;
+  document.getElementById("buyerOrdersPage").classList.add("show");
+}
+function openBuyerDashboard(){
+  closeBuyerProfileMenu();closeBuyerSection();
+  const u=getBuyerAccount(), orders=getLocalOrders().filter(o=>o.buyer===u?.pseudonym);
+  const messages=getMessages().filter(m=>m.sender===u?.pseudonym);
+  const conversations=getConversations().filter(c=>c.buyer===u?.pseudonym);
+  const box=document.getElementById("buyerDashboardKpis");
+  if(box)box.innerHTML=`<div class="kpi"><span>Zamówienia</span><strong>${orders.length}</strong></div><div class="kpi"><span>Wydano</span><strong>${orders.reduce((a,o)=>a+Number(o.total||0),0).toFixed(2).replace(".",",")} zł</strong></div><div class="kpi"><span>Wiadomości</span><strong>${messages.length}</strong></div><div class="kpi"><span>Kontakty</span><strong>${conversations.length}</strong></div>`;
+  document.getElementById("buyerDashboardPage").classList.add("show");
+}
+async function openBuyerCollection(){
+  closeBuyerProfileMenu();closeBuyerSection();
   document.getElementById("buyerCollectionPage").classList.add("show");
+  const box=document.getElementById("buyerCollectionContent");
+  const u=getBuyerAccount();
+  const orders=getLocalOrders().filter(o=>o.buyer===u?.pseudonym&&o.status==="completed"&&["video","photo","custom_photo"].includes(o.type));
+  let privateItems=[];
+  try{privateItems=await getPrivateMedia(u?.pseudonym)}catch(e){}
+  const mediaHtml=privateItems.length?privateItems.map(m=>`<div class="collection-item"><div class="collection-preview" id="collectionMedia_${m.id}"></div><strong>${escapeHtml(m.name)}</strong><span>${m.type==="video"?"Wideo":"Zdjęcie"}</span></div>`).join(""):"";
+  const orderHtml=orders.map(o=>`<div class="collection-item"><strong>${escapeHtml(o.title||"Materiał")}</strong><span>${escapeHtml(o.seller||"Sprzedająca")} · zamówienie ${escapeHtml(o.id)}</span></div>`).join("");
+  box.innerHTML=mediaHtml||orderHtml||'<div class="empty-state"><h2>Twoja kolekcja</h2><p>Po zakupie i otrzymaniu zdjęć lub filmów będą pojawiały się tutaj.</p></div>';
+  privateItems.forEach(m=>{const el=document.getElementById("collectionMedia_"+m.id);if(!el)return;const url=URL.createObjectURL(m.blob);el.innerHTML=m.type==="video"?`<video controls src="${url}"></video>`:`<img src="${url}" alt="">`});
 }
 function openBuyerCredibility(){
   closeBuyerProfileMenu();closeBuyerSection();
@@ -1824,7 +2111,7 @@ function sendConversationMessage(){
   saveMessages(messages);
   c.updatedAt=new Date().toISOString();
   saveConversations(getConversations().map(x=>x.id===c.id?c:x));
-  document.getElementById("conversationInput").value="";
+  document.getElementById("conversationInputLegacy").value="";
   if(document.getElementById("conversationMedia"))document.getElementById("conversationMedia").value="";
   renderConversationMessages(c);
 }
@@ -1869,6 +2156,57 @@ function sellerAcceptOrderAndOpenChat(id){
   const conversations=getConversations();
   let c=conversations.find(x=>x.buyer===o.buyer&&x.seller===o.seller);
   if(!c){c={id:"conv_"+Date.now(),buyer:o.buyer,seller:o.seller,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};conversations.push(c);saveConversations(conversations)}
+}
+
+function sanitizeChatText(v){
+  return String(v||"").replace(/[\u0000-\u001f\u007f]/g,"").trim().slice(0,2000);
+}
+function sendConversationMessageSafe(recipient,text){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||!recipient)return;
+  if(isUserBlocked(u.pseudonym,recipient)){alert("Ta rozmowa jest zablokowana.");return}
+  const clean=sanitizeChatText(text);
+  if(!clean){alert("Wpisz wiadomość.");return}
+  const messages=getMessages();
+  messages.push({id:"msg_"+Date.now(),sender:u.pseudonym,recipient,text:clean,createdAt:new Date().toISOString(),type:"text"});
+  localStorage.setItem("stringoland_messages",JSON.stringify(messages));
+  return true;
+}
+function sendConversationMedia(recipient,file){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||!recipient||!file)return Promise.resolve(false);
+  if(isUserBlocked(u.pseudonym,recipient)){alert("Ta rozmowa jest zablokowana.");return Promise.resolve(false)}
+  if(!/^image\/|^video\//.test(file.type)){alert("Możesz wysłać tylko zdjęcie lub wideo.");return Promise.resolve(false)}
+  if(file.size>50*1024*1024){alert("Plik może mieć maksymalnie 50 MB.");return Promise.resolve(false)}
+  return savePrivateMedia(file,recipient,"chat_"+Date.now(),file.type.startsWith("video/")?"video":"photo").then(()=>{
+    const messages=getMessages();
+    messages.push({id:"msg_"+Date.now(),sender:u.pseudonym,recipient,createdAt:new Date().toISOString(),type:"media",mediaName:file.name});
+    localStorage.setItem("stringoland_messages",JSON.stringify(messages));
+    return true;
+  });
+}
+function blockChatUser(target){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||!target)return;
+  const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
+  if(!blocks.some(x=>x.owner===u.pseudonym&&x.target===target))blocks.push({owner:u.pseudonym,target,createdAt:new Date().toISOString()});
+  localStorage.setItem("stringoland_blocks",JSON.stringify(blocks));
+  alert("Użytkownik został zablokowany.");
+}
+function isUserBlocked(a,b){
+  const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
+  return blocks.some(x=>(x.owner===a&&x.target===b)||(x.owner===b&&x.target===a));
+}
+function reportUser(target,reason){
+  reportChatUser(target,reason);
+}
+function reportChatUser(target,reason){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||!target)return;
+  const reports=getReports();
+  reports.push({id:"report_"+Date.now(),reporter:u.pseudonym,target,type:"chat",reason:sanitizeChatText(reason||"Nieodpowiednie zachowanie"),status:"new",createdAt:new Date().toISOString()});
+  saveReports(reports);
+  alert("Zgłoszenie zostało zapisane.");
 }
 function openConversations(){
   const page=document.getElementById("buyerConversationsPage"), list=document.getElementById("buyerConversationList");
@@ -1922,7 +2260,32 @@ async function saveProfile(){
   msg.textContent="Profil zapisany ✓";
   fillProfile(data.user);
 }
-async function logout(){localStorage.removeItem("stringoland_active_session");try{if(supabaseClient)await supabaseClient.auth.signOut()}catch(e){}location.reload()}
+async 
+function resetStringolandDemo(){
+  if(!confirm("Wyczyścić lokalne dane demonstracyjne tej strony?"))return;
+  [
+    "stringoland_test_user","stringoland_accounts","stringoland_orders",
+    "stringoland_notifications","stringoland_reviews","stringoland_buyer_credibility",
+    "stringoland_blocks","stringoland_reports"
+  ].forEach(k=>localStorage.removeItem(k));
+  try{indexedDB.deleteDatabase("stringoland_media_db")}catch(e){}
+  location.reload();
+}
+function createDemoAccounts(){
+  const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+  const demos=[
+    {id:"demo_buyer",email:"kupujacy@example.test",password:"demo1234",pseudonym:"KupujacyDemo",role:"buyer"},
+    {id:"demo_seller",email:"sprzedajaca@example.test",password:"demo1234",pseudonym:"SprzedajacaDemo",role:"seller",verified:true}
+  ];
+  demos.forEach(d=>{if(!accounts.some(a=>a.id===d.id))accounts.push(d)});
+  localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+  alert("Konta demonstracyjne utworzone. Kupujący: kupujacy@example.test / demo1234. Sprzedająca: sprzedajaca@example.test / demo1234.");
+}
+async function logout(){
+  localStorage.removeItem("stringoland_active_session");
+  try{if(typeof supabaseClient!=="undefined" && supabaseClient) await supabaseClient.auth.signOut()}catch(e){}
+  location.reload();
+}
 try{
   const active=localStorage.getItem("stringoland_active_session")==="1";
   const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
@@ -1945,16 +2308,16 @@ try{
     <button class="buyer-menu-close" onclick="closeBuyerProfileMenu()">×</button>
     <div class="buyer-menu-name" id="buyerMenuName">Twój pseudonim</div>
     <div class="buyer-menu-sub">Profil kupującego</div>
-    <button onclick="openBuyerDashboard()">Panel kupującego</button>
+    <button onclick="openBuyerDashboard()">Panel kupującego</button><button onclick="openBuyerOrders()">Moje zamówienia</button>
     <button onclick="openBuyerCollection()">Kolekcja</button>
-    <button onclick="openBuyerCredibility()">Moja wiarygodność</button>
+    <button onclick="openBuyerCredibility()">Wiarygodność w panelu</button>
     <button onclick="logout()">Wyloguj się</button>
   </div>
 </div>
 
 <div class="buyer-section-page" id="buyerDashboardPage">
   <div class="buyer-overlay-header"><button onclick="closeBuyerSection()">←</button><div><strong>Panel kupującego</strong><span>Twoje konto</span></div></div>
-  <div class="buyer-section-content"><h2>Panel kupującego</h2><p>Tutaj później zbierzemy najważniejsze informacje o Twoim koncie, zamówieniach i aktywności.</p></div>
+  <div class="buyer-section-content"><h2>Panel kupującego</h2><div class="kpi-grid" id="buyerDashboardKpis"></div><div class="dashboard-actions"><button class="primary" onclick="openBuyerOrders()">Moje zamówienia</button><button class="small-btn" onclick="openBuyerCollection()">Kolekcja</button><button class="small-btn" onclick="openBuyerCredibility()">Wiarygodność</button></div></div>
 </div>
 
 <div class="buyer-section-page" id="buyerCollectionPage">
@@ -2613,23 +2976,46 @@ function openOrderSummary(offer){
   let modal=document.getElementById("orderSummaryModal");
   if(!modal){modal=document.createElement("div");modal.id="orderSummaryModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
+  const physical=!!offer.deliveryRequired;
   modal.innerHTML=`<div class="summary-card">
     <button class="modal-close" onclick="document.getElementById('orderSummaryModal').classList.remove('show')">×</button>
-    <div class="eyebrow">Podsumowanie zamówienia</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
+    <div class="eyebrow">Ostatni krok</div><h2>Podsumowanie zamówienia</h2>
     <div class="summary-row"><span>Sprzedająca</span><b>${escapeHtml(offer.seller||offer.sellerName||"—")}</b></div>
+    <div class="summary-row"><span>Oferta</span><b>${escapeHtml(offer.title||"—")}</b></div>
+    ${offer.selectedDuration?`<div class="summary-row"><span>Czas noszenia</span><b>${offer.selectedDuration} ${offer.selectedDuration===1?"dzień":"dni"}</b></div>`:""}
     <div class="summary-row"><span>Cena podstawowa</span><b>${t.base.toFixed(2).replace(".",",")} zł</b></div>
     ${t.addonTotal?`<div class="summary-row"><span>Usługi dodatkowe</span><b>${t.addonTotal.toFixed(2).replace(".",",")} zł</b></div>`:""}
     ${t.tip?`<div class="summary-row"><span>Napiwek</span><b>${t.tip.toFixed(2).replace(".",",")} zł</b></div>`:""}
-    ${offer.deliveryRequired ? `<div class="summary-row"><span>Dostawa</span><b>${t.delivery.toFixed(2).replace(".",",")} zł</b></div>` : `<div class="summary-row"><span>Dostawa</span><b>Brak</b></div>`}
+    <div class="summary-row"><span>Dostawa</span><b>${physical?t.delivery.toFixed(2).replace(".",",")+" zł":"Brak"}</b></div>
+    <div class="summary-row"><span>E-mail konta</span><b>${escapeHtml(u.email||"—")}</b></div>
+    ${physical?`<div class="checkout-private-box">
+      <div class="privacy-link">Dane dostawy</div>
+      <label>Imię<input id="summaryFirstName" autocomplete="given-name"></label>
+      <label>Nazwisko<input id="summaryLastName" autocomplete="family-name"></label>
+      <label>Numer telefonu<input id="summaryPhone" inputmode="tel" autocomplete="tel"></label>
+      <label>Paczkomat InPost<input id="summaryLocker" placeholder="np. WAW01A"></label>
+      <p>Te dane służą wyłącznie do realizacji dostawy. Nie są wyświetlane sprzedającej.</p>
+    </div>`:""}
     <div class="summary-total"><span>Do zapłaty</span><b>${t.total.toFixed(2).replace(".",",")} zł</b></div>
     <div class="payment-box"><b>Sposób płatności</b>
       <label><input type="radio" name="paymentMethod" value="blik" checked> BLIK</label>
       <label><input type="radio" name="paymentMethod" value="bank"> Szybki przelew</label>
     </div>
-    <p class="checkout-note">To jest wersja demonstracyjna. Nie wpisuj tutaj danych karty ani prawdziwych danych płatniczych.</p>
-    <button class="primary" onclick='finalizeDemoOrder(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Potwierdź i złóż zamówienie</button>
+    <p class="checkout-note">Nie korzystamy tutaj z płatności kartą. Wersja demonstracyjna nie pobiera prawdziwych środków.</p>
+    <button class="primary" onclick='copySummaryDeliveryToCheckout(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Złóż zamówienie</button>
   </div>`;
   modal.classList.add("show");
+}
+function copySummaryDeliveryToCheckout(offer){
+  if(offer.deliveryRequired){
+    const vals={firstName:document.getElementById("summaryFirstName")?.value.trim(),lastName:document.getElementById("summaryLastName")?.value.trim(),phone:document.getElementById("summaryPhone")?.value.trim(),locker:document.getElementById("summaryLocker")?.value.trim()};
+    if(!vals.firstName||!vals.lastName||!vals.phone||!vals.locker){alert("Uzupełnij wszystkie dane dostawy.");return}
+    ["firstName","lastName","phone","locker"].forEach(k=>{
+      const el=document.getElementById("buyer"+k.charAt(0).toUpperCase()+k.slice(1));
+      if(el)el.value=vals[k];
+    });
+  }
+  finalizeDemoOrder(offer);
 }
 
 function openOrderConfirmation(order){
@@ -2703,6 +3089,39 @@ function getUserNotifications(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   return getNotifications().filter(n=>n.user===u?.pseudonym).reverse();
 }
+
+function openChatSafetyMenu(target){
+  const action=prompt("Wpisz: Z = zablokuj, R = zgłoś");
+  if(String(action||"").toUpperCase()==="Z")blockChatUser(target);
+  if(String(action||"").toUpperCase()==="R")reportChatUser(target,prompt("Powód zgłoszenia:")||"");
+}
+
+function markAllNotificationsRead(){
+  const all=JSON.parse(localStorage.getItem("stringoland_notifications")||"[]");
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u)return;
+  all.forEach(n=>{if(n.recipient===u.pseudonym)n.read=true});
+  localStorage.setItem("stringoland_notifications",JSON.stringify(all));
+  renderNotifications();
+}
+function renderNotifications(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const box=document.getElementById("notificationsContent");
+  if(!box||!u)return;
+  const list=JSON.parse(localStorage.getItem("stringoland_notifications")||"[]")
+    .filter(n=>n.recipient===u.pseudonym)
+    .sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  box.innerHTML=list.length?list.map(n=>`
+    <article class="notification-item ${n.read?"read":""}">
+      <div class="notification-dot"></div>
+      <div><b>${escapeHtml(n.title||"Powiadomienie")}</b><p>${escapeHtml(n.body||"")}</p>
+      <small>${new Date(n.createdAt||Date.now()).toLocaleString("pl-PL")}</small></div>
+    </article>`).join(""):`<div class="empty-state"><h3>Brak powiadomień</h3><p>Tutaj pojawią się informacje o zamówieniach, wiadomościach i realizacji.</p></div>`;
+  list.forEach(n=>n.read=true);
+  localStorage.setItem("stringoland_notifications",JSON.stringify(
+    JSON.parse(localStorage.getItem("stringoland_notifications")||"[]").map(n=>list.some(x=>x.id===n.id)?{...n,read:true}:n)
+  ));
+}
 function openNotifications(){
   const items=getUserNotifications();
   let modal=document.getElementById("notificationsModal");
@@ -2718,8 +3137,43 @@ function finalizeDemoOrder(offer){
   const t=calculateOfferTotal(offer);
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="buyer"){openAuth("login");return}
+
+  const physical=!!offer.deliveryRequired;
+  let deliveryData=null;
+  if(physical){
+    const first=document.getElementById("buyerFirstName")?.value.trim()||"";
+    const last=document.getElementById("buyerLastName")?.value.trim()||"";
+    const phone=document.getElementById("buyerPhone")?.value.trim()||"";
+    const locker=document.getElementById("buyerLocker")?.value.trim()||"";
+    if(!first||!last||!phone||!locker){
+      alert("Uzupełnij imię, nazwisko, numer telefonu i Paczkomat.");
+      return;
+    }
+    deliveryData={firstName:first,lastName:last,phone,locker};
+  }
+
   const orders=getLocalOrders();
-  orders.push({id:"ord_"+Date.now(),buyer:u.pseudonym,buyerEmail:u.email||"",seller:offer.seller||offer.sellerName||"Sprzedająca",title:offer.title,type:offer.type,price:t.base,selectedDuration:offer.selectedDuration||null,addons:offer.selectedAddons||[],tip:t.tip,total:t.total,paymentMethod:method,status:"pending_seller",deliveryRequired:!!offer.deliveryRequired,createdAt:new Date().toISOString()});
+  const order={
+    id:"ord_"+Date.now(),
+    buyer:u.pseudonym,
+    buyerEmail:u.email||"",
+    seller:offer.seller||offer.sellerName||"Sprzedająca",
+    title:offer.title,
+    type:offer.type,
+    price:t.base,
+    selectedDuration:offer.selectedDuration||null,
+    addons:offer.selectedAddons||[],
+    tip:t.tip,
+    delivery:t.delivery,
+    total:t.total,
+    paymentMethod:method,
+    paymentStatus:"demo_confirmed",
+    status:"pending_seller",
+    deliveryRequired:physical,
+    deliveryData,
+    createdAt:new Date().toISOString()
+  };
+  orders.push(order);
   localStorage.setItem("stringoland_orders",JSON.stringify(orders));
   addNotification(order.seller,"Nowe zamówienie: "+order.title,order.id);
   document.getElementById("orderSummaryModal")?.classList.remove("show");
@@ -2984,6 +3438,44 @@ function openTermsInfo(){
   modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('termsInfoModal').classList.remove('show')">×</button><div class="eyebrow">Informacje</div><h2>Regulamin</h2><p>Wersja demonstracyjna serwisu. Zamówienia, płatności, wiadomości i multimedia działają tutaj jako prototyp interfejsu.</p><p>W produkcji regulamin powinien zostać przygotowany i zaakceptowany przed uruchomieniem sprzedaży.</p></div>`;
   modal.classList.add("show");
 }
+
+
+function openLaunchChecklist(){
+  let modal=document.getElementById("launchChecklistModal");
+  if(!modal){modal=document.createElement("div");modal.id="launchChecklistModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('launchChecklistModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Status projektu</div><h2>Co jeszcze przed prawdziwym startem?</h2>
+    <ul class="info">
+      <li>Podłączyć backend, bazę danych i autoryzację serwerową.</li>
+      <li>Podłączyć prawdziwego operatora płatności.</li>
+      <li>Podłączyć InPost po stronie serwera.</li>
+      <li>Przenieść multimedia do prywatnego storage z kontrolą dostępu.</li>
+      <li>Wdrożyć moderację, zgłoszenia i logi administracyjne.</li>
+      <li>Przygotować dokumenty prawne i procesy prywatności.</li>
+      <li>Przetestować na telefonach i desktopie oraz zrobić testy bezpieczeństwa.</li>
+    </ul>
+    <p class="info">Obecny plik jest kompletnym prototypem front-endowym do testowania przepływów, ale nie powinien być traktowany jako gotowy system produkcyjny bez powyższych integracji.</p>
+  </div>`;
+  modal.classList.add("show");
+}
+function openProductionChecklist(){
+  let modal=document.getElementById("productionChecklistModal");
+  if(!modal){modal=document.createElement("div");modal.id="productionChecklistModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('productionChecklistModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Przed uruchomieniem</div><h2>Lista produkcyjna</h2>
+    <ul class="info">
+      <li>Backend i baza danych zamiast localStorage.</li>
+      <li>Bezpieczne logowanie i reset hasła.</li>
+      <li>Prawdziwe płatności i obsługa zwrotów.</li>
+      <li>Prywatny storage zdjęć/wideo z autoryzacją dostępu.</li>
+      <li>Weryfikacja wieku/tożsamości i proces moderacji.</li>
+      <li>Integracja dostawy InPost.</li>
+      <li>Regulamin, polityka prywatności i dokumentacja RODO przygotowane prawnie.</li>
+      <li>Monitoring błędów, backupy i zabezpieczenia serwera.</li>
+    </ul>
+  </div>`;
+  modal.classList.add("show");
+}
 function openHelpInfo(){
   let modal=document.getElementById("helpInfoModal");
   if(!modal){modal=document.createElement("div");modal.id="helpInfoModal";modal.className="modal-overlay";document.body.appendChild(modal)}
@@ -3143,16 +3635,16 @@ window.addEventListener("storage",renderDiscover);
       <div class="buyer-data-privacy-note">🔒 Dane kupującego nie są udostępniane sprzedającej.</div>
       <div class="buyer-data-grid">
         <div>
-          <label for="buyerFirstName">Imię</label>
-          <input id="buyerFirstName" type="text" placeholder="Imię">
+          <label for="buyerFirstNameLegacy"></label>
+          <input id="buyerFirstNameLegacy" type="text" placeholder="Imię">
         </div>
         <div>
-          <label for="buyerLastName">Nazwisko</label>
-          <input id="buyerLastName" type="text" placeholder="Nazwisko">
+          <label for="buyerLastNameLegacy"></label>
+          <input id="buyerLastNameLegacy" type="text" placeholder="Nazwisko">
         </div>
         <div>
           <label for="buyerPhone">Numer telefonu</label>
-          <input id="buyerPhone" type="tel" placeholder="Do powiadomień o przesyłce">
+          <input id="buyerPhoneLegacy" type="tel" placeholder="Do powiadomień o przesyłce">
         </div>
       </div>
 
@@ -3261,7 +3753,7 @@ window.addEventListener("storage",renderDiscover);
       ＋
       <input id="conversationAttachment" type="file" accept="image/*,video/*" multiple hidden onchange="handleConversationAttachment(event)">
     </label>
-    <textarea id="conversationInput" rows="1" placeholder="Napisz wiadomość…" maxlength="1000"></textarea>
+    <textarea id="conversationInputLegacy" rows="1" placeholder="Napisz wiadomość…" maxlength="1000"></textarea>
     <button type="submit">➤</button>
   </form>
 </div>
@@ -3330,8 +3822,20 @@ function closeRegulation(){document.getElementById("regulationModal")?.classList
 <footer id="siteFooter">
   <div class="footer-inner">
     <span>STRINGOLAND</span>
-    <div><button onclick="openBuyerDataInfo()">Prywatność</button><button onclick="openTermsInfo()">Regulamin</button><button onclick="openHelpInfo()">Pomoc</button></div>
+    <div><button onclick="openBuyerDataInfo()">Prywatność</button><button onclick="openTermsInfo()">Regulamin</button><button onclick="openHelpInfo()">Pomoc</button><button onclick="openProductionChecklist()">Produkcja</button><button onclick="openLaunchChecklist()">Status projektu</button><button id="demoTools" onclick="createDemoAccounts()">Konta demo</button><button onclick="resetStringolandDemo()">Reset demo</button></div>
   </div>
 </footer>
+<script>
+window.addEventListener('error',function(e){
+  const el=document.getElementById('runtimeErrorToast');
+  if(!el)return;
+  el.textContent="Wystąpił błąd strony. Odśwież stronę i spróbuj ponownie.";
+  el.style.display="block";
+  setTimeout(()=>el.style.display="none",5000);
+});
+</script>
+<script>
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeTopModal()});
+</script>
 </body>
 </html>
