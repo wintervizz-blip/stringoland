@@ -933,10 +933,18 @@ async function tryApiSession(){
 .seller-admin-row small{display:block;color:#8b817b;font-size:9px;margin-top:4px}
 @media(max-width:800px){.seller-panel-grid{grid-template-columns:1fr}}
 </style>
+
+<style>
+.seller-menu-link{display:none}
+#sellerPanel.active{display:block!important}
+#sellerPanel .content-wrap{max-width:1100px;margin:0 auto;padding:24px}
+</style>
 </head>
 <body>
 <div id="sellerPanel" class="page" style="display:none">
-  <div id="sellerPanelContent" class="content-wrap"></div>
+  <div id="sellerPanelContent" class="content-wrap">
+    <div class="panel-card"><h1>Panel sprzedającej</h1><p class="info">Ładowanie panelu…</p></div>
+  </div>
 </div>
 
 <div id="adminPanel" class="page" style="display:none">
@@ -984,6 +992,7 @@ async function tryApiSession(){
     <button type="button" id="sellerOffers" onclick="menuOffers()">📦 Moje oferty</button>
     <button type="button" id="sellerSales" onclick="menuSales()">💰 Sprzedaż</button>
     <button type="button" onclick="menuProfile()">👤 Mój profil</button>
+    <button type="button" class="seller-menu-link" onclick="openSellerPanel()">💰 Panel sprzedającej</button>
     <button type="button" onclick="menuSettings()">⚙️ Ustawienia</button>
   </nav>
 </aside>
@@ -1377,13 +1386,32 @@ async function submitAuth(){
 }
 
 function openSellerPanel(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  if(!u||u.role!=="seller"){openAuth("login");return}
-  document.querySelectorAll(".page").forEach(el=>el.style.display="none");
+  let u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u){
+    openAuth("login");return;
+  }
+  // Recover the role from the local account registry when an older session is stale.
+  if(u.role!=="seller"){
+    const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+    const saved=accounts.find(a=>a.id===u.id||a.email===u.email||a.pseudonym===u.pseudonym);
+    if(saved&&saved.role==="seller"){
+      u=saved;
+      localStorage.setItem("stringoland_test_user",JSON.stringify(u));
+    }
+  }
+  if(u.role!=="seller"){
+    alert("To konto jest kontem kupującego. Aby wejść do panelu sprzedającej, zaloguj się na konto sprzedającej.");
+    return;
+  }
+  document.querySelectorAll(".page").forEach(el=>{el.style.display="none";});
   const panel=document.getElementById("sellerPanel");
-  if(panel) panel.style.display="block";
+  if(!panel){alert("Nie znaleziono panelu sprzedającej.");return;}
+  panel.style.display="block";
+  panel.classList.add("active");
   renderSellerPanel();
+  window.scrollTo(0,0);
 }
+
 function renderSellerPanel(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller")return;
@@ -1434,7 +1462,7 @@ function renderLocalSession(account){
     actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
     updateBuyerHeader();
   }else{
-    actions.innerHTML='<button class="btn" onclick="openSellerPanel()">👤 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+    actions.innerHTML='<button class="btn primary" onclick="openSellerPanel()">💰 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
   }
 }
 
