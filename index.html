@@ -1707,7 +1707,7 @@ async function submitAuth(){
       if(accounts.some(a=>a.pseudonym.toLowerCase()===pseudonym.toLowerCase())){msg.textContent="Ten pseudonim jest już zajęty.";return}
       const account={id:"u_"+Date.now(),email:identifier.toLowerCase(),password,pseudonym,role:accountRole,verifiedEmail:false,verifiedSeller:accountRole==="buyer",createdAt:new Date().toISOString()};
       accounts.push(account);localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
-      localStorage.removeItem("stringoland_test_user");localStorage.removeItem("stringoland_active_session");
+      localStorage.removeItem(STRINGOLAND_SESSION_KEY);localStorage.removeItem("stringoland_test_user");localStorage.removeItem("stringoland_active_session");
       pendingVerificationEmail=account.email;localStorage.setItem("stringoland_pending_verification",account.email);
       showEmailVerification(account.email);return;
     }
@@ -1736,11 +1736,12 @@ function normalizeOrder(raw){
   return o;
 }
 function getLocalOrders(){
-  try{return JSON.parse(localStorage.getItem("stringoland_orders")||"[]")}catch(e){return []}
+  const raw=readLSJson("stringoland_orders",[]);
+  return Array.isArray(raw)?raw.map(normalizeOrder):[];
 }
 
 function openSellerOfferEditor(index=null){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller"){openAuth("login");return}
   const sellers=getPublicSellers();let me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(!me){me={pseudonym:u.pseudonym,offers:[],verified:false};sellers.push(me)}
@@ -1748,27 +1749,47 @@ function openSellerOfferEditor(index=null){
   let modal=document.getElementById("sellerOfferEditorModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerOfferEditorModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   const dp=existing?.durationPrices||{};
+  const media=Array.isArray(existing?.media)?existing.media:[];
   modal.innerHTML=`<div class="offer-editor-card">
-    <button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerOfferEditorModal').classList.remove('show')">×</button>
+    <button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerOfferEditorModal').classList.remove('show');syncModalScrollLock()">×</button>
     <div class="eyebrow">Oferta</div><h2>${existing?"Edytuj ofertę":"Dodaj ofertę"}</h2>
-    <label>Nazwa oferty<input id="offerTitleEdit" value="${escapeHtml(existing?.title||"")}"></label>
-    <label>Typ
-      <select id="offerTypeEdit"><option value="underwear" ${existing?.type==="underwear"?"selected":""}>Bielizna / oferta fizyczna</option><option value="video" ${existing?.type==="video"?"selected":""}>Wideo</option><option value="photo" ${existing?.type==="photo"?"selected":""}>Zdjęcia</option><option value="custom" ${existing?.type==="custom"?"selected":""}>Na życzenie</option></select>
-    </label>
-    <div id="durationPricesEdit"><b>Ceny za czas noszenia</b>
-      ${[1,2,3,4,5,6,7].map(d=>`<label class="inline-price"><span>${d} ${d===1?"dzień":"dni"}</span><input id="dayPrice${d}" type="number" min="0" step="0.01" value="${dp[d]??""}" placeholder="zł"></label>`).join("")}
-    </div>
+    <label>Nazwa oferty<input id="offerTitleEdit" maxlength="100" value="${escapeHtml(existing?.title||"")}"></label>
+    <label>Typ<select id="offerTypeEdit"><option value="underwear" ${existing?.type==="underwear"?"selected":""}>Bielizna / oferta fizyczna</option><option value="video" ${existing?.type==="video"?"selected":""}>Wideo</option><option value="photo" ${existing?.type==="photo"?"selected":""}>Zdjęcia</option><option value="custom" ${existing?.type==="custom"?"selected":""}>Na życzenie</option></select></label>
+    <div id="durationPricesEdit"><b>Ceny za czas noszenia</b>${[1,2,3,4,5,6,7].map(d=>`<label class="inline-price"><span>${d} ${d===1?"dzień":"dni"}</span><input id="dayPrice${d}" type="number" min="0" step="0.01" value="${dp[d]??""}" placeholder="zł"></label>`).join("")}</div>
     <div class="addon-edit"><b>Usługi dodatkowe</b>
       <label class="inline-price"><span>Zdjęcia</span><input id="addonPhoto" type="number" min="0" step="0.01" value="${existing?.addons?.photo??""}" placeholder="zł"></label>
       <label class="inline-price"><span>Wideo</span><input id="addonVideo" type="number" min="0" step="0.01" value="${existing?.addons?.video??""}" placeholder="zł"></label>
       <label class="inline-price"><span>Pudełko prezentowe</span><input id="addonGift" type="number" min="0" step="0.01" value="${existing?.addons?.gift??""}" placeholder="zł"></label>
     </div>
     <label class="toggle-row"><input id="offerDeliveryEdit" type="checkbox" ${existing?.deliveryRequired?"checked":""}> Wymaga dostawy fizycznej (InPost)</label>
-    <label>Opis<textarea id="offerDescriptionEdit">${escapeHtml(existing?.description||"")}</textarea></label>
-    <label>Zdjęcie/wideo oferty<input id="offerMediaEdit" type="file" accept="image/*,video/*" multiple></label>
-    <button class="primary" onclick="saveSellerOffer(${index===null?"null":index})">Zapisz ofertę</button>
+    <label>Opis<textarea id="offerDescriptionEdit" maxlength="3000">${escapeHtml(existing?.description||"")}</textarea></label>
+    <div class="offer-media-editor"><b>Galeria oferty</b><p class="info">Dodaj do 6 zdjęć. Wideo możesz dodać jako materiał realizacyjny po zakupie.</p>
+      <input id="offerMediaEdit" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple>
+      <div id="offerMediaGalleryEdit" class="offer-media-gallery-edit"></div>
+    </div>
+    <button type="button" class="primary" onclick="saveSellerOffer(${index===null?"null":index})">Zapisz ofertę</button>
   </div>`;
   modal.classList.add("show");syncModalScrollLock();
+  renderOfferEditorMedia(media, existing?.mainMediaId||null);
+  document.getElementById("offerMediaEdit").addEventListener("change",e=>{
+    renderOfferEditorMedia(media.concat([...e.target.files].map((f,i)=>({id:"new_"+Date.now()+"_"+i,name:f.name,type:f.type.startsWith("video/")?"video":"photo",file:f}))),existing?.mainMediaId||null);
+  });
+}
+function renderOfferEditorMedia(media,mainId){
+  const box=document.getElementById("offerMediaGalleryEdit");if(!box)return;
+  box.innerHTML="";
+  media.forEach((m,i)=>{
+    const card=document.createElement("div");card.className="offer-media-edit-item";
+    const preview=document.createElement("div");preview.className="offer-media-edit-preview";
+    if(m.file && m.type==="photo"){
+      const url=URL.createObjectURL(m.file);preview.style.backgroundImage=`url("${url}")`;
+    }else if(m.src && m.type==="photo"){
+      preview.style.backgroundImage=`url("${m.src}")`;
+    }else preview.textContent=m.type==="video"?"WIDEO":"BRAK";
+    const main=document.createElement("button");main.type="button";main.className="small-btn"+((m.id===mainId)||(i===0&&!mainId)?" active":"");main.textContent="Główne";
+    main.onclick=()=>{document.querySelectorAll(".offer-media-edit-item .small-btn").forEach(x=>x.classList.remove("active"));main.classList.add("active");main.dataset.mainMediaId=m.id};
+    card.append(preview,main);box.appendChild(card);
+  });
 }
 
 
@@ -1786,8 +1807,9 @@ function deleteSellerOffer(index){
   const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(!me||!me.offers?.[index])return;
   if(!confirm("Usunąć tę ofertę?"))return;
+  const backup=JSON.stringify(me.offers);
   me.offers.splice(index,1);
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){me.offers=JSON.parse(backup);alert("Nie udało się zapisać usunięcia oferty.");return}
   renderSellerPanel();
 }
 function setOfferAvailability(offerRef,available){
@@ -1803,6 +1825,29 @@ function setOfferAvailability(offerRef,available){
   renderSellerPanel();
 }
 
+
+function collectSellerOfferForm(){
+  const value=id=>document.getElementById(id)?.value;
+  const checked=id=>!!document.getElementById(id)?.checked;
+  const durationPrices={};
+  [1,2,3,4,5,6,7].forEach(d=>{
+    const el=document.getElementById("dayPrice"+d);
+    const n=Number(el?.value);
+    if(Number.isFinite(n)&&n>0)durationPrices[d]=n;
+  });
+  return {
+    title:value("offerTitleEdit")||"",
+    description:value("offerDescriptionEdit")||"",
+    type:value("offerTypeEdit")||"photo",
+    durationPrices,
+    addons:{
+      photo:Number(value("addonPhoto")||0),
+      video:Number(value("addonVideo")||0),
+      gift:Number(value("addonGift")||0)
+    },
+    deliveryRequired:checked("offerDeliveryEdit")
+  };
+}
 function normalizeSellerOffer(raw){
   const o={...(raw||{})};
   o.title=String(o.title||"").trim().slice(0,100);
@@ -1835,37 +1880,48 @@ async function saveSellerOffer(index){
   const raw=collectSellerOfferForm();
   const validation=validateSellerOffer(raw);
   if(!validation.ok){alert(validation.errors.join("\n"));return}
-  const u=getActiveUser();
-  if(!u||u.role!=="seller"){openAuth("login");return}
-  const sellers=getPublicSellers();
-  const me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  const u=getActiveUser();if(!u||u.role!=="seller"){openAuth("login");return}
+  const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(!me){alert("Nie znaleziono profilu sprzedającej.");return}
   me.offers=Array.isArray(me.offers)?me.offers:[];
   const existing=index!==null?me.offers[index]:null;
   const offer={...(existing||{}),...validation.offer,updatedAt:new Date().toISOString(),available:existing?.available!==false};
   if(!offer.id)offer.id="offer_"+Date.now();
-  if(index===null)me.offers.push(offer);else me.offers[index]=offer;
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
 
-  const files=[...(document.getElementById("offerMediaEdit")?.files||[])].slice(0,6);
-  if(files.length && typeof savePrivateMedia==="function"){
-    offer.mediaCount=files.length;
-    offer.mediaNames=files.map(f=>f.name).slice(0,6);
-    for(const file of files){
-      try{await savePrivateMedia(file,u.pseudonym,u.pseudonym+"_"+offer.id,file.type.startsWith("video/")?"video":"photo")}
-      catch(e){console.warn("Nie udało się zapisać materiału oferty",e)}
-    }
+  const input=document.getElementById("offerMediaEdit");
+  const files=[...(input?.files||[])].slice(0,6);
+  const existingMedia=Array.isArray(existing?.media)?existing.media.filter(m=>m&&m.src&&m.type==="photo"):[];
+  const newMedia=[];
+  for(const file of files){
+    if(!file.type.startsWith("image/"))continue;
+    if(file.size>2*1024*1024){alert(`Zdjęcie ${file.name} jest za duże. Maksymalnie 2 MB.`);continue}
+    try{
+      const src=await readFileAsDataURL(file);
+      newMedia.push({id:"media_"+Date.now()+"_"+newMedia.length,src,name:file.name,type:"photo"});
+    }catch(e){console.warn(e)}
   }
-  me.offers[index===null?me.offers.length-1:index]=offer;
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
-  document.getElementById("sellerOfferEditorModal")?.classList.remove("show");
+  const merged=[...existingMedia,...newMedia].slice(0,6);
+  offer.media=merged;
+  offer.mediaCount=merged.length;
+  offer.image=merged[0]?.src||"";
+  const mainButton=document.querySelector(".offer-media-edit-item .small-btn.active");
+  const chosenId=mainButton?.dataset?.mainMediaId;
+  if(chosenId){
+    const chosen=merged.find(m=>m.id===chosenId);
+    if(chosen){offer.image=chosen.src;offer.mainMediaId=chosen.id}
+  }else if(!offer.mainMediaId||!merged.some(m=>m.id===offer.mainMediaId)){
+    offer.mainMediaId=merged[0]?.id||null;
+  }
+
+  const previousOffers=me.offers.slice();
+  if(index===null)me.offers.push(offer);else me.offers[index]=offer;
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){me.offers=previousOffers;alert("Nie udało się zapisać oferty. Pamięć przeglądarki może być pełna.");return}
+  document.getElementById("sellerOfferEditorModal")?.classList.remove("show");syncModalScrollLock();
   renderSellerPanel();
 }
+
 function sellerCreateOfferDemo(){
-  openSellerOfferEditor();return;
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  if(!u||u.role!=="seller"){alert("Zaloguj się na konto sprzedającej.");return}
-  openAddOffer();
+  openSellerOfferEditor();
 }
 window.openSellerDashboard=openSellerPanel;
 
@@ -1901,7 +1957,7 @@ function closeAllPages(){
 }
 function openSellerPanel(){
   const sellerUser=requireSeller(); if(!sellerUser)return;
-  let u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  let u=getActiveUser();
   if(!u){
     openAuth("login");return;
   }
@@ -1911,7 +1967,7 @@ function openSellerPanel(){
     const saved=accounts.find(a=>a.id===u.id||a.email===u.email||a.pseudonym===u.pseudonym);
     if(saved&&saved.role==="seller"){
       u=saved;
-      localStorage.setItem("stringoland_test_user",JSON.stringify(u));
+      persistActiveUser(u);
     }
   }
   if(u.role!=="seller"){
@@ -1927,8 +1983,107 @@ function openSellerPanel(){
   window.scrollTo(0,0);
 }
 
+
+const SELLER_COMMISSION_RATE=0.24;
+function getSellerWalletKey(pseudonym){return "stringoland_wallet_"+encodeURIComponent(pseudonym)}
+function getSellerPayoutKey(pseudonym){return "stringoland_payout_"+encodeURIComponent(pseudonym)}
+function getSellerPayoutSettings(pseudonym){
+  return readLSJson(getSellerPayoutKey(pseudonym),{ownerName:"",bankName:"",accountNumber:""});
+}
+function saveSellerPayoutSettings(data){
+  const u=getActiveUser();if(!u||u.role!=="seller")return false;
+  const clean={
+    ownerName:String(data?.ownerName||"").trim().slice(0,120),
+    bankName:String(data?.bankName||"").trim().slice(0,100),
+    accountNumber:String(data?.accountNumber||"").replace(/\s+/g,"").slice(0,34)
+  };
+  return writeLSJson(getSellerPayoutKey(u.pseudonym),clean);
+}
+
+function calculateSellerNet(order){
+  const o=normalizeOrder(order);
+  const rate=Number.isFinite(Number(o.commissionRateAtOrder))?Number(o.commissionRateAtOrder):SELLER_COMMISSION_RATE;
+  const gross=Math.max(0,Number(o.total||0));
+  const commission=Math.round(gross*rate*100)/100;
+  return {gross,rate,commission,net:Math.round((gross-commission)*100)/100};
+}
+function getSellerWallet(pseudonym){
+  const orders=getLocalOrders().map(normalizeOrder).filter(o=>o.seller===pseudonym&&o.status==="completed");
+  const earnings=orders.map(calculateSellerNet);
+  const gross=Math.round(earnings.reduce((sum,x)=>sum+x.gross,0)*100)/100;
+  const commission=Math.round(earnings.reduce((sum,x)=>sum+x.commission,0)*100)/100;
+  const net=Math.round(earnings.reduce((sum,x)=>sum+x.net,0)*100)/100;
+  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.seller===pseudonym);
+  const paidOut=Math.round(payouts.filter(x=>x.status==="paid").reduce((sum,x)=>sum+Number(x.amount||0),0)*100)/100;
+  const pending=Math.round(payouts.filter(x=>x.status==="pending").reduce((sum,x)=>sum+Number(x.amount||0),0)*100)/100;
+  const available=Math.max(0,Math.round((net-paidOut-pending)*100)/100);
+  return {gross,commission,net,paidOut,pending,available,orders:payouts};
+}
+function formatPayoutAccount(account){
+  const a=String(account||"");if(!a)return "Nie ustawiono";
+  return a.length>8?a.slice(0,4)+" •••• •••• "+a.slice(-4):a;
+}
+
+
+function normalizeBankAccount(v){
+  return String(v||"").replace(/\s+/g,"").toUpperCase();
+}
+function isValidBankAccount(v){
+  const x=normalizeBankAccount(v);
+  if(/^PL\d{26}$/.test(x))return true;
+  if(/^\d{26}$/.test(x))return true;
+  return /^[A-Z]{2}\d{13,32}$/.test(x);
+}
+function isSellerPayoutReady(pseudonym){
+  const b=getSellerPayoutSettings(pseudonym);
+  return !!(b.ownerName&&b.bankName&&isValidBankAccount(b.accountNumber));
+}
+function openSellerWallet(){
+  const u=requireSeller();if(!u)return;
+  const w=getSellerWallet(u.pseudonym), bank=getSellerPayoutSettings(u.pseudonym);
+  let modal=document.getElementById("sellerWalletModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerWalletModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="seller-wallet-card">
+    <button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerWalletModal').classList.remove('show');syncModalScrollLock()">×</button>
+    <div class="eyebrow">Finanse</div><h2>Portfel</h2>
+    <div class="wallet-balance"><span>Do wypłaty</span><strong>${formatPLN(w.available)}</strong><small>Po odliczeniu prowizji 24%</small></div>
+    <div class="wallet-stats">
+      <div><span>Wartość zamówień</span><b>${formatPLN(w.gross)}</b></div>
+      <div><span>Prowizja Stringoland (24%)</span><b>− ${formatPLN(w.commission)}</b></div>
+      <div><span>Twój zarobek netto</span><b>${formatPLN(w.net)}</b></div>
+      <div><span>Wypłaty zakończone</span><b>${formatPLN(w.paidOut)}</b></div>
+      <div><span>Wypłaty oczekujące</span><b>${formatPLN(w.pending)}</b></div>
+    </div>
+    <div class="payout-account-card"><div><b>Dane do wypłaty</b><small>${escapeHtml(bank.ownerName||"Brak danych")} · ${escapeHtml(formatPayoutAccount(bank.accountNumber))}</small></div><button type="button" class="small-btn" onclick="openSellerProfileEditor()">Edytuj</button></div>
+    <div class="wallet-actions"><button type="button" class="primary" ${w.available<=0||!isSellerPayoutReady(u.pseudonym)?"disabled":""} onclick="requestSellerPayout()">Wypłać ${formatPLN(w.available)}</button><button type="button" class="secondary" onclick="openSellerPayoutHistory()">Historia wypłat</button></div>
+    <p class="wallet-note">W tej wersji wypłata jest zgłoszeniem demonstracyjnym. Nie wykonuje rzeczywistego przelewu bankowego.</p>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
+function requestSellerPayout(){
+  const u=requireSeller();if(!u)return;
+  const w=getSellerWallet(u.pseudonym),bank=getSellerPayoutSettings(u.pseudonym);
+  if(!isSellerPayoutReady(u.pseudonym)){alert("Najpierw uzupełnij poprawne dane do wypłaty.");openSellerProfileEditor();return}
+  if(!confirm("Zlecić wypłatę środków na zapisane konto bankowe?"))return;
+  if(w.available<=0){alert("Nie masz obecnie środków dostępnych do wypłaty.");return}
+  const payouts=readLSJson("stringoland_payout_requests",[]);
+  payouts.push({id:"payout_"+Date.now(),seller:u.pseudonym,amount:w.available,status:"pending",updatedAt:new Date().toISOString(),accountLast4:String(bank.accountNumber||"").slice(-4),ownerName:bank.ownerName,createdAt:new Date().toISOString()});
+  writeLSJson("stringoland_payout_requests",payouts);
+  addNotification(u.pseudonym,`Zlecenie wypłaty ${formatPLN(w.available)} zostało przyjęte do realizacji.`);
+  document.getElementById("sellerWalletModal")?.classList.remove("show");syncModalScrollLock();
+  alert("Zlecenie wypłaty zostało zapisane.");
+  renderSellerPanel();
+}
+function openSellerPayoutHistory(){
+  const u=requireSeller();if(!u)return;
+  const payouts=readLSJson("stringoland_payout_requests",[]).filter(x=>x.seller===u.pseudonym).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  let modal=document.getElementById("sellerPayoutHistoryModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerPayoutHistoryModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="seller-wallet-card"><button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerPayoutHistoryModal').classList.remove('show');syncModalScrollLock()">×</button><div class="eyebrow">Finanse</div><h2>Historia wypłat</h2>${payouts.length?payouts.map(x=>`<div class="payout-history-row"><b>${formatPLN(x.amount)}</b><span>${x.status==="paid"?"Wypłacona":"Oczekuje"}</span><small>${new Date(x.createdAt).toLocaleDateString("pl-PL")}</small></div>`).join(""):'<div class="empty-state"><p>Nie masz jeszcze zleconych wypłat.</p></div>'}</div>`;
+  modal.classList.add("show");syncModalScrollLock();
+}
 function renderSellerPanel(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   const box=document.getElementById("sellerPanelContent"); if(!box)return;
   const sellers=(typeof getPublicSellers==="function"?getPublicSellers():[]);
@@ -1944,18 +2099,21 @@ function renderSellerPanel(){
   const completed=orders.filter(o=>o.status==="completed").length;
   box.innerHTML=`
     <div class="subhead seller-panel-head"><div><div class="eyebrow">Konto sprzedającej</div><h1>Panel sprzedającej</h1><p>${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"}</p></div><button class="small-btn" onclick="logout()">Wyloguj się</button></div>
-    <div id="sellerKpiGrid" class="kpi-grid seller-kpis"></div><div class="kpi-grid seller-kpis"><div class="kpi"><span>Wszystkie zamówienia</span><strong>${orders.length}</strong></div><div class="kpi"><span>Nowe</span><strong>${pending}</strong></div><div class="kpi"><span>W realizacji</span><strong>${active}</strong></div><div class="kpi"><span>Zakończone</span><strong>${completed}</strong></div></div><div class="seller-dashboard-actions"><button class="primary" onclick="sellerCreateOfferDemo()">＋ Dodaj ofertę</button><button class="secondary" onclick="renderSellerOrders()">Zamówienia</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj profil</button></div><div class="seller-panel-grid">
+    <div class="kpi-grid seller-kpis"><div class="kpi"><span>Wszystkie zamówienia</span><strong>${orders.length}</strong></div><div class="kpi"><span>Nowe</span><strong>${pending}</strong></div><div class="kpi"><span>W realizacji</span><strong>${active}</strong></div><div class="kpi"><span>Zakończone</span><strong>${completed}</strong></div></div><div class="seller-dashboard-actions"><button class="primary" onclick="sellerCreateOfferDemo()">＋ Dodaj ofertę</button><button class="secondary" onclick="renderSellerOrders()">Zamówienia</button><button class="secondary" onclick="openOwnSellerProfile()">Podgląd profilu</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj profil</button><button class="secondary" onclick="openSellerWallet()">Portfel</button></div><div class="seller-profile-summary"><div class="seller-profile-avatar">${me.photo?`<img src="${escapeHtml(me.photo)}" alt="">`:'<span>+</span>'}</div><div class="seller-profile-summary-copy"><div class="eyebrow">Twój profil publiczny</div><h3>${escapeHtml(me.pseudonym)}</h3><p>${me.bio?escapeHtml(me.bio.slice(0,120)):"Dodaj opis profilu."}</p><small>${Array.isArray(me.photos)?me.photos.length:0}/8 zdjęć profilowych · ${offers.length} ofert</small></div><button class="secondary" onclick="openOwnSellerProfile()">Podgląd</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj</button></div>
+    <div class="seller-kpi-grid"><div><span>Nowe</span><b>${getLocalOrders().filter(o=>o.seller===u.pseudonym&&o.status==="pending_seller").length}</b></div><div><span>W realizacji</span><b>${getLocalOrders().filter(o=>o.seller===u.pseudonym&&["accepted","in_progress"].includes(o.status)).length}</b></div><div><span>Zakończone</span><b>${getLocalOrders().filter(o=>o.seller===u.pseudonym&&o.status==="completed").length}</b></div><div><span>Netto</span><b>${formatPLN(getSellerWallet(u.pseudonym).net)}</b></div></div>
+    <div class="seller-wallet-summary"><div><div class="eyebrow">Portfel</div><span>Środki do wypłaty</span><strong>${formatPLN(getSellerWallet(u.pseudonym).available)}</strong><small>po prowizji 24%</small></div><button class="primary" onclick="openSellerWallet()">Otwórz portfel</button></div>
+    <div class="seller-panel-grid">
       <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2><p class="info">${orders.length} zamówień · ${me.likes||0} polubień</p><button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button></div>
       <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2><p class="info">Aktywne i nieaktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button></div>
       <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2><p class="info">Zarządzaj zamówieniami kupujących.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button></div>
     </div>
     <div class="panel-card"><div class="eyebrow">Twoje oferty</div><h2>Oferty</h2>
-      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOfferEditor(${i})">Edytuj</button><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert. Dodaj pierwszą ofertę.</p>"}
+      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOfferEditor(${i})">Edytuj</button><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button><button class="small-btn danger" onclick="deleteSellerOffer(${i})">Usuń</button></div></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert. Dodaj pierwszą ofertę.</p>"}
     </div>`;
 }
 
 function openSellerVerification(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller"){openAuth("login");return}
   let modal=document.getElementById("sellerVerificationModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
@@ -1970,7 +2128,7 @@ function openSellerVerification(){
   modal.classList.add("show");syncModalScrollLock();
 }
 function submitSellerVerification(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u)return;
   const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(me){me.verificationStatus="pending";localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers))}
@@ -1980,7 +2138,7 @@ function submitSellerVerification(){
   renderSellerPanel();
 }
 function blockCurrentConversationUser(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   const target=document.getElementById("conversationTitle")?.textContent||"";
   if(!u||!target)return;
   const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
@@ -1990,13 +2148,103 @@ function blockCurrentConversationUser(){
   }
   alert("Użytkownik został zablokowany.");
 }
-function openSellerProfileEditor(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
-  const bio=prompt("Opis profilu:",me.bio||"");if(bio===null)return;
-  me.bio=bio;localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));renderSellerPanel();
+async function openSellerProfileEditor(){
+  const u=getActiveUser();
+  if(!u||u.role!=="seller"){openAuth("login");return}
+  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  if(!me)return;
+  const wallet=getSellerWallet(u.pseudonym);
+  const bank=getSellerPayoutSettings(u.pseudonym);
+  let modal=document.getElementById("sellerProfileEditorModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerProfileEditorModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const photos=Array.isArray(me.photos)?me.photos:[];
+  modal.innerHTML=`<div class="seller-profile-editor-card">
+    <button type="button" aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerProfileEditorModal').classList.remove('show');syncModalScrollLock()">×</button>
+    <div class="eyebrow">Twój profil</div><h2>Edytuj profil sprzedającej</h2>
+    <p class="info">Tak wygląda Twój profil dla kupujących. Pseudonim jest stałym identyfikatorem konta.</p>
+
+    <div class="profile-photo-editor">
+      <div class="profile-photo-main">${me.photo?`<img src="${escapeHtml(me.photo)}" alt="Zdjęcie profilowe">`:'<span>Brak zdjęcia</span>'}</div>
+      <div><b>Zdjęcia profilowe</b><p class="info">Dodaj jedno lub kilka zdjęć. Pierwsze zdjęcie jest główne.</p>
+      <input id="sellerProfilePhotosInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+      <div id="sellerProfilePhotoPreview" class="profile-photo-strip">${photos.map((src,i)=>`<div class="profile-photo-thumb"><img src="${escapeHtml(src)}" alt="Zdjęcie ${i+1}"><button type="button" onclick="removeSellerProfilePhoto(${i})">Usuń</button></div>`).join("")}</div></div>
+    </div>
+
+    <div class="profile-editor-grid">
+      <label>Pseudonim<input value="${escapeHtml(me.pseudonym||"")}" disabled></label>
+      <label>Wiek<input id="sellerProfileAge" type="number" min="18" max="99" value="${Number(me.age)||""}"></label>
+    </div>
+    <label>Opis profilu<textarea id="sellerProfileBio" maxlength="2000" placeholder="Napisz kilka słów o sobie...">${escapeHtml(me.bio||"")}</textarea></label>
+
+    <div class="payout-settings-box">
+      <div class="eyebrow">Dane do wypłat</div><h3>Gdzie mamy kierować wypłaty?</h3>
+      <p class="info">Dane są potrzebne przed zleceniem wypłaty. W tej wersji strony są przechowywane lokalnie w przeglądarce — przed uruchomieniem produkcyjnym trzeba podłączyć bezpieczny backend.</p>
+      <div class="profile-editor-grid">
+        <label>Imię i nazwisko / nazwa właściciela<input id="payoutOwnerName" autocomplete="name" value="${escapeHtml(bank.ownerName||"")}"></label>
+        <label>Nazwa banku<input id="payoutBankName" value="${escapeHtml(bank.bankName||"")}"></label>
+      </div>
+      <label>Numer rachunku / IBAN<input id="payoutAccountNumber" inputmode="numeric" autocomplete="off" value="${escapeHtml(bank.accountNumber||"")}" placeholder="PL..."></label>
+    </div>
+
+    <div class="seller-profile-editor-actions">
+      <button type="button" class="secondary" onclick="openOwnSellerProfile()">Podgląd mojego profilu</button>
+      <button type="button" class="primary" onclick="saveSellerProfileEditor()">Zapisz zmiany</button>
+    </div>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+  document.getElementById("sellerProfilePhotosInput").addEventListener("change",handleSellerProfilePhotoUpload);
 }
 
+async function handleSellerProfilePhotoUpload(e){
+  const files=[...e.target.files].slice(0,8);
+  const u=getActiveUser();if(!u||u.role!=="seller")return;
+  const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
+  me.photos=Array.isArray(me.photos)?me.photos:[];
+  for(const file of files){
+    if(file.size>3*1024*1024){alert("Jedno zdjęcie może mieć maksymalnie 3 MB.");continue}
+    const data=await readFileAsDataURL(file);
+    if(data&&!me.photos.includes(data))me.photos.push(data);
+  }
+  me.photos=me.photos.slice(0,8);
+  me.photo=me.photos[0]||"";
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zdjęć. Usuń część zdjęć lub zmniejsz ich rozmiar.");return}
+  openSellerProfileEditor();
+}
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file)});
+}
+function removeSellerProfilePhoto(index){
+  const u=getActiveUser();if(!u||u.role!=="seller")return;
+  const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
+  me.photos=Array.isArray(me.photos)?me.photos:[];
+  me.photos.splice(index,1);me.photo=me.photos[0]||"";
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać zmian profilu.");return}
+  openSellerProfileEditor();
+}
+function saveSellerProfileEditor(){
+  const u=getActiveUser();if(!u||u.role!=="seller")return;
+  const sellers=getPublicSellers(),me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
+  const age=Number(document.getElementById("sellerProfileAge")?.value||0);
+  const bio=(document.getElementById("sellerProfileBio")?.value||"").trim().slice(0,2000);
+  if(!age||age<18||age>99){alert("Sprzedająca musi mieć ustawiony prawidłowy wiek 18+.");return}
+  const payoutAccount=normalizeBankAccount(document.getElementById("payoutAccountNumber")?.value||"");
+  const payoutOwner=(document.getElementById("payoutOwnerName")?.value||"").trim();
+  const payoutBank=(document.getElementById("payoutBankName")?.value||"").trim();
+  if((payoutOwner||payoutBank||payoutAccount) && (!payoutOwner||!payoutBank||!isValidBankAccount(payoutAccount))){alert("Jeżeli uzupełniasz dane do wypłaty, wypełnij wszystkie pola i podaj prawidłowy rachunek.");return}
+  me.age=age;me.bio=bio;me.photos=Array.isArray(me.photos)?me.photos.slice(0,8):[];me.photo=me.photos[0]||"";
+  if(!safeWriteLocal(STRINGOLAND_PUBLIC_SELLERS_KEY,sellers)){alert("Nie udało się zapisać profilu.");return}
+  saveSellerPayoutSettings({
+    ownerName:(document.getElementById("payoutOwnerName")?.value||"").trim(),
+    bankName:(document.getElementById("payoutBankName")?.value||"").trim(),
+    accountNumber:payoutAccount
+  });
+  document.getElementById("sellerProfileEditorModal")?.classList.remove("show");syncModalScrollLock();renderSellerPanel();
+  alert("Profil został zapisany.");
+}
+function openOwnSellerProfile(){
+  const u=getActiveUser();if(!u||u.role!=="seller"){openAuth("login");return}
+  const me=getPublicSellers().find(x=>x.pseudonym===u.pseudonym);if(me)openPublicProfile(me);
+}
 
 
 function openOrderReview(orderId){
@@ -2013,38 +2261,67 @@ function submitOrderReview(orderId){
   const u=requireBuyer();if(!u)return;
   const rating=Number(document.getElementById("selectedReviewRating")?.value||0);if(!rating){alert("Wybierz ocenę.");return}
   const reviews=getReviews(),o=getLocalOrders().find(x=>x.id===orderId&&x.buyer===u.pseudonym);
-  if(!o||o.status!=="completed"||reviews.some(r=>r.orderId===orderId))return;
+  if(!o||o.status!=="completed"){alert("Ocena będzie dostępna po zakończeniu zamówienia.");return}
+  if(reviews.some(r=>r.orderId===orderId)){alert("To zamówienie zostało już ocenione.");return}
   const body=(document.getElementById("reviewBody")?.value||"").trim().slice(0,1200);
-  reviews.push({id:"review_"+Date.now(),orderId,seller:o.seller,rating,body,createdAt:new Date().toISOString()});
+  const review={id:"review_"+Date.now(),orderId,seller:o.seller,rating,body,createdAt:new Date().toISOString()};
+  const nextReviews=[...reviews,review];
+  if(!safeWriteLocal("stringoland_reviews",nextReviews)){alert("Nie udało się zapisać opinii.");return}
   o.reviewedAt=new Date().toISOString();
   const orders=getLocalOrders();const oi=orders.findIndex(x=>x.id===orderId);
   if(oi>=0)orders[oi]=o;
-  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
-  localStorage.setItem("stringoland_reviews",JSON.stringify(reviews));document.getElementById("orderReviewModal")?.classList.remove("show");addNotification(o.seller,"Kupujący wystawił opinię za zamówienie.",orderId);alert("Opinia została dodana.");
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Opinia została zapisana, ale nie udało się zaktualizować historii zamówienia.");return}
+  document.getElementById("orderReviewModal")?.classList.remove("show");syncModalScrollLock();addNotification(o.seller,"Kupujący wystawił opinię za zamówienie.",orderId);alert("Opinia została dodana.");
 }
 function acceptLocalOrder(id){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   const orders=getLocalOrders();
   const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
   if(!o||!canTransitionOrder(o.status,"accepted"))return;
   o.status="accepted";
   o.acceptedAt=new Date().toISOString();
-  o.startedAt=new Date().toISOString();
   o.deadline=new Date(Date.now()+7*86400000).toISOString();
-  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się zapisać akceptacji zamówienia.");return}
   addNotification(o.buyer,"Sprzedająca zaakceptowała zamówienie. Termin realizacji: 7 dni.",o.id);
   renderSellerOrders();
 }
 
 
+
+
+function renderOrderTimeline(order,container){
+  if(!container)return;
+  const events=getOrderTimeline(order);
+  const labels={created:"Utworzone",accepted:"Zaakceptowane",started:"W realizacji",delivered:"Materiały dostarczone",completed:"Zakończone",reviewed:"Opinia"};
+  container.innerHTML=events.length?`<div class="order-timeline">${events.map(e=>`<div class="timeline-event"><span class="timeline-dot"></span><div><b>${labels[e.key]||e.label}</b><small>${new Date(e.at).toLocaleString("pl-PL")}</small></div></div>`).join("")}</div>`:'<div class="empty-state"><p>Brak historii tego zamówienia.</p></div>';
+}
+
+
+function getSellerOrderStatusLabel(status){
+  return ({pending_seller:"Nowe",accepted:"Zaakceptowane",in_progress:"W realizacji",completed:"Zakończone",declined:"Odrzucone",expired:"Wygasłe"})[status]||"Nieznany status";
+}
+function getBuyerOrderStatusLabel(status){
+  return ({pending_seller:"Oczekuje na akceptację",accepted:"Zaakceptowane",in_progress:"W realizacji",completed:"Zakończone",declined:"Odrzucone",expired:"Wygasłe"})[status]||"Nieznany status";
+}
+function getOrderTimeline(order){
+  const o=normalizeOrder(order);
+  const events=[];
+  if(o.createdAt)events.push({key:"created",label:"Zamówienie utworzone",at:o.createdAt});
+  if(o.acceptedAt)events.push({key:"accepted",label:"Zamówienie zaakceptowane",at:o.acceptedAt});
+  if(o.startedAt)events.push({key:"started",label:"Realizacja rozpoczęta",at:o.startedAt});
+  if(o.mediaDeliveredAt)events.push({key:"delivered",label:"Materiały dostarczone",at:o.mediaDeliveredAt});
+  if(o.completedAt)events.push({key:"completed",label:"Zamówienie zakończone",at:o.completedAt});
+  if(o.reviewedAt)events.push({key:"reviewed",label:"Wystawiono opinię",at:o.reviewedAt});
+  return events.sort((a,b)=>new Date(a.at)-new Date(b.at));
+}
 function canTransitionOrder(from,to){
   const allowed={pending_seller:["accepted","declined"],accepted:["in_progress","completed"],in_progress:["completed"],completed:[],declined:[],expired:[]};
   return (allowed[from]||[]).includes(to);
 }
 function sellerAcceptOrder(id){acceptLocalOrder(id)}
 function sellerDeclineOrder(id){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   const orders=getLocalOrders();
   const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
@@ -2073,8 +2350,6 @@ async function sellerAttachOrderMedia(id){
       for(const file of files){
         await savePrivateMedia(file,o.buyer,o.id,file.type.startsWith("video/")?"video":"photo");
       }
-      o.status="completed";
-      o.completedAt=new Date().toISOString();
       o.mediaDeliveredAt=new Date().toISOString();
       o.mediaCount=(o.mediaCount||0)+files.length;
       localStorage.setItem("stringoland_orders",JSON.stringify(orders));
@@ -2087,12 +2362,22 @@ async function sellerAttachOrderMedia(id){
   };
   input.click();
 }
+
+function sellerStartOrder(id){
+  const u=getActiveUser();if(!u||u.role!=="seller")return;
+  const orders=getLocalOrders(),o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
+  if(!o||!canTransitionOrder(o.status,"in_progress"))return;
+  o.status="in_progress";o.startedAt=new Date().toISOString();
+  if(!safeWriteLocal("stringoland_orders",orders)){alert("Nie udało się rozpocząć realizacji.");return}
+  addNotification(o.buyer,"Sprzedająca rozpoczęła realizację zamówienia.",o.id);
+  renderSellerOrders();
+}
 function sellerCompleteOrder(id){
   const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   const orders=getLocalOrders();
   const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
-  if(!o||!["accepted","in_progress"].includes(o.status))return;
+  if(!o||o.status!=="in_progress")return;
   if(["video","photo","custom_photo"].includes(o.type)){
     // The seller media attachment action is the completion gate for digital orders.
     if(!o.mediaDeliveredAt){
@@ -2110,7 +2395,7 @@ function sellerSafeBuyerLabel(order){
   return escapeHtml(order?.buyer||"Kupujący");
 }
 function openSellerOrderDetails(id){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   const o=getLocalOrders().find(x=>x.id===id&&x.seller===u?.pseudonym);
   if(!o)return;
   let modal=document.getElementById("sellerOrderDetailsModal");
@@ -2126,13 +2411,16 @@ function openSellerOrderDetails(id){
       ${addons?`<div><span>Dodatki</span><b>${escapeHtml(addons)}</b></div>`:""}
       ${o.tip?`<div><span>Napiwek</span><b>${Number(o.tip).toFixed(2).replace(".",",")} zł</b></div>`:""}
       <div><span>Dostawa</span><b>${o.deliveryRequired?"InPost Paczkomat":"Brak — oferta cyfrowa/usługa"}</b></div>
+      <div><span>Materiały</span><b>${Number(o.mediaCount||0)}</b></div>
     </div>
+    <div class="eyebrow" style="margin-top:18px">Historia</div><div id="sellerOrderTimeline"></div>
     <p class="privacy-boundary">Dane kontaktowe kupującego nie są udostępniane sprzedającej. Kontakt odbywa się przez portal.</p>
   </div>`;
   modal.classList.add("show");syncModalScrollLock();
+  renderOrderTimeline(o,document.getElementById("sellerOrderTimeline"));
 }
 function openBuyerCredibilityForSeller(buyer){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   let modal=document.getElementById("sellerCredibilityModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerCredibilityModal";modal.className="modal-overlay";document.body.appendChild(modal)}
@@ -2145,12 +2433,12 @@ function openBuyerCredibilityForSeller(buyer){
   modal.classList.add("show");syncModalScrollLock();
 }
 function submitBuyerCredibility(buyer){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="seller")return;
   const score=Math.max(0,Math.min(100,Number(document.getElementById("buyerCredibilityInput")?.value||0)));
   const all=JSON.parse(localStorage.getItem("stringoland_buyer_reviews")||"[]");
   all.push({id:"cred_"+Date.now(),buyer,score,seller:u.pseudonym,createdAt:new Date().toISOString()});
-  localStorage.setItem("stringoland_buyer_reviews",JSON.stringify(all));
+  safeWriteLocal("stringoland_buyer_reviews",all);
   document.getElementById("sellerCredibilityModal")?.classList.remove("show");
   addNotification(buyer,"Sprzedająca wystawiła Ci ocenę wiarygodności.");
 }
@@ -2177,8 +2465,9 @@ function renderSellerOrders(){
     const deadline=o.deadline?new Date(o.deadline).toLocaleDateString("pl-PL"):"—";
     let actions="";
     if(o.status==="pending_seller") actions=`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button><button class="small-btn danger-btn" onclick="sellerDeclineOrder('${o.id}')">Odrzuć</button>`;
-    if(o.status==="accepted"||o.status==="in_progress") actions=`<button class="primary" onclick="sellerAttachOrderMedia('${o.id}')">Dodaj zdjęcie / wideo</button><button class="small-btn" onclick="sellerCompleteOrder('${o.id}')">Oznacz jako zrealizowane</button>`;
-    return `<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · Status: ${escapeHtml(o.status||"nowe")} · Termin: ${deadline}</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOrderDetails('${o.id}')">Szczegóły</button>${o.buyer?`<button class="small-btn" onclick="openBuyerCredibilityForSeller('${String(o.buyer).replace(/'/g,"\'")}')">Wiarygodność</button>`:""}${actions}</div></div>`;
+    if(o.status==="accepted") actions=`<button class="primary" onclick="sellerStartOrder('${o.id}')">Rozpocznij realizację</button>`;
+    if(o.status==="in_progress") actions=`<button class="primary" onclick="sellerAttachOrderMedia('${o.id}')">Dodaj zdjęcie / wideo</button><button class="small-btn" onclick="sellerCompleteOrder('${o.id}')">Oznacz jako zrealizowane</button>`;
+    return `<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · Status: ${escapeHtml(getSellerOrderStatusLabel(o.status))} · Termin: ${deadline}</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOrderDetails('${o.id}')">Szczegóły</button>${o.buyer?`<button class="small-btn" onclick="openBuyerCredibilityForSeller('${String(o.buyer).replace(/'/g,"\'")}')">Wiarygodność</button>`:""}${actions}</div></div>`;
   }).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
 }
 
@@ -2207,6 +2496,11 @@ function togglePassword(){
 
 
 
+
+function safeWriteLocal(key,value){
+  try{localStorage.setItem(key,JSON.stringify(value));return true}
+  catch(e){alert("Nie udało się zapisać danych lokalnie. Pamięć przeglądarki może być pełna.");return false}
+}
 function readLSJson(key,fallback){
   try{
     const raw=localStorage.getItem(key);
@@ -2219,27 +2513,39 @@ function writeLSJson(key,value){
   try{localStorage.setItem(key,JSON.stringify(value));return true}
   catch(e){console.error("Nie udało się zapisać danych:",key,e);return false}
 }
+const STRINGOLAND_SESSION_KEY="stringoland_session_user";
 function getActiveUser(){
   try{
-    const raw=localStorage.getItem("stringoland_test_user");
+    const raw=localStorage.getItem(STRINGOLAND_SESSION_KEY)||localStorage.getItem("stringoland_test_user");
     return raw?JSON.parse(raw):null;
   }catch(e){return null}
 }
 function persistActiveUser(user){
-  if(user)localStorage.setItem("stringoland_test_user",JSON.stringify(user));
-  else localStorage.removeItem("stringoland_test_user");
-  window.dispatchEvent(new CustomEvent("stringoland:auth",{detail:user||null}));
+  try{
+    if(user){
+      const raw=JSON.stringify(user);
+      localStorage.setItem(STRINGOLAND_SESSION_KEY,raw);
+      localStorage.setItem("stringoland_test_user",raw);
+      localStorage.setItem("stringoland_active_session","1");
+    }else{
+      localStorage.removeItem(STRINGOLAND_SESSION_KEY);
+      localStorage.removeItem("stringoland_test_user");
+      localStorage.removeItem("stringoland_active_session");
+    }
+    window.dispatchEvent(new CustomEvent("stringoland:auth",{detail:user||null}));
+  }catch(e){}
 }
 function requireBuyer(){
   const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return null} return u;
 }
 function requireSeller(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  if(!u||u.role!=="seller"){openAuth("login");return null} return u;
+  const u=getActiveUser();
+  if(!u||u.role!=="seller"){openAuth("login");return null}
+  return u;
 }
 function getBuyerAccount(){
-  try{return JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){return null}
+  try{return getActiveUser()}catch(e){return null}
 }
 function updateBuyerHeader(){
   const saved=getBuyerAccount();
@@ -2247,7 +2553,7 @@ function updateBuyerHeader(){
   if(name) name.textContent=saved?.pseudonym||"Twój pseudonim";
 }
 function openBuyerProfileMenuSafe(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u){openAuth("login");return}
   return openBuyerProfileMenu();
 }
@@ -2341,13 +2647,35 @@ function openBuyerOrders(){
       ${o.selectedDuration?`<p><span>Czas:</span> ${o.selectedDuration} ${o.selectedDuration===1?"dzień":"dni"}</p>`:""}
       <p><span>Kwota:</span> <b>${Number(o.total||0).toFixed(2).replace(".",",")} zł</b></p>
       </div>
-      <div class="buyer-order-side"><span class="status-badge">${statusLabels[o.status]||o.status}</span>
+      <div class="buyer-order-side"><span class="status-badge">${getBuyerOrderStatusLabel(o.status)}</span>
+      ${getOrderTimeline(o).length?`<small class="order-history-count">${getOrderTimeline(o).length} etapów historii</small>`:""}
       ${o.deadline&&["accepted","in_progress"].includes(o.status)?`<small>Termin: ${new Date(o.deadline).toLocaleDateString("pl-PL")}</small>`:""}
       ${canReview?`<button class="small-btn review-after-order" onclick="openOrderReview('${String(o.id).replace(/'/g,"\\'")}')">Oceń zamówienie</button>`:""}
       </div>
     </article>`;
   }).join(""):`<div class="empty-state"><h3>Nie masz jeszcze zamówień</h3><p>Po zakupie zamówienia pojawią się tutaj.</p></div>`;
   document.getElementById("buyerOrdersPage").classList.add("show");
+}
+
+function openBuyerOrderDetails(id){
+  const u=getActiveUser();if(!u||u.role!=="buyer")return;
+  const o=getLocalOrders().find(x=>x.id===id&&x.buyer===u.pseudonym);if(!o)return;
+  let modal=document.getElementById("buyerOrderDetailsModal");
+  if(!modal){modal=document.createElement("div");modal.id="buyerOrderDetailsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="seller-wallet-card"><button class="modal-close" aria-label="Zamknij" onclick="document.getElementById('buyerOrderDetailsModal').classList.remove('show');syncModalScrollLock()">×</button>
+    <div class="eyebrow">Moje zamówienie</div><h2>${escapeHtml(o.title||"Zamówienie")}</h2>
+    <div class="seller-order-detail-grid">
+      <div><span>Sprzedająca</span><b>${escapeHtml(o.seller||"—")}</b></div>
+      <div><span>Status</span><b>${escapeHtml(getBuyerOrderStatusLabel(o.status))}</b></div>
+      <div><span>Kwota</span><b>${formatPLN(o.total||0)}</b></div>
+      ${o.selectedDuration?`<div><span>Czas</span><b>${o.selectedDuration} dni</b></div>`:""}
+      <div><span>Materiały</span><b>${Number(o.mediaCount||0)}</b></div>
+    </div>
+    <div class="eyebrow" style="margin-top:18px">Historia</div>
+    <div id="buyerOrderTimeline"></div>
+  </div>`;
+  modal.classList.add("show");syncModalScrollLock();
+  renderOrderTimeline(o,document.getElementById("buyerOrderTimeline"));
 }
 function openBuyerDashboard(){
   const buyerUser=requireBuyer(); if(!buyerUser)return;
@@ -2368,6 +2696,15 @@ async function getBuyerCollectionItems(){
   return items.filter(m=>mediaBelongsToUser(m,u));
 }
 async 
+
+function downloadPrivateMedia(mediaId,owner,name){
+  getPrivateMedia(owner).then(items=>{
+    const m=items.find(x=>x.id===mediaId);if(!m)return;
+    const url=URL.createObjectURL(m.blob);
+    const a=document.createElement("a");a.href=url;a.download=name||m.name||"stringoland-media";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }).catch(()=>alert("Nie udało się pobrać materiału."));
+}
 async function removeCollectionMedia(mediaId){
   const u=getActiveUser();
   if(!u||u.role!=="buyer")return;
@@ -2389,7 +2726,7 @@ async function openBuyerCollection(){
   privateItems=privateItems.filter(m=>mediaBelongsToUser(m,u));
   const orderIds=new Set(orders.map(o=>o.id));
   const relevantMedia=privateItems.filter(m=>!m.orderId||orderIds.has(m.orderId));
-  const mediaHtml=relevantMedia.map(m=>`<div class="collection-item"><div class="collection-preview" id="collectionMedia_${escapeHtml(String(m.id))}"></div><div class="collection-meta"><strong>${escapeHtml(m.name||"Materiał")}</strong><small>${m.type==="video"?"Wideo":"Zdjęcie"}${m.orderId?" · zamówienie "+escapeHtml(m.orderId):""}</small><button class="collection-remove" onclick="removeCollectionMedia('${String(m.id).replace(/'/g,"\\'")}')">Usuń z kolekcji</button></div></div>`).join("");
+  const mediaHtml=relevantMedia.map(m=>`<div class="collection-item"><div class="collection-preview" id="collectionMedia_${escapeHtml(String(m.id))}"></div><div class="collection-meta"><strong>${escapeHtml(m.name||"Materiał")}</strong><small>${m.type==="video"?"Wideo":"Zdjęcie"}${m.orderId?" · zamówienie "+escapeHtml(m.orderId):""}</small><div class="collection-item-actions"><button class="collection-download" onclick="downloadPrivateMedia('${String(m.id).replace(/'/g,"\'")}','${String(u.pseudonym).replace(/'/g,"\'")}','${String(m.name||"materiał").replace(/'/g,"\'")}')">Pobierz</button><button class="collection-remove" onclick="removeCollectionMedia('${String(m.id).replace(/'/g,"\'")}')">Usuń z kolekcji</button></div></div></div>`).join("");
   const orderHtml=orders.filter(o=>!relevantMedia.some(m=>m.orderId===o.id)).map(o=>`<div class="collection-item"><div class="collection-meta"><strong>${escapeHtml(o.title||"Materiał")}</strong><small>${escapeHtml(o.seller||"Sprzedająca")} · zamówienie ${escapeHtml(o.id)}</small></div></div>`).join("");
   box.innerHTML=(mediaHtml||orderHtml)?`<div class="collection-gallery">${mediaHtml||orderHtml}</div>`:'<div class="empty-state"><h2>Twoja kolekcja</h2><p>Po zakupie i otrzymaniu zdjęć lub filmów będą pojawiały się tutaj.</p></div>';
   relevantMedia.forEach(m=>{
@@ -2423,6 +2760,15 @@ function updateConnectionState(){
 }
 window.addEventListener("online",updateConnectionState);
 window.addEventListener("offline",updateConnectionState);
+
+function closeModalById(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.remove("show");syncModalScrollLock();}
+}
+function showInlineState(container,message,type="empty"){
+  if(!container)return;
+  container.innerHTML=`<div class="inline-state ${type}"><span>${escapeHtml(message)}</span></div>`;
+}
 function syncModalScrollLock(){
   const open=[...document.querySelectorAll(".modal-overlay.show")].length>0;
   document.body.style.overflow=open?"hidden":"";
@@ -2440,13 +2786,13 @@ function closeBuyerSection(){
 }
 
 function getConversations(){
-  return JSON.parse(localStorage.getItem("stringoland_conversations")||"[]");
+  const v=readLSJson("stringoland_conversations",[]);return Array.isArray(v)?v:[];
 }
 function saveConversations(v){localStorage.setItem("stringoland_conversations",JSON.stringify(v))}
-function getMessages(){return JSON.parse(localStorage.getItem("stringoland_messages")||"[]")}
+function getMessages(){const v=readLSJson("stringoland_messages",[]);return Array.isArray(v)?v:[]}
 function saveMessages(v){localStorage.setItem("stringoland_messages",JSON.stringify(v))}
 function openConversationWithSeller(seller){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return}
   const conversations=getConversations();
   let c=conversations.find(x=>x.buyer===u.pseudonym&&x.seller===seller);
@@ -2454,7 +2800,7 @@ function openConversationWithSeller(seller){
   openConversation(c.id);
 }
 function openConversation(id){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   const c=getConversations().find(x=>x.id===id);
   if(!c||!u)return;
   window.currentConversationId=id;
@@ -2475,31 +2821,28 @@ function renderConversationMessages(c){
   list.scrollTop=list.scrollHeight;
 }
 function sendConversationMessage(){
-  const text=document.getElementById("conversationInput")?.value.trim()||"";
+  const input=document.getElementById("conversationInput")||document.getElementById("conversationInputLegacy");
+  const text=input?.value.trim()||"";
   const file=document.getElementById("conversationMedia")?.files?.[0]||null;
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const id=window.currentConversationId;
+  const u=getActiveUser(),id=window.currentConversationId;
   const c=getConversations().find(x=>x.id===id);
   if(!u||!c||(!text&&!file))return;
+  if(isUserBlocked(u.pseudonym,c.buyer===u.pseudonym?c.seller:c.buyer)){alert("Ta rozmowa jest zablokowana.");return}
+  if(text&&containsContactInfo(text)){alert("Dla bezpieczeństwa nie wysyłaj numeru telefonu ani adresu e-mail.");return}
   const messages=getMessages();
-  messages.push({id:"msg_"+Date.now(),conversationId:id,sender:u.pseudonym,text,mediaName:file?.name||null,mediaType:file?.type||null,createdAt:new Date().toISOString()});
+  messages.push({id:"msg_"+Date.now(),conversationId:id,sender:u.pseudonym,text:sanitizeChatText(text),mediaName:file?.name||null,mediaType:file?.type||null,createdAt:new Date().toISOString()});
   saveMessages(messages);
   c.updatedAt=new Date().toISOString();
   saveConversations(getConversations().map(x=>x.id===c.id?c:x));
-  document.getElementById("conversationInputLegacy").value="";
+  if(input)input.value="";
   if(document.getElementById("conversationMedia"))document.getElementById("conversationMedia").value="";
   renderConversationMessages(c);
 }
-
 function refreshOrderLifecycle(){
   const orders=getLocalOrders();
   let changed=false;
   const now=Date.now();
   orders.forEach(o=>{
-    if(o.status==="accepted"&&!o.startedAt){
-      o.status="in_progress";o.startedAt=new Date().toISOString();changed=true;
-      addNotification(o.buyer,"Sprzedająca zaakceptowała zamówienie: "+o.title,o.id);
-    }
     if(o.status==="in_progress"&&o.deadline&&now>new Date(o.deadline).getTime()){
       o.status="expired";o.expiredAt=new Date().toISOString();changed=true;
       addNotification(o.buyer,"Termin realizacji minął. Zamówienie zostało zakończone jako niewykonane.",o.id);
@@ -2541,7 +2884,7 @@ function sanitizeChatText(v){
   return String(v||"").replace(/[\u0000-\u001f\u007f]/g,"").trim().slice(0,2000);
 }
 function sendConversationMessageSafe(recipient,text){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||!recipient)return;
   if(isUserBlocked(u.pseudonym,recipient)){alert("Ta rozmowa jest zablokowana.");return}
   const clean=sanitizeChatText(text);
@@ -2553,7 +2896,7 @@ function sendConversationMessageSafe(recipient,text){
   return true;
 }
 function sendConversationMedia(recipient,file){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||!recipient||!file)return Promise.resolve(false);
   if(isUserBlocked(u.pseudonym,recipient)){alert("Ta rozmowa jest zablokowana.");return Promise.resolve(false)}
   if(!/^image\/|^video\//.test(file.type)){alert("Możesz wysłać tylko zdjęcie lub wideo.");return Promise.resolve(false)}
@@ -2566,7 +2909,7 @@ function sendConversationMedia(recipient,file){
   });
 }
 function blockChatUser(target){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||!target)return;
   const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
   if(!blocks.some(x=>x.owner===u.pseudonym&&x.target===target))blocks.push({owner:u.pseudonym,target,createdAt:new Date().toISOString()});
@@ -2581,7 +2924,7 @@ function reportUser(target,reason){
   reportChatUser(target,reason);
 }
 function reportChatUser(target,reason){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||!target)return;
   const reports=getReports();
   reports.push({id:"report_"+Date.now(),reporter:u.pseudonym,target,type:"chat",reason:sanitizeChatText(reason||"Nieodpowiednie zachowanie"),status:"new",createdAt:new Date().toISOString()});
@@ -2636,7 +2979,7 @@ function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&am
 async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
   const meta=user.user_metadata||{};
-  let saved=null; try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
+  let saved=null; try{saved=getActiveUser()}catch(e){}
   const role=saved?.role||"seller";
   if(role==="buyer"){
     actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
@@ -2718,7 +3061,7 @@ async function logout(){
 }
 try{
   const active=localStorage.getItem("stringoland_active_session")==="1";
-  const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const saved=getActiveUser();
   if(active&&saved) renderLocalSession(saved);
   tryApiSession().then(u=>{if(u){localStorage.setItem("stringoland_test_user",JSON.stringify(u));renderLocalSession(u)}}).catch(()=>{});
 }catch(e){console.warn("Session restore failed",e)}
@@ -2853,7 +3196,7 @@ function closeSideMenu(){
 }
 function updateSideMenu(){
   let saved=null;
-  try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
+  try{saved=getActiveUser()}catch(e){}
   const toggle=document.querySelector(".menu-toggle");
   const menu=document.getElementById("sideMenu");
   const overlay=document.getElementById("sideMenuOverlay");
@@ -2892,7 +3235,7 @@ function menuOffers(){closeSideMenu();alert("Moje oferty będą dostępne po prz
 function menuSales(){closeSideMenu();alert("Panel sprzedaży będzie dostępny po aktywacji konta sprzedającej.")}
 function menuProfile(){closeSideMenu();alert("Mój profil będzie dostępny po zalogowaniu.")}
 function menuSettings(){closeSideMenu();alert("Ustawienia będą dostępne po zalogowaniu.")}
-window.stringolandRole=(JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{}).role||"guest";
+window.stringolandRole=(getActiveUser()||{}).role||"guest";
 </script>
 
 
@@ -3128,7 +3471,7 @@ function seedDemoSeller(){
   const key=STRINGOLAND_PUBLIC_SELLERS_KEY;
   try{
     const existing=JSON.parse(localStorage.getItem(key)||"[]");
-    if(existing.length===2) return;
+    if(existing.length>0) return;
     const demo=[
       {
         pseudonym:"Luna",verified:true,active:true,age:27,likes:128,rating:4.5,
@@ -3189,7 +3532,7 @@ function renderDiscover(){
 function canManageSellerProfile(seller){
   try{
     const active=localStorage.getItem("stringoland_active_session")==="1";
-    const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+    const saved=getActiveUser();
     const role=(saved&&saved.role)||window.stringolandRole||"guest";
     const name=(saved&&saved.pseudonym)||"";
     return active && role==="seller" && !!name && name===seller.pseudonym;
@@ -3290,7 +3633,7 @@ let selectedAddons=[];
 function openAddOffer(){
   const m=document.getElementById("addOfferModal");
   if(!m)return;
-  const role=(JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{}).role||"guest";
+  const role=(getActiveUser()||{}).role||"guest";
   if(role!=="seller"){openAuth("login");return;}
   m.classList.add("show");
   updateOfferForm();
@@ -3325,7 +3668,7 @@ function publishOffer(){
     if(err)err.textContent="Przy ofercie cyfrowej dodaj gotowy materiał przed publikacją.";
     return;
   }
-  const user=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
+  const user=getActiveUser()||{};
   const sellerName=user.pseudonym||"Sprzedająca";
   const offer={title,description,price,sellerName,type,available:true};
   if(type==="underwear"){
@@ -3350,7 +3693,7 @@ function publishOffer(){
 }
 
 function placeLocalOrder(offer){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return}
   const days=document.getElementById("selectedDuration")?.value||null;
   const tip=Number(document.getElementById("tipAmount")?.value||0);
@@ -3385,10 +3728,10 @@ function calculateOfferTotal(offer){
   return {base,addonTotal,tip,delivery,total:base+addonTotal+tip+delivery};
 }
 function openOrderSummary(offer){
-  const t=calculateOfferTotal(offer);
+  const t=getCanonicalCheckoutSnapshot(offer);
   let modal=document.getElementById("orderSummaryModal");
   if(!modal){modal=document.createElement("div");modal.id="orderSummaryModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
+  const u=getActiveUser()||{};
   const physical=!!offer.deliveryRequired;
   modal.innerHTML=`<div class="summary-card">
     <button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('orderSummaryModal').classList.remove('show')">×</button>
@@ -3460,6 +3803,20 @@ async function savePrivateMedia(file,owner,orderId,type){
     tx.oncomplete=()=>resolve(id);tx.onerror=()=>reject(tx.error);
   });
 }
+
+async function deletePrivateMedia(mediaId,owner){
+  const db=await mediaDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(MEDIA_STORE,"readwrite"),store=tx.objectStore(MEDIA_STORE);
+    const req=store.get(mediaId);
+    req.onsuccess=()=>{
+      const item=req.result;
+      if(!item||item.owner!==owner){reject(new Error("Brak dostępu do materiału"));return}
+      store.delete(mediaId);
+    };
+    tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);
+  });
+}
 async function getPrivateMedia(owner){
   const db=await mediaDb();
   return new Promise((resolve,reject)=>{
@@ -3468,7 +3825,7 @@ async function getPrivateMedia(owner){
   });
 }
 async function openBuyerCollectionPrivate(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return}
   document.querySelectorAll(".page").forEach(el=>el.style.display="none");
   const page=document.getElementById("collection");if(page)page.style.display="block";
@@ -3484,16 +3841,18 @@ async function openBuyerCollectionPrivate(){
     else {el.innerHTML=`<img alt="" src="${url}">`}
   });
 }
-function getNotifications(){return JSON.parse(localStorage.getItem("stringoland_notifications")||"[]")}
-function addNotification(user, text, orderId=null){
-  const n=getNotifications();n.push({id:"ntf_"+Date.now()+Math.random(),user,text,orderId,read:false,createdAt:new Date().toISOString()});
-  localStorage.setItem("stringoland_notifications",JSON.stringify(n));
+function getNotifications(){const v=readLSJson("stringoland_notifications",[]);return Array.isArray(v)?v:[]}
+function addNotification(user,text,orderId=null){
+  const n=getNotifications();
+  const item={id:"ntf_"+Date.now()+Math.random(),user:String(user||""),recipient:String(user||""),
+    text:String(text||""),title:"Stringoland",body:String(text||""),orderId,read:false,createdAt:new Date().toISOString()};
+  n.push(item);
+  writeLSJson("stringoland_notifications",n);
 }
 function getUserNotifications(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  return getNotifications().filter(n=>n.user===u?.pseudonym).reverse();
+  const u=getActiveUser();if(!u)return [];
+  return getNotifications().filter(n=>(n.user||n.recipient)===u.pseudonym).sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
 }
-
 function openChatSafetyMenu(target){
   const action=prompt("Wpisz: Z = zablokuj, R = zgłoś");
   if(String(action||"").toUpperCase()==="Z")blockChatUser(target);
@@ -3502,18 +3861,23 @@ function openChatSafetyMenu(target){
 
 function markAllNotificationsRead(){
   const all=JSON.parse(localStorage.getItem("stringoland_notifications")||"[]");
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u)return;
-  all.forEach(n=>{if(n.recipient===u.pseudonym)n.read=true});
+  all.forEach(n=>{if((n.user||n.recipient)===u.pseudonym)n.read=true});
   localStorage.setItem("stringoland_notifications",JSON.stringify(all));
   renderNotifications();
 }
+
+function getUnreadNotificationCount(){
+  const u=getActiveUser();if(!u)return 0;
+  return getNotifications().filter(n=>(n.user||n.recipient)===u.pseudonym&&!n.read).length;
+}
 function renderNotifications(){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   const box=document.getElementById("notificationsContent")||document.getElementById("notificationsList");
   if(!box||!u)return;
   const list=JSON.parse(localStorage.getItem("stringoland_notifications")||"[]")
-    .filter(n=>n.recipient===u.pseudonym)
+    .filter(n=>(n.user||n.recipient)===u.pseudonym)
     .sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   box.innerHTML=list.length?list.map(n=>`
     <article class="notification-item ${n.read?"read":""}">
@@ -3532,7 +3896,8 @@ function openNotifications(){
   if(!modal){modal=document.createElement("div");modal.id="notificationsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   modal.innerHTML=`<div class="notifications-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('notificationsModal').classList.remove('show')">×</button><div class="eyebrow">Powiadomienia</div><h2>Centrum powiadomień</h2>${items.length?items.map(n=>`<div class="notification-item"><b>${escapeHtml(n.text)}</b><small>${new Date(n.createdAt).toLocaleString("pl-PL")}</small></div>`).join(""):"<p class='info'>Brak nowych powiadomień.</p>"}</div>`;
   modal.classList.add("show");syncModalScrollLock();
-  const all=getNotifications().map(n=>n.user===JSON.parse(localStorage.getItem("stringoland_test_user")||"{}").pseudonym?{...n,read:true}:n);
+  const u=getActiveUser();
+  const all=getNotifications().map(n=>(n.user||n.recipient)===u?.pseudonym?{...n,read:true}:n);
   localStorage.setItem("stringoland_notifications",JSON.stringify(all));
 }
 
@@ -3545,14 +3910,29 @@ function markDemoPaymentPaid(order){
   order.paymentMethod=order.paymentMethod||"blik";
   order.paidAt=new Date().toISOString();
 }
+
+function getCanonicalCheckoutSnapshot(offer){
+  const t=calculateOfferTotal(offer);
+  const selectedDuration=document.querySelector('input[name="checkoutDuration"]:checked')?.value||offer.selectedDuration||null;
+  const selectedAddons=[...document.querySelectorAll('#buyerOfferConfigurator input[type="checkbox"][data-price]:checked')].map(x=>({key:x.value,price:Number(x.dataset.price||0)}));
+  return {
+    base:Number(t.base||0),
+    delivery:Number(t.delivery||0),
+    tip:Number(t.tip||0),
+    total:Number(t.total||0),
+    selectedDuration:selectedDuration?Number(selectedDuration):null,
+    selectedAddons,
+    calculatedAt:new Date().toISOString()
+  };
+}
 function finalizeDemoOrder(offer){
   const selectedPayment=document.querySelector('input[name="paymentMethod"]:checked')?.value||"blik";
   if(!offer||!offer.title){alert("Nie można utworzyć zamówienia.");return}
   if(window.__stringolandOrderSubmitting){return}
   window.__stringolandOrderSubmitting=true;
   const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"blik";
-  const t=calculateOfferTotal(offer);
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const t=getCanonicalCheckoutSnapshot(offer)
+  const u=getActiveUser();
   if(!u||u.role!=="buyer"){window.__stringolandOrderSubmitting=false;openAuth("login");return}
 
   const physical=!!offer.deliveryRequired;
@@ -3570,6 +3950,9 @@ function finalizeDemoOrder(offer){
     deliveryData={firstName:first,lastName:last,phone,locker};
   }
 
+  if(offer.type==="underwear" && !t.selectedDuration){
+    window.__stringolandOrderSubmitting=false;alert("Wybierz czas noszenia.");return;
+  }
   if(!Number.isFinite(t.total)||t.total<=0){window.__stringolandOrderSubmitting=false;alert("Nieprawidłowa kwota zamówienia.");return}
   const orders=getLocalOrders();
   const duplicate=orders.find(o=>o.buyer===u.pseudonym&&o.seller===(offer.seller||offer.sellerName||"Sprzedająca")&&o.title===offer.title&&o.status==="pending_seller"&&Date.now()-new Date(o.createdAt||0).getTime()<15000);
@@ -3582,13 +3965,13 @@ function finalizeDemoOrder(offer){
     title:offer.title,
     type:offer.type,
     price:t.base,
-    selectedDuration:offer.selectedDuration||null,
-    addons:offer.selectedAddons||[],
+    selectedDuration:t.selectedDuration||offer.selectedDuration||null,
+    addons:t.selectedAddons||offer.selectedAddons||[],
     tip:t.tip,
     delivery:t.delivery,
     total:t.total,
     paymentMethod:method,
-    paymentStatus:"demo_confirmed",
+    paymentStatus:"demo_confirmed",paymentIsReal:false,commissionRateAtOrder:0.24,
     status:"pending_seller",
     deliveryRequired:physical,
     deliveryData,
@@ -3630,7 +4013,7 @@ function buildBuyerOfferConfigurator(offer){
 }
 
 function toggleOfferFavorite(offerId){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u||u.role!=="buyer"){openAuth("login");return}
   const key="stringoland_favorites_"+u.pseudonym;
   const list=JSON.parse(localStorage.getItem(key)||"[]");
@@ -3640,7 +4023,7 @@ function toggleOfferFavorite(offerId){
   return list.includes(offerId);
 }
 function isOfferFavorite(offerId){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u)return false;
   return JSON.parse(localStorage.getItem("stringoland_favorites_"+u.pseudonym)||"[]").includes(offerId);
 }
@@ -3727,7 +4110,7 @@ function updateTypedCheckoutTotal(offer){
 }
 function closeTypedCheckout(){document.getElementById("typedCheckoutModal")?.classList.remove("show")}
 function confirmTypedOrder(offer){
-  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const u=getActiveUser();
   if(!u)return;
   const duration=Number(document.getElementById("checkoutDuration")?.value||offer.selectedDuration||0)||null;
   const tip=Number(document.getElementById("checkoutTip")?.value||0);
@@ -3775,6 +4158,7 @@ function openOfferDetail(offer){
       :"Po złożeniu zamówienia sprzedająca otrzyma powiadomienie i będzie musiała je zaakceptować. Po akceptacji rozpocznie się czas realizacji.";
   }
 
+  const gallery=document.getElementById("offerDetailGallery");if(gallery){gallery.innerHTML="";(Array.isArray(offer.media)?offer.media:[]).forEach((m,i)=>{if(m.type!=="photo"||!m.src)return;const b=document.createElement("button");b.type="button";b.className="offer-detail-thumb"+(m.src===offer.image?" active":"");b.style.backgroundImage=`url("${m.src}")`;b.onclick=()=>{image.style.backgroundImage=`url("${m.src}")`;gallery.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active")};gallery.appendChild(b)})}
   const image=document.getElementById("offerDetailImage");
   if(offer.image && /^data:image\//.test(offer.image)){
     image.style.backgroundImage='url("'+offer.image+'")';
@@ -3872,7 +4256,7 @@ function updateCheckoutSummary(){
 function getLoggedInBuyerEmail(){
   try{
     const active=localStorage.getItem("stringoland_active_session")==="1";
-    const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+    const saved=getActiveUser();
     return active && saved && saved.role==="buyer" ? (saved.email||"") : "";
   }catch(e){return "";}
 }
@@ -3972,7 +4356,7 @@ function openPrivacyCenter(){
 }
 function exportMyDemoData(){
   const u=getActiveUser();if(!u)return;
-  const payload={account:u,orders:getLocalOrders().filter(o=>o.buyer===u.pseudonym||o.seller===u.pseudonym),messages:getMessages().filter(m=>m.sender===u.pseudonym||m.recipient===u.pseudonym),notifications:JSON.parse(localStorage.getItem("stringoland_notifications")||"[]").filter(n=>n.recipient===u.pseudonym)};
+  const payload={account:u,orders:getLocalOrders().filter(o=>o.buyer===u.pseudonym||o.seller===u.pseudonym),messages:getMessages().filter(m=>m.sender===u.pseudonym||m.recipient===u.pseudonym),notifications:JSON.parse(localStorage.getItem("stringoland_notifications")||"[]").filter(n=>(n.user||n.recipient)===u.pseudonym)};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="stringoland-moje-dane.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
@@ -3992,6 +4376,29 @@ function resolveReport(id){
   const u=getActiveUser();if(!u||!["seller","admin"].includes(u.role))return;
   const reports=getReports();const r=reports.find(x=>x.id===id);if(!r)return;
   r.status="resolved";r.resolvedAt=new Date().toISOString();saveReports(reports);openModerationQueue();
+}
+
+
+function getAppHealth(){
+  const required=["getActiveUser","getPublicSellerOffers","openSellerProfileEditor","openSellerOfferEditor","openSellerWallet","getLocalOrders","openBuyerCollection","sendConversationMessage","addNotification"];
+  return {ok:required.every(n=>typeof window[n]==="function"||typeof eval("typeof "+n)!=="undefined"),missing:required.filter(n=>typeof window[n]!=="function"&&typeof eval("typeof "+n)==="undefined"),storage:typeof localStorage!=="undefined",indexedDB:typeof indexedDB!=="undefined"};
+}
+function runFinalLaunchAudit(){
+  const u=getActiveUser();
+  const checks=[
+    ["HTML ID",(()=>{const a=[...document.querySelectorAll("[id]")].map(x=>x.id);return a.length===new Set(a).size})()],
+    ["Sesja",typeof getActiveUser==="function"],
+    ["Oferty",typeof getPublicSellerOffers==="function"],
+    ["Profil sprzedającej",typeof openSellerProfileEditor==="function"],
+    ["Galeria ofert",typeof openSellerOfferEditor==="function"],
+    ["Portfel",typeof openSellerWallet==="function"],
+    ["Wypłaty",typeof requestSellerPayout==="function"],
+    ["Zamówienia",typeof getLocalOrders==="function"],
+    ["Kolekcja",typeof openBuyerCollection==="function"],
+    ["Czat",typeof openConversations==="function"],
+    ["Powiadomienia",typeof getUserNotifications==="function"]
+  ];
+  return {user:u?.pseudonym||null,passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
 function openLaunchChecklist(){
   let modal=document.getElementById("launchChecklistModal");
