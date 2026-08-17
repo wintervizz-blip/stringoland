@@ -1168,15 +1168,37 @@ async function submitAuth(){
       }
       const result=await supabaseClient.auth.signInWithPassword({email,password});
       if(result.error){msg.textContent=result.error.message;return}
-      closeAuth();renderSession(result.data.session?.user);
+      const loggedUser=result.data.session?.user;
+      if(loggedUser){
+        const loggedMeta=loggedUser.user_metadata||{};
+        localStorage.setItem("stringoland_test_user",JSON.stringify({
+          pseudonym:loggedMeta.display_name||"",
+          email:loggedUser.email||"",
+          role:loggedMeta.role||accountRole||"buyer",
+          password:""
+        }));
+        localStorage.setItem("stringoland_active_session","1");
+      }
+      closeAuth();renderSession(loggedUser);
+      if(typeof syncAccountMenu==="function") syncAccountMenu();
       return;
     }
 
     const result=await supabaseClient.auth.signUp({email,password,options:{data:{role:accountRole,display_name},emailRedirectTo:window.location.origin}});
     if(result.error){msg.textContent=result.error.message;return}
+    const createdUser=result.data.session?.user||result.data.user;
+    if(createdUser){
+      localStorage.setItem("stringoland_test_user",JSON.stringify({
+        pseudonym:display_name,
+        email:createdUser.email||email,
+        role:accountRole,
+        password:""
+      }));
+    }
     localStorage.setItem("stringoland_active_session","1");
     closeAuth();
-    renderSession(result.data.session?.user);
+    renderSession(createdUser);
+    if(typeof syncAccountMenu==="function") syncAccountMenu();
   }catch(err){
     msg.textContent="Nie udało się połączyć z serwerem. Sprawdź internet i spróbuj ponownie.";
     console.error(err);
@@ -1284,7 +1306,15 @@ async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
   const meta=user.user_metadata||{};
   let saved=null; try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
-  const role=saved?.role||"seller";
+  const role=meta.role||saved?.role||"seller";
+  if(user.email || meta.display_name || meta.role){
+    localStorage.setItem("stringoland_test_user",JSON.stringify({
+      pseudonym:meta.display_name||saved?.pseudonym||"",
+      email:user.email||saved?.email||"",
+      role,
+      password:saved?.password||""
+    }));
+  }
   if(role==="buyer"){
     actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
   }else{
@@ -1313,7 +1343,13 @@ async function saveProfile(){
   fillProfile(data.user);
 }
 async function logout(){localStorage.removeItem("stringoland_active_session");await supabaseClient.auth.signOut();location.reload()}
-supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
+supabaseClient.auth.getSession().then(({data})=>{
+  if(data.session){
+    localStorage.setItem("stringoland_active_session","1");
+    renderSession(data.session.user);
+    if(typeof syncAccountMenu==="function") syncAccountMenu();
+  }
+})
 </script>
 
 
@@ -1591,8 +1627,12 @@ window.addEventListener("storage",refreshAccountMenuAfterAuth);
         syncAccountMenu();
       });
       supabaseClient.auth.onAuthStateChange(function(event,session){
-        if(session) localStorage.setItem("stringoland_active_session","1");
-        else localStorage.removeItem("stringoland_active_session");
+        if(session){
+          localStorage.setItem("stringoland_active_session","1");
+          if(typeof renderSession==="function") renderSession(session.user);
+        }else{
+          localStorage.removeItem("stringoland_active_session");
+        }
         syncAccountMenu();
       });
     }
