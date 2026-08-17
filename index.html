@@ -904,8 +904,41 @@ h1,h2,h3,.hero h1,.section-title,.subhead h1,.profile-info h1,
 .admin-status{font-size:8px;color:#a31f3a}.admin-stat-grid h2{margin:5px 0 0;font-family:Georgia,serif}
 @media(max-width:800px){.admin-stat-grid{grid-template-columns:1fr 1fr}}
 </style>
+
+<script>
+const STRINGOLAND_API_BASE = window.STRINGOLAND_API_BASE || "";
+async function apiRequest(path, options={}){
+  const headers={"Content-Type":"application/json",...(options.headers||{})};
+  const token=localStorage.getItem("stringoland_api_token");
+  if(token)headers.Authorization="Bearer "+token;
+  const res=await fetch(STRINGOLAND_API_BASE+path,{...options,headers});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||"API_ERROR");
+  return data;
+}
+async function tryApiSession(){
+  if(!STRINGOLAND_API_BASE)return null;
+  const token=localStorage.getItem("stringoland_api_token");
+  if(!token)return null;
+  try{return await apiRequest("/api/me")}catch(e){localStorage.removeItem("stringoland_api_token");return null}
+}
+</script>
+
+<style>
+#sellerPanel{min-height:70vh}
+#sellerPanel .content-wrap{max-width:1100px;margin:0 auto;padding:24px}
+.seller-panel-head{display:flex;justify-content:space-between;align-items:center}
+.seller-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.seller-admin-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid #e9e2dd}
+.seller-admin-row small{display:block;color:#8b817b;font-size:9px;margin-top:4px}
+@media(max-width:800px){.seller-panel-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
+<div id="sellerPanel" class="page" style="display:none">
+  <div id="sellerPanelContent" class="content-wrap"></div>
+</div>
+
 <div id="adminPanel" class="page" style="display:none">
   <div class="subhead"><button class="small-btn" onclick="go('home')">← Strona główna</button><div><div class="eyebrow">Administracja</div><h1>Panel administracyjny</h1></div></div>
   <div id="adminPanelContent" class="content-wrap"></div>
@@ -1300,159 +1333,99 @@ async function resendEmailCode(){
   document.getElementById("msg").textContent=error?error.message:"Wysłaliśmy nowy kod weryfikacyjny.";
 }
 
+
 async function submitAuth(){
-  const emailEl=document.getElementById("email");
-  const passwordEl=document.getElementById("password");
-  const nameEl=document.getElementById("profileNameInput");
-  const ageEl=document.getElementById("ageConsent");
-  const msg=document.getElementById("msg");
-  const button=document.getElementById("authSubmit");
-  const identifier=emailEl?.value.trim()||"";
-  const password=passwordEl?.value||"";
-  const display_name=nameEl?.value.trim()||"";
+  const emailEl=document.getElementById("email"), passwordEl=document.getElementById("password");
+  const nameEl=document.getElementById("profileNameInput"), ageEl=document.getElementById("ageConsent");
+  const msg=document.getElementById("msg"), button=document.getElementById("authSubmit");
+  const identifier=emailEl?.value.trim()||"", password=passwordEl?.value||"", pseudonym=nameEl?.value.trim()||"";
   msg.textContent="";
-
   if(mode==="signup"){
-    if(!display_name){msg.textContent="Wpisz pseudonim.";return}
-    if(!identifier||!identifier.includes("@")){msg.textContent="Wpisz prawidłowy adres e-mail.";return}
+    if(!pseudonym){msg.textContent="Wpisz pseudonim.";return}
+    if(!identifier||!identifier.includes("@")){msg.textContent="Wpisz prawidłowy e-mail.";return}
     if(password.length<12){msg.textContent="Hasło musi mieć co najmniej 12 znaków.";return}
-    if(!ageEl?.checked){msg.textContent="Potwierdź, że masz ukończone 18 lat i akceptujesz Regulamin.";return}
-  }else if(!identifier||!password){
-    msg.textContent="Podaj e-mail lub pseudonim oraz hasło.";return
-  }
-
-  button.disabled=true;
-  button.style.opacity=".65";
-  button.textContent="Chwila…";
-
+    if(!ageEl?.checked){msg.textContent="Potwierdź ukończenie 18 lat i akceptację Regulaminu.";return}
+  }else if(!identifier||!password){msg.textContent="Podaj e-mail/pseudonim i hasło.";return}
+  button.disabled=true;button.textContent="Chwila…";
   try{
-    const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
-
-    if(mode==="signup"){
-      if(accounts.some(a=>a.email.toLowerCase()===identifier.toLowerCase())){
-        msg.textContent="Konto z tym adresem e-mail już istnieje.";
-        return;
-      }
-      if(accounts.some(a=>a.pseudonym.toLowerCase()===display_name.toLowerCase())){
-        msg.textContent="Ten pseudonim jest już zajęty.";
-        return;
-      }
-
-      const account={
-        id:"u_"+Date.now(),
-        email:identifier.toLowerCase(),
-        password,
-        pseudonym:display_name,
-        role:accountRole,
-        verifiedEmail:false,
-        verifiedSeller:accountRole==="buyer",
-        createdAt:new Date().toISOString()
-      };
-      accounts.push(account);
-      localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
-      localStorage.setItem("stringoland_test_user",JSON.stringify(account));
+    if(STRINGOLAND_API_BASE){
+      const data=mode==="signup"
+        ?await apiRequest("/api/auth/register",{method:"POST",body:JSON.stringify({email:identifier,password,pseudonym,role:accountRole})})
+        :await apiRequest("/api/auth/login",{method:"POST",body:JSON.stringify({email:identifier,password})});
+      localStorage.setItem("stringoland_api_token",data.token);
+      localStorage.setItem("stringoland_test_user",JSON.stringify(data.user));
       localStorage.setItem("stringoland_active_session","1");
-
-      // In this local prototype email verification is represented by a demo code.
-      // Production will replace this with a real email provider.
-      pendingVerificationEmail=account.email;
-      localStorage.setItem("stringoland_pending_verification",account.email);
-      document.getElementById("msg").textContent="Konto utworzone. W wersji demonstracyjnej kod weryfikacyjny to 123456.";
-      showEmailVerification(account.email);
+      currentUser=data.user;closeAuth();renderLocalSession(data.user);updateSideMenu?.();
       return;
     }
-
-    const account=accounts.find(a=>
-      a.email.toLowerCase()===identifier.toLowerCase() ||
-      a.pseudonym.toLowerCase()===identifier.toLowerCase()
-    );
-    if(!account || account.password!==password){
-      msg.textContent="Nieprawidłowy e-mail/pseudonim lub hasło.";
-      return;
+    const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+    if(mode==="signup"){
+      if(accounts.some(a=>a.email.toLowerCase()===identifier.toLowerCase())){msg.textContent="E-mail jest już zajęty.";return}
+      if(accounts.some(a=>a.pseudonym.toLowerCase()===pseudonym.toLowerCase())){msg.textContent="Ten pseudonim jest już zajęty.";return}
+      const account={id:"u_"+Date.now(),email:identifier.toLowerCase(),password,pseudonym,role:accountRole,verifiedEmail:false,verifiedSeller:accountRole==="buyer",createdAt:new Date().toISOString()};
+      accounts.push(account);localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+      localStorage.setItem("stringoland_test_user",JSON.stringify(account));localStorage.setItem("stringoland_active_session","1");
+      pendingVerificationEmail=account.email;localStorage.setItem("stringoland_pending_verification",account.email);
+      showEmailVerification(account.email);return;
     }
-
-    localStorage.setItem("stringoland_test_user",JSON.stringify(account));
-    localStorage.setItem("stringoland_active_session","1");
-    currentUser=account;
-    closeAuth();
-    renderLocalSession(account);
-    updateSideMenu?.();
-  }catch(err){
-    console.error(err);
-    msg.textContent="Nie udało się utworzyć lub otworzyć konta.";
-  }finally{
-    button.disabled=false;
-    button.style.opacity="";
-    button.textContent=mode==="signup"
-      ?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto")
-      :"Zaloguj się";
-  }
+    const account=accounts.find(a=>a.email.toLowerCase()===identifier.toLowerCase()||a.pseudonym.toLowerCase()===identifier.toLowerCase());
+    if(!account||account.password!==password){msg.textContent="Nieprawidłowe dane logowania.";return}
+    localStorage.setItem("stringoland_test_user",JSON.stringify(account));localStorage.setItem("stringoland_active_session","1");
+    currentUser=account;closeAuth();renderLocalSession(account);updateSideMenu?.();
+  }catch(err){console.error(err);msg.textContent="Nie udało się wykonać operacji."}
+  finally{button.disabled=false;button.textContent=mode==="signup"?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto"):"Zaloguj się"}
 }
-
 
 function openSellerPanel(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller"){openAuth("login");return}
-  go("sellerPanel");
+  document.querySelectorAll(".page").forEach(el=>el.style.display="none");
+  const panel=document.getElementById("sellerPanel");
+  if(panel) panel.style.display="block";
   renderSellerPanel();
 }
 function renderSellerPanel(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const box=document.getElementById("sellerPanelContent");
-  if(!box)return;
+  if(!u||u.role!=="seller")return;
+  const box=document.getElementById("sellerPanelContent"); if(!box)return;
   const sellers=getPublicSellers();
-  const me=sellers.find(x=>x.pseudonym===u.pseudonym)||{pseudonym:u.pseudonym,offers:[],orders:[],rating:null,likes:0,verified:false};
-  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]").filter(o=>o.seller===u.pseudonym);
+  let me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  if(!me){
+    me={pseudonym:u.pseudonym,verified:false,active:true,likes:0,rating:null,lastActive:"Aktywna teraz",bio:"",offers:[],reviews:[]};
+    sellers.push(me);localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  }
+  const orders=getLocalOrders().filter(o=>o.seller===u.pseudonym);
   const offers=Array.isArray(me.offers)?me.offers:[];
   box.innerHTML=`
+    <div class="subhead seller-panel-head"><div><div class="eyebrow">Konto sprzedającej</div><h1>Panel sprzedającej</h1><p>${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"}</p></div><button class="small-btn" onclick="logout()">Wyloguj się</button></div>
     <div class="seller-panel-grid">
-      <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2>
-        <p class="info">${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"} · ${orders.length} zamówień · ${me.likes||0} polubień</p>
-        <button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button>
-      </div>
-      <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2>
-        <p class="info">Twoje aktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button>
-      </div>
-      <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2>
-        <p class="info">Nowe zamówienia wymagające obsługi.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button>
-      </div>
+      <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2><p class="info">${orders.length} zamówień · ${me.likes||0} polubień</p><button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button></div>
+      <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2><p class="info">Aktywne i nieaktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button></div>
+      <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2><p class="info">Zarządzaj zamówieniami kupujących.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button></div>
     </div>
-    <div class="panel-card seller-panel-offers"><div class="eyebrow">Twoje oferty</div>
-      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert.</p>"}
+    <div class="panel-card"><div class="eyebrow">Twoje oferty</div><h2>Oferty</h2>
+      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert. Dodaj pierwszą ofertę.</p>"}
     </div>`;
 }
 function openSellerProfileEditor(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const sellers=getPublicSellers(); const me=sellers.find(x=>x.pseudonym===u.pseudonym);
-  const bio=prompt("Opis profilu:",me?.bio||"");
-  if(bio===null)return;
-  if(me){me.bio=bio;localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));}
-  renderSellerPanel();
+  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
+  const bio=prompt("Opis profilu:",me.bio||"");if(bio===null)return;
+  me.bio=bio;localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));renderSellerPanel();
 }
 function toggleSellerOffer(i){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const sellers=getPublicSellers(); const me=sellers.find(x=>x.pseudonym===u.pseudonym);
-  if(!me||!me.offers?.[i])return;
+  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me?.offers?.[i])return;
   me.offers[i].available=me.offers[i].available===false;
-  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
-  renderSellerPanel();
+  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));renderSellerPanel();
 }
 function renderSellerOrders(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
-  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]").filter(o=>o.seller===u?.pseudonym);
-  const box=document.getElementById("sellerPanelContent"); if(!box)return;
-  box.innerHTML=`<div class="panel-card"><button class="small-btn" onclick="renderSellerPanel()">← Panel</button><h2>Zamówienia</h2>
-  ${orders.length?orders.map(o=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · ${escapeHtml(o.status||"nowe")}</small></div>
-  ${o.status==="pending_seller"?`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button>`:""}</div>`).join(""):"<p class=\"info\">Brak zamówień.</p>"}</div>`;
+  const orders=getLocalOrders().filter(o=>o.seller===u?.pseudonym);
+  const box=document.getElementById("sellerPanelContent");if(!box)return;
+  box.innerHTML=`<div class="subhead"><button class="small-btn" onclick="renderSellerPanel()">← Panel</button><div><div class="eyebrow">Sprzedaż</div><h1>Zamówienia</h1></div></div><div class="panel-card">
+  ${orders.length?orders.map(o=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · ${escapeHtml(o.status||"nowe")}</small></div>${o.status==="pending_seller"?`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button>`:""}</div>`).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
 }
-function acceptLocalOrder(id){
-  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
-  const o=orders.find(x=>x.id===id); if(!o)return;
-  o.status="accepted";o.acceptedAt=new Date().toISOString();o.deadline=new Date(Date.now()+7*86400000).toISOString();
-  localStorage.setItem("stringoland_orders",JSON.stringify(orders));renderSellerOrders();
-}
-function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
-
 function renderLocalSession(account){
   if(!account)return;
   const actions=document.getElementById("actions");
@@ -1628,7 +1601,7 @@ async function renderSession(user){
   if(role==="buyer"){
     actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
   }else{
-    actions.innerHTML='<button class="btn" onclick="openProfile()">👤 Mój profil</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+    actions.innerHTML='<button class="btn" onclick="openSellerPanel()">👤 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
   }
   fillProfile(user);
   if(role==="buyer") updateBuyerHeader();
@@ -1657,6 +1630,7 @@ try{
   const active=localStorage.getItem("stringoland_active_session")==="1";
   const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(active&&saved) renderLocalSession(saved);
+  tryApiSession().then(u=>{if(u){localStorage.setItem("stringoland_test_user",JSON.stringify(u));renderLocalSession(u)}}).catch(()=>{});
 }catch(e){console.warn("Session restore failed",e)}
 </script>
 
