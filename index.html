@@ -1147,6 +1147,12 @@ a{color:var(--sl-accent)}
 <style>
 .notification-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 </style>
+<style>
+.public-seller-card{width:min(480px,calc(100vw - 30px));background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}.public-seller-rating{display:flex;align-items:baseline;gap:7px;padding:10px 0}.public-seller-rating strong{font:30px Georgia,serif}.public-seller-rating span{color:#8f1f38}.public-seller-rating small{color:#817771;font-size:8px}
+</style>
+<style>
+.offer-availability{font-size:8px;border:1px solid #ded6d1;background:#fff;border-radius:999px;padding:5px 9px;cursor:pointer}.offer-availability.on{color:#8f1f38}.offer-availability.off{color:#817771}
+</style>
 </head>
 <body>
 <div id="runtimeErrorToast" class="runtime-error-toast" aria-live="polite"></div>
@@ -1482,6 +1488,11 @@ let pendingVerificationEmail = "";
 
 
 function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim())}
+function passwordStrength(v){
+  const p=String(v||"");let score=0;
+  if(p.length>=8)score++;if(/[A-Z]/.test(p))score++;if(/[0-9]/.test(p))score++;if(/[^A-Za-z0-9]/.test(p))score++;
+  return score;
+}
 function isValidPassword(v){return String(v||"").length>=8}
 function normalizePseudonym(v){return String(v||"").trim().replace(/\s+/g," ").slice(0,40)}
 function openAuth(m){mode=m;if(m==="signup")selectRole("buyer");document.getElementById("emailVerifyPanel").classList.remove("show");document.getElementById("verificationPanel").classList.remove("show");updateAuth();document.getElementById("authModal").classList.add("show")}
@@ -1630,7 +1641,7 @@ function openSellerOfferEditor(index=null){
   if(!modal){modal=document.createElement("div");modal.id="sellerOfferEditorModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   const dp=existing?.durationPrices||{};
   modal.innerHTML=`<div class="offer-editor-card">
-    <button class="modal-close" onclick="document.getElementById('sellerOfferEditorModal').classList.remove('show')">×</button>
+    <button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerOfferEditorModal').classList.remove('show')">×</button>
     <div class="eyebrow">Oferta</div><h2>${existing?"Edytuj ofertę":"Dodaj ofertę"}</h2>
     <label>Nazwa oferty<input id="offerTitleEdit" value="${escapeHtml(existing?.title||"")}"></label>
     <label>Typ
@@ -1651,7 +1662,45 @@ function openSellerOfferEditor(index=null){
   </div>`;
   modal.classList.add("show");
 }
+
+function setOfferAvailability(offerId,available){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const accounts=JSON.parse(localStorage.getItem("stringoland_accounts")||"[]");
+  const me=accounts.find(a=>a.pseudonym===u.pseudonym);
+  if(!me)return;
+  const offers=Array.isArray(me.offers)?me.offers:[];
+  const offer=offers.find(o=>o.id===offerId);
+  if(!offer)return;
+  offer.available=!!available;
+  me.offers=offers;
+  localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
+  if(typeof renderSellerOffers==="function")renderSellerOffers();
+}
+
+function normalizeSellerOffer(raw){
+  const o={...(raw||{})};
+  o.title=String(o.title||"").trim().slice(0,100);
+  o.description=String(o.description||"").trim().slice(0,3000);
+  o.price=Math.max(0,Number(o.price||0));
+  o.type=["photo","video","custom_photo","physical"].includes(o.type)?o.type:"photo";
+  o.duration=Math.max(1,Math.min(7,parseInt(o.duration||1,10)));
+  o.available=o.available!==false;
+  o.addons=Array.isArray(o.addons)?o.addons.slice(0,10):[];
+  return o;
+}
+function validateSellerOffer(raw){
+  const o=normalizeSellerOffer(raw);
+  const errors=[];
+  if(!o.title)errors.push("Podaj nazwę oferty.");
+  if(!Number.isFinite(o.price)||o.price<=0)errors.push("Cena musi być większa od 0 zł.");
+  if(!o.description)errors.push("Dodaj opis oferty.");
+  if(![1,2,3,4,5,6,7].includes(o.duration))errors.push("Czas realizacji/noszenia musi być od 1 do 7 dni.");
+  return {ok:!errors.length,offer:o,errors};
+}
 function saveSellerOffer(index){
+  const rawOffer=(typeof collectSellerOfferForm==="function"?collectSellerOfferForm():null);
+  if(rawOffer){const validation=validateSellerOffer(rawOffer);if(!validation.ok){alert(validation.errors.join("\n"));return;}}
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller")return;
   const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
@@ -1761,7 +1810,7 @@ function openSellerVerification(){
   if(!u||u.role!=="seller"){openAuth("login");return}
   let modal=document.getElementById("sellerVerificationModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="verification-card"><button class="modal-close" onclick="document.getElementById('sellerVerificationModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="verification-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerVerificationModal').classList.remove('show')">×</button>
     <div class="eyebrow">Bezpieczeństwo</div><h2>Weryfikacja sprzedającej</h2>
     <p>Weryfikacja pomaga chronić kupujących i budować wiarygodność profilu.</p>
     <label>Imię i nazwisko<input id="verifyFullName" autocomplete="name"></label>
@@ -1806,6 +1855,24 @@ function toggleSellerOffer(i){
 }
 
 
+function openOrderReview(orderId){
+  const u=requireBuyer();if(!u)return;
+  const o=getLocalOrders().find(x=>x.id===orderId&&x.buyer===u.pseudonym);
+  if(!o||o.status!=="completed"){alert("Ocena będzie dostępna po zakończeniu zamówienia.");return}
+  let modal=document.getElementById("orderReviewModal");
+  if(!modal){modal=document.createElement("div");modal.id="orderReviewModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="reviews-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('orderReviewModal').classList.remove('show')">×</button><div class="eyebrow">Ocena zamówienia</div><h2>${escapeHtml(o.title||"Zamówienie")}</h2><div class="review-stars-input">${[1,2,3,4,5].map(n=>`<button type="button" onclick="selectReviewRating(${n})">★</button>`).join("")}</div><input type="hidden" id="selectedReviewRating" value="0"><textarea id="reviewBody" placeholder="Napisz opinię"></textarea><button class="primary" onclick="submitOrderReview('${String(orderId).replace(/'/g,"\\'")}')">Opublikuj opinię</button></div>`;
+  modal.classList.add("show");
+}
+function selectReviewRating(n){const el=document.getElementById("selectedReviewRating");if(el)el.value=n;document.querySelectorAll(".review-stars-input button").forEach((b,i)=>b.classList.toggle("selected",i<n))}
+function submitOrderReview(orderId){
+  const u=requireBuyer();if(!u)return;
+  const rating=Number(document.getElementById("selectedReviewRating")?.value||0);if(!rating){alert("Wybierz ocenę.");return}
+  const reviews=getReviews(),o=getLocalOrders().find(x=>x.id===orderId&&x.buyer===u.pseudonym);
+  if(!o||o.status!=="completed"||reviews.some(r=>r.orderId===orderId))return;
+  reviews.push({id:"review_"+Date.now(),orderId,seller:o.seller,rating,body:(document.getElementById("reviewBody")?.value||"").trim(),createdAt:new Date().toISOString()});
+  localStorage.setItem("stringoland_reviews",JSON.stringify(reviews));document.getElementById("orderReviewModal")?.classList.remove("show");addNotification(o.seller,"Kupujący wystawił opinię za zamówienie.",orderId);alert("Opinia została dodana.");
+}
 function acceptLocalOrder(id){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller")return;
@@ -1879,7 +1946,7 @@ function openSellerOrderDetails(id){
   let modal=document.getElementById("sellerOrderDetailsModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerOrderDetailsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
   const addons=(o.addons||[]).map(a=>a.key||a).join(", ");
-  modal.innerHTML=`<div class="seller-order-detail-card"><button class="modal-close" onclick="document.getElementById('sellerOrderDetailsModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="seller-order-detail-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerOrderDetailsModal').classList.remove('show')">×</button>
     <div class="eyebrow">Szczegóły zamówienia</div><h2>${escapeHtml(o.title||"Zamówienie")}</h2>
     <div class="seller-order-detail-grid">
       <div><span>Kupujący</span><b>${escapeHtml(o.buyer||"—")}</b></div>
@@ -1899,7 +1966,7 @@ function openBuyerCredibilityForSeller(buyer){
   if(!u||u.role!=="seller")return;
   let modal=document.getElementById("sellerCredibilityModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerCredibilityModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="reviews-card"><button class="modal-close" onclick="document.getElementById('sellerCredibilityModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="reviews-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerCredibilityModal').classList.remove('show')">×</button>
     <div class="eyebrow">Wiarygodność kupującego</div><h2>${escapeHtml(buyer)}</h2>
     <p class="info">Oceń, na ile kontakt i zachowanie kupującego były wiarygodne.</p>
     <label>Ocena: <input id="buyerCredibilityInput" type="number" min="0" max="100" step="1" placeholder="0–100"></label>
@@ -1987,6 +2054,17 @@ function togglePassword(){
   el.type=el.type==="password"?"text":"password";
 }
 
+
+function getActiveUser(){
+  try{
+    const raw=localStorage.getItem("stringoland_test_user");
+    return raw?JSON.parse(raw):null;
+  }catch(e){return null}
+}
+function persistActiveUser(user){
+  if(user)localStorage.setItem("stringoland_test_user",JSON.stringify(user));
+  else localStorage.removeItem("stringoland_test_user");
+}
 function requireBuyer(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="buyer"){openAuth("login");return null} return u;
@@ -2003,9 +2081,25 @@ function updateBuyerHeader(){
   const name=document.getElementById("buyerMenuName");
   if(name) name.textContent=saved?.pseudonym||"Twój pseudonim";
 }
+function openBuyerProfileMenuSafe(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u){openAuth("login");return}
+  return openBuyerProfileMenu();
+}
 function openBuyerProfileMenu(){updateBuyerHeader();document.getElementById("buyerProfileMenu").classList.add("show")}
 function closeBuyerProfileMenu(){document.getElementById("buyerProfileMenu").classList.remove("show")}
 
+
+function openBuyerFavorites(){
+  closeBuyerProfileMenu();closeBuyerSection();
+  const u=requireBuyer();if(!u)return;
+  const ids=JSON.parse(localStorage.getItem("stringoland_favorites_"+u.pseudonym)||"[]");
+  const offers=typeof getBuyerOffers==="function"?getBuyerOffers().filter(o=>ids.includes(o.id)):[];
+  let modal=document.getElementById("buyerFavoritesModal");
+  if(!modal){modal=document.createElement("div");modal.id="buyerFavoritesModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="reviews-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('buyerFavoritesModal').classList.remove('show')">×</button><div class="eyebrow">Kupujący</div><h2>Ulubione oferty</h2>${offers.length?offers.map(o=>`<article class="favorite-offer"><b>${escapeHtml(o.title||"Oferta")}</b><span>${formatPLN(o.price)}</span><button class="small-btn" onclick="openBuyerOfferFromSeller('${String(o.id).replace(/'/g,"\\'")}')">Otwórz</button></article>`).join(""):"<div class='empty-state'><p>Nie masz jeszcze zapisanych ofert.</p></div>"}</div>`;
+  modal.classList.add("show");
+}
 function openBuyerOrders(){
   closeBuyerProfileMenu();closeBuyerSection();
   const u=getBuyerAccount();
@@ -2227,6 +2321,9 @@ function openConversations(){
   page.classList.add("show");
 }
 function closeConversations(){document.getElementById("buyerConversationsPage").classList.remove("show")}
+function safeMoney(value){const n=Number(value);return Number.isFinite(n)?n:0}
+function formatPLN(value){return Number(value||0).toFixed(2).replace(".",",")+" zł"}
+function formatDatePL(value){try{return new Date(value).toLocaleDateString("pl-PL")}catch(e){return "—"}}
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
 async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
@@ -2281,9 +2378,25 @@ function createDemoAccounts(){
   localStorage.setItem("stringoland_accounts",JSON.stringify(accounts));
   alert("Konta demonstracyjne utworzone. Kupujący: kupujacy@example.test / demo1234. Sprzedająca: sprzedajaca@example.test / demo1234.");
 }
+async 
+function refreshAuthHeader(){
+  const u=getActiveUser();
+  document.querySelectorAll("[data-auth-only]").forEach(el=>el.style.display=u?"":"none");
+  document.querySelectorAll("[data-guest-only]").forEach(el=>el.style.display=u?"none":"");
+  const names=document.querySelectorAll("[data-current-pseudonym]");
+  names.forEach(el=>el.textContent=u?.pseudonym||"");
+  const chatBadges=document.querySelectorAll("[data-chat-count]");
+  const notifications=document.querySelectorAll("[data-notification-count]");
+  const messages=u&&typeof getMessages==="function"?getMessages().filter(m=>m.recipient===u.pseudonym&&!m.read).length:0;
+  const notes=u?JSON.parse(localStorage.getItem("stringoland_notifications")||"[]").filter(n=>n.recipient===u.pseudonym&&!n.read).length:0;
+  chatBadges.forEach(el=>el.textContent=messages>99?"99+":String(messages));
+  notifications.forEach(el=>el.textContent=notes>99?"99+":String(notes));
+}
 async function logout(){
+  persistActiveUser(null);
   localStorage.removeItem("stringoland_active_session");
   try{if(typeof supabaseClient!=="undefined" && supabaseClient) await supabaseClient.auth.signOut()}catch(e){}
+  refreshAuthHeader();
   location.reload();
 }
 try{
@@ -2308,7 +2421,7 @@ try{
     <button class="buyer-menu-close" onclick="closeBuyerProfileMenu()">×</button>
     <div class="buyer-menu-name" id="buyerMenuName">Twój pseudonim</div>
     <div class="buyer-menu-sub">Profil kupującego</div>
-    <button onclick="openBuyerDashboard()">Panel kupującego</button><button onclick="openBuyerOrders()">Moje zamówienia</button>
+    <button onclick="openBuyerDashboard()">Panel kupującego</button><button onclick="openBuyerFavorites()">Ulubione oferty</button><button onclick="openBuyerOrders()">Moje zamówienia</button>
     <button onclick="openBuyerCollection()">Kolekcja</button>
     <button onclick="openBuyerCredibility()">Wiarygodność w panelu</button>
     <button onclick="logout()">Wyloguj się</button>
@@ -2978,7 +3091,7 @@ function openOrderSummary(offer){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
   const physical=!!offer.deliveryRequired;
   modal.innerHTML=`<div class="summary-card">
-    <button class="modal-close" onclick="document.getElementById('orderSummaryModal').classList.remove('show')">×</button>
+    <button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('orderSummaryModal').classList.remove('show')">×</button>
     <div class="eyebrow">Ostatni krok</div><h2>Podsumowanie zamówienia</h2>
     <div class="summary-row"><span>Sprzedająca</span><b>${escapeHtml(offer.seller||offer.sellerName||"—")}</b></div>
     <div class="summary-row"><span>Oferta</span><b>${escapeHtml(offer.title||"—")}</b></div>
@@ -3021,25 +3134,10 @@ function copySummaryDeliveryToCheckout(offer){
 function openOrderConfirmation(order){
   let modal=document.getElementById("orderConfirmationModal");
   if(!modal){modal=document.createElement("div");modal.id="orderConfirmationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="confirmation-card">
-    <div class="confirmation-icon">✓</div>
-    <div class="eyebrow">Zamówienie przyjęte</div>
-    <h2>Dziękujemy za zakup</h2>
-    <p>Numer zamówienia: <b>${escapeHtml(order.id)}</b></p>
-    <p>Sprzedająca otrzyma informację o nowym zamówieniu. Aktualny status możesz sprawdzić w „Moje zamówienia”.</p>
-    <div class="status-timeline">
-      <div class="status-step active"><b>1</b><span>Złożone</span></div>
-      <div class="status-step"><b>2</b><span>Akceptacja</span></div>
-      <div class="status-step"><b>3</b><span>Realizacja</span></div>
-      <div class="status-step"><b>4</b><span>Zakończone</span></div>
-    </div>
-    <button class="primary" onclick="document.getElementById('orderConfirmationModal').classList.remove('show');openBuyerOrders()">Zobacz zamówienie</button>
-  </div>`;
+  modal.innerHTML=`<div class="confirmation-card"><div class="confirmation-mark">✓</div><div class="eyebrow">Zamówienie przyjęte</div><h2>Potwierdzenie zamówienia</h2><p class="info">Numer zamówienia: <b>${escapeHtml(order.id)}</b></p><div class="summary-row"><span>Sprzedająca</span><b>${escapeHtml(order.seller||"—")}</b></div><div class="summary-row"><span>Kwota</span><b>${Number(order.total||0).toFixed(2).replace(".",",")} zł</b></div><p class="info">Sprzedająca otrzyma powiadomienie o nowym zamówieniu. Szczegóły znajdziesz w „Moje zamówienia”.</p><button class="primary" onclick="document.getElementById('orderConfirmationModal').classList.remove('show');openBuyerOrders()">Przejdź do moich zamówień</button></div>`;
   modal.classList.add("show");
 }
 
-const MEDIA_DB_NAME="stringoland_media_db";
-const MEDIA_STORE="private_media";
 function mediaDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(MEDIA_DB_NAME,1);
@@ -3126,7 +3224,7 @@ function openNotifications(){
   const items=getUserNotifications();
   let modal=document.getElementById("notificationsModal");
   if(!modal){modal=document.createElement("div");modal.id="notificationsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="notifications-card"><button class="modal-close" onclick="document.getElementById('notificationsModal').classList.remove('show')">×</button><div class="eyebrow">Powiadomienia</div><h2>Centrum powiadomień</h2>${items.length?items.map(n=>`<div class="notification-item"><b>${escapeHtml(n.text)}</b><small>${new Date(n.createdAt).toLocaleString("pl-PL")}</small></div>`).join(""):"<p class='info'>Brak nowych powiadomień.</p>"}</div>`;
+  modal.innerHTML=`<div class="notifications-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('notificationsModal').classList.remove('show')">×</button><div class="eyebrow">Powiadomienia</div><h2>Centrum powiadomień</h2>${items.length?items.map(n=>`<div class="notification-item"><b>${escapeHtml(n.text)}</b><small>${new Date(n.createdAt).toLocaleString("pl-PL")}</small></div>`).join(""):"<p class='info'>Brak nowych powiadomień.</p>"}</div>`;
   modal.classList.add("show");
   const all=getNotifications().map(n=>n.user===JSON.parse(localStorage.getItem("stringoland_test_user")||"{}").pseudonym?{...n,read:true}:n);
   localStorage.setItem("stringoland_notifications",JSON.stringify(all));
@@ -3206,13 +3304,29 @@ function buildBuyerOfferConfigurator(offer){
     ${offer.deliveryRequired?`<div class="delivery-note">📦 Ta oferta wymaga dostawy InPost Paczkomat.</div>`:`<div class="delivery-note digital">✓ Oferta cyfrowa/usługa — bez dostawy InPost.</div>`}
   </div>`;
 }
+
+function toggleOfferFavorite(offerId){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return}
+  const key="stringoland_favorites_"+u.pseudonym;
+  const list=JSON.parse(localStorage.getItem(key)||"[]");
+  const i=list.indexOf(offerId);
+  if(i>=0)list.splice(i,1);else list.push(offerId);
+  localStorage.setItem(key,JSON.stringify(list));
+  return list.includes(offerId);
+}
+function isOfferFavorite(offerId){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u)return false;
+  return JSON.parse(localStorage.getItem("stringoland_favorites_"+u.pseudonym)||"[]").includes(offerId);
+}
 function openBuyerOfferFromSeller(sellerName,index){
   const offer=getBuyerOfferBySeller(sellerName,index);
   if(!offer){alert("Ta oferta nie jest już dostępna.");return}
   if(offer.available===false){alert("Ta oferta jest obecnie niedostępna.");return}
   let modal=document.getElementById("buyerOfferDetailModal");
   if(!modal){modal=document.createElement("div");modal.id="buyerOfferDetailModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="offer-detail-card"><button class="modal-close" onclick="document.getElementById('buyerOfferDetailModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="offer-detail-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('buyerOfferDetailModal').classList.remove('show')">×</button>
     <div class="eyebrow">${escapeHtml(offer.type||"Oferta")}</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
     <p class="offer-description">${escapeHtml(offer.description||"")}</p>
     ${buildBuyerOfferConfigurator(offer)}
@@ -3248,7 +3362,7 @@ function renderSellerOffersForBuyer(sellerName){
   const offers=(seller.offers||[]).filter(o=>o.available!==false);
   let modal=document.getElementById("sellerOffersBuyerModal");
   if(!modal){modal=document.createElement("div");modal.id="sellerOffersBuyerModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="buyer-offers-card"><button class="modal-close" onclick="document.getElementById('sellerOffersBuyerModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="buyer-offers-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('sellerOffersBuyerModal').classList.remove('show')">×</button>
     <div class="eyebrow">Oferty</div><h2>${escapeHtml(seller.pseudonym)}</h2>
     ${offers.length?offers.map((o,i)=>`<article class="buyer-offer-row"><div><b>${escapeHtml(o.title||"Oferta")}</b><small>${escapeHtml(o.type||"oferta")} · ${o.deliveryRequired?"Dostawa fizyczna":"Produkt cyfrowy / usługa"}</small></div><button class="primary" onclick="openBuyerOfferFromSeller('${String(seller.pseudonym).replace(/'/g,"\\'")}',${seller.offers.indexOf(o)})">Zobacz / kup</button></article>`).join(""):"<p class='info'>Brak aktywnych ofert.</p>"}
   </div>`;
@@ -3260,7 +3374,7 @@ function openTypedOfferCheckout(offer){
   const selected=calculateOfferTotal(offer);
   const addons=(offer.selectedAddons||[]);
   modal.innerHTML=`<div class="checkout-card">
-    <button class="modal-close" onclick="document.getElementById('typedCheckoutModal').classList.remove('show')">×</button>
+    <button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('typedCheckoutModal').classList.remove('show')">×</button>
     <div class="eyebrow">Zamówienie</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
     <div class="checkout-selected">
       ${offer.selectedDuration?`<div><span>Czas noszenia</span><b>${offer.selectedDuration} ${offer.selectedDuration===1?"dzień":"dni"}</b></div>`:""}
@@ -3435,7 +3549,7 @@ function getLoggedInBuyerEmail(){
 function openTermsInfo(){
   let modal=document.getElementById("termsInfoModal");
   if(!modal){modal=document.createElement("div");modal.id="termsInfoModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('termsInfoModal').classList.remove('show')">×</button><div class="eyebrow">Informacje</div><h2>Regulamin</h2><p>Wersja demonstracyjna serwisu. Zamówienia, płatności, wiadomości i multimedia działają tutaj jako prototyp interfejsu.</p><p>W produkcji regulamin powinien zostać przygotowany i zaakceptowany przed uruchomieniem sprzedaży.</p></div>`;
+  modal.innerHTML=`<div class="privacy-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('termsInfoModal').classList.remove('show')">×</button><div class="eyebrow">Informacje</div><h2>Regulamin</h2><p>Wersja demonstracyjna serwisu. Zamówienia, płatności, wiadomości i multimedia działają tutaj jako prototyp interfejsu.</p><p>W produkcji regulamin powinien zostać przygotowany i zaakceptowany przed uruchomieniem sprzedaży.</p></div>`;
   modal.classList.add("show");
 }
 
@@ -3443,7 +3557,7 @@ function openTermsInfo(){
 function openLaunchChecklist(){
   let modal=document.getElementById("launchChecklistModal");
   if(!modal){modal=document.createElement("div");modal.id="launchChecklistModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('launchChecklistModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="privacy-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('launchChecklistModal').classList.remove('show')">×</button>
     <div class="eyebrow">Status projektu</div><h2>Co jeszcze przed prawdziwym startem?</h2>
     <ul class="info">
       <li>Podłączyć backend, bazę danych i autoryzację serwerową.</li>
@@ -3461,7 +3575,7 @@ function openLaunchChecklist(){
 function openProductionChecklist(){
   let modal=document.getElementById("productionChecklistModal");
   if(!modal){modal=document.createElement("div");modal.id="productionChecklistModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('productionChecklistModal').classList.remove('show')">×</button>
+  modal.innerHTML=`<div class="privacy-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('productionChecklistModal').classList.remove('show')">×</button>
     <div class="eyebrow">Przed uruchomieniem</div><h2>Lista produkcyjna</h2>
     <ul class="info">
       <li>Backend i baza danych zamiast localStorage.</li>
@@ -3479,7 +3593,7 @@ function openProductionChecklist(){
 function openHelpInfo(){
   let modal=document.getElementById("helpInfoModal");
   if(!modal){modal=document.createElement("div");modal.id="helpInfoModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('helpInfoModal').classList.remove('show')">×</button><div class="eyebrow">Pomoc</div><h2>Centrum pomocy</h2><p>Wybierz sprzedającą, otwórz ofertę, wybierz wariant i przejdź do zamówienia. Po zakupie status znajdziesz w „Moje zamówienia”.</p><p>Kontakt z użytkownikami odbywa się wyłącznie przez wiadomości na portalu.</p></div>`;
+  modal.innerHTML=`<div class="privacy-card"><button aria-label="Zamknij" class="modal-close" onclick="document.getElementById('helpInfoModal').classList.remove('show')">×</button><div class="eyebrow">Pomoc</div><h2>Centrum pomocy</h2><p>Wybierz sprzedającą, otwórz ofertę, wybierz wariant i przejdź do zamówienia. Po zakupie status znajdziesz w „Moje zamówienia”.</p><p>Kontakt z użytkownikami odbywa się wyłącznie przez wiadomości na portalu.</p></div>`;
   modal.classList.add("show");
 }
 function openBuyerDataInfo(){
@@ -3837,5 +3951,6 @@ window.addEventListener('error',function(e){
 <script>
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeTopModal()});
 </script>
+<script>document.addEventListener("DOMContentLoaded",function(){try{refreshAuthHeader()}catch(e){}});</script>
 </body>
 </html>
