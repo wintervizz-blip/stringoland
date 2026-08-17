@@ -742,6 +742,14 @@ header .menu-btn.account-menu-visible,
 .buyer-profile-menu-card>button:not(.buyer-menu-close){display:block;width:100%;padding:13px 0;border:0;border-bottom:1px solid #eee6df;background:#fff;text-align:left;font-size:12px;color:#39332f;cursor:pointer}
 .buyer-section-content{max-width:760px;margin:auto;padding:30px 18px}.buyer-section-content h2{font-weight:500}.buyer-section-content p{font-size:12px;line-height:1.6;color:#6e6660}
 .credibility-score{font-size:48px;color:#8f1730;font-weight:500;margin:15px 0}.credibility-breakdown{padding:15px;background:#faf7f5;border-radius:9px;font-size:11px;color:#706762}
+
+.buyer-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:24px 0}
+.buyer-stat-card{padding:15px;border:1px solid #e8dfd9;border-radius:10px;background:#fff}
+.buyer-stat-card strong{display:block;font-size:21px;font-weight:500;color:#292522}
+.buyer-stat-card span{display:block;margin-top:5px;font-size:9px;line-height:1.4;color:#8c837d}
+@media(max-width:520px){.buyer-stats-grid{grid-template-columns:1fr 1fr}}
+
+.order-no-cancel-note{margin-top:10px;font-size:9px;color:#8f1730;text-align:center}
 </style>
 </head>
 <body>
@@ -1203,17 +1211,55 @@ function openBuyerCollection(){
   document.getElementById("buyerCollectionPage").classList.add("show");
 }
 function openBuyerCredibility(){
-  closeBuyerProfileMenu();closeBuyerSection();
+  closeBuyerProfileMenu();
+  closeBuyerSection();
+
   const saved=getBuyerAccount();
-  const reviews=JSON.parse(localStorage.getItem("stringoland_buyer_reviews")||"[]").filter(r=>r.buyer===saved?.pseudonym);
-  const score=reviews.length?Math.round(reviews.reduce((a,r)=>a+Number(r.score||0),0)/reviews.length):null;
+  const pseudonym=saved?.pseudonym||"";
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]")
+    .filter(o=>o.buyerPseudonym===pseudonym);
+  const conversations=JSON.parse(localStorage.getItem("stringoland_conversations")||"[]")
+    .filter(c=>c.buyer===pseudonym);
+
+  const reviews=JSON.parse(localStorage.getItem("stringoland_buyer_reviews")||"[]")
+    .filter(r=>r.buyer===pseudonym);
+
+  const score=reviews.length
+    ? Math.round(reviews.reduce((a,r)=>a+Number(r.score||0),0)/reviews.length)
+    : null;
+
+  const paid=orders.reduce((sum,o)=>sum+Number(o.amount||0),0);
+  const messageCount=conversations.reduce((sum,c)=>sum+Number(c.messageCount||0),0);
+  const uniqueContacts=new Set(conversations.map(c=>c.seller).filter(Boolean)).size;
+
   document.getElementById("buyerCredibilityScore").textContent=score===null?"—%":score+"%";
-  document.getElementById("buyerCredibilityBreakdown").textContent=reviews.length?("Na wynik składa się "+reviews.length+" ocen od sprzedających."):"Na razie nie masz ocen od sprzedających.";
+  document.getElementById("buyerOrdersCount").textContent=orders.length;
+  document.getElementById("buyerOrdersValue").textContent=paid.toFixed(2).replace(".",",")+" zł";
+  document.getElementById("buyerMessagesCount").textContent=messageCount;
+  document.getElementById("buyerContactsCount").textContent=uniqueContacts;
+
+  document.getElementById("buyerCredibilityBreakdown").textContent=reviews.length
+    ? "Wynik został obliczony na podstawie "+reviews.length+" ocen wystawionych przez sprzedające."
+    : "Na razie nie masz ocen od sprzedających. Statystyki zamówień i kontaktów są widoczne niezależnie od wyniku wiarygodności.";
+
   document.getElementById("buyerCredibilityPage").classList.add("show");
 }
+
 function closeBuyerSection(){
   document.querySelectorAll(".buyer-section-page").forEach(el=>el.classList.remove("show"));
 }
+
+function getSellerConversationStats(sellerPseudonym){
+  const conversations=JSON.parse(localStorage.getItem("stringoland_conversations")||"[]")
+    .filter(c=>c.seller===sellerPseudonym);
+  return conversations.map(c=>({
+    buyerPseudonym:c.buyer||"Kupujący",
+    messageCount:Number(c.messageCount||0),
+    lastMessage:c.preview||"",
+    lastActivity:c.time||""
+  }));
+}
+
 function openConversations(){
   const page=document.getElementById("buyerConversationsPage"), list=document.getElementById("buyerConversationList");
   const saved=getBuyerAccount();
@@ -1307,6 +1353,26 @@ supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(d
     <div class="credibility-score" id="buyerCredibilityScore">—%</div>
     <h2>Wiarygodność kupującego</h2>
     <p>Wynik będzie budowany na podstawie ocen sprzedających po zakończonych rozmowach i zamówieniach.</p>
+
+    <div class="buyer-stats-grid">
+      <div class="buyer-stat-card">
+        <strong id="buyerOrdersCount">0</strong>
+        <span>Zamówienia</span>
+      </div>
+      <div class="buyer-stat-card">
+        <strong id="buyerOrdersValue">0 zł</strong>
+        <span>Łącznie zapłacono</span>
+      </div>
+      <div class="buyer-stat-card">
+        <strong id="buyerMessagesCount">0</strong>
+        <span>Wysłane wiadomości</span>
+      </div>
+      <div class="buyer-stat-card">
+        <strong id="buyerContactsCount">0</strong>
+        <span>Sprzedające, z którymi nawiązano kontakt</span>
+      </div>
+    </div>
+
     <div class="credibility-breakdown" id="buyerCredibilityBreakdown"></div>
   </div>
 </div>
@@ -1637,6 +1703,21 @@ function sendConversationMessage(event){
     from:"me",text,
     time:new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})
   });
+
+  const saved=getBuyerAccount();
+  if(saved?.pseudonym){
+    const conversations=JSON.parse(localStorage.getItem("stringoland_conversations")||"[]");
+    let conversation=conversations.find(c=>c.buyer===saved.pseudonym && c.seller===activeConversationSeller);
+    if(!conversation){
+      conversation={buyer:saved.pseudonym,seller:activeConversationSeller,messageCount:0,preview:"",time:""};
+      conversations.push(conversation);
+    }
+    conversation.messageCount=Number(conversation.messageCount||0)+1;
+    conversation.preview=text;
+    conversation.time=new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});
+    localStorage.setItem("stringoland_conversations",JSON.stringify(conversations));
+  }
+
   input.value="";
   renderConversation();
 }
@@ -2172,6 +2253,7 @@ window.addEventListener("storage",renderDiscover);
         <div class="summary-email">Potwierdzenie zamówienia na e-mail konta: <strong id="summaryEmail">—</strong></div>
       </div>
 
+      <div class="order-no-cancel-note">Po złożeniu zamówienia nie można go anulować przez kupującego.</div>
       <div class="order-fulfillment-note" id="orderFulfillmentNote">Po złożeniu zamówienia sprzedająca otrzyma powiadomienie i będzie musiała je zaakceptować. Po akceptacji rozpocznie się czas realizacji.</div>
       <button class="offer-detail-button" id="placeOrderButton" type="button" onclick="placeOrder()">ZŁÓŻ ZAMÓWIENIE</button>
       <p class="offer-detail-note">Przed złożeniem zamówienia sprawdź wszystkie dane i wybrane opcje.</p>
