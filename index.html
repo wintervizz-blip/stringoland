@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Stringoland — odkryj swoją ulubioną sprzedającą</title>
+  <title>STRINGOLAND — platforma</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>document.addEventListener("DOMContentLoaded",()=>document.getElementById("buyerEmail")?.addEventListener("input",updateCheckoutSummary));</script>
   <style>
@@ -939,8 +939,115 @@ async function tryApiSession(){
 #sellerPanel.active{display:block!important}
 #sellerPanel .content-wrap{max-width:1100px;margin:0 auto;padding:24px}
 </style>
+<style>
+.seller-dashboard-actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.seller-dashboard-actions button{min-height:42px}
+</style>
+<style>
+.order-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.danger-btn{border-color:#b33b4e;color:#a31f3a}
+</style>
+<style>
+.privacy-card{width:min(650px,calc(100vw - 30px));max-height:88vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.18);position:relative;font-size:10px;line-height:1.6}
+.privacy-card h2,.privacy-card h3{font-family:Georgia,serif}.privacy-card h3{margin-bottom:4px}
+.privacy-card li{margin:7px 0}.privacy-link{border:0;background:none;text-decoration:underline;font-size:9px;padding:0;cursor:pointer;color:#8d1d35}
+.buyer-data-block{background:#f7f3f1;padding:14px;border-radius:10px;margin:14px 0}
+.buyer-data-block label{margin:10px 0}
+.buyer-data-block input{width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd5d0;border-radius:7px;margin-top:4px}
+</style>
+<style>
+.summary-card{width:min(600px,calc(100vw - 30px));max-height:90vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.18);position:relative}
+.summary-card h2{font-family:Georgia,serif}.summary-row,.summary-total{display:flex;justify-content:space-between;gap:15px;padding:10px 0;border-bottom:1px solid #eee7e2;font-size:10px}
+.summary-total{font-size:14px;border-bottom:0;padding-top:18px}.payment-box{margin-top:18px;padding:14px;background:#f7f3f1;border-radius:9px}.payment-box label{display:block;margin:10px 0}
+</style>
+<style>
+.confirmation-card{width:min(520px,calc(100vw - 30px));background:#fff;padding:32px;border-radius:16px;text-align:center;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.confirmation-icon{width:48px;height:48px;border-radius:50%;margin:0 auto 15px;background:#a31f3a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:25px}
+.status-timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:25px 0}
+.status-step{font-size:8px;color:#9a918c}.status-step b{display:block;margin:0 auto 6px;width:22px;height:22px;border-radius:50%;background:#e9e2dd;line-height:22px}.status-step.active{color:#a31f3a}.status-step.active b{background:#a31f3a;color:#fff}
+.notifications-card{width:min(520px,calc(100vw - 30px));max-height:80vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative}
+.notification-item{padding:13px 0;border-bottom:1px solid #eee7e2;font-size:10px}.notification-item small{display:block;color:#8b817b;margin-top:5px;font-size:8px}
+</style>
+<style>
+.order-progress{height:6px;background:#eee7e2;border-radius:10px;overflow:hidden;margin-top:8px}
+.order-progress>span{display:block;height:100%;background:#a31f3a}
+.deadline-note{font-size:8px;color:#8b817b;margin-top:4px}
+</style>
+<style>
+.private-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.private-media-item{border:1px solid #e9e2dd;border-radius:12px;padding:10px;background:#fff}
+.private-media-preview{height:170px;background:#f1edeb;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.private-media-preview img,.private-media-preview video{width:100%;height:100%;object-fit:cover}
+.private-media-item small{display:block;color:#8b817b;font-size:8px;margin-top:4px}
+@media(max-width:800px){.private-media-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.private-media-grid{grid-template-columns:1fr}}
+</style>
+<style>
+.reviews-card{width:min(620px,calc(100vw - 30px));max-height:85vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.review-summary{display:flex;align-items:baseline;gap:8px;padding:15px 0}.review-summary strong{font:32px Georgia,serif}.review-summary span{color:#a31f3a;font-size:18px}.review-summary small{color:#8b817b;font-size:9px}
+.review-item{padding:14px 0;border-top:1px solid #eee7e2}.stars{color:#a31f3a;letter-spacing:2px}.review-item p{font-size:10px;line-height:1.5}.review-item small{color:#8b817b;font-size:8px}
+.credibility-number{text-align:center;font:54px Georgia,serif;color:#a31f3a;padding:25px}
+</style>
+<style>
+.verification-card{width:min(520px,calc(100vw - 30px));background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.verification-card label{display:block;font-size:9px;margin:12px 0}.verification-card input{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:9px;border:1px solid #ddd5d0;border-radius:7px}
+.verification-note{font-size:8px;color:#8b817b;line-height:1.5}
+</style>
+<style>
+.admin-row .order-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+</style>
+<style>
+.offer-editor-card{width:min(680px,calc(100vw - 30px));max-height:88vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.offer-editor-card label{display:block;font-size:9px;margin:11px 0}.offer-editor-card input,.offer-editor-card select,.offer-editor-card textarea{width:100%;box-sizing:border-box;margin-top:5px;padding:9px;border:1px solid #ddd5d0;border-radius:7px;background:#fff}.offer-editor-card textarea{min-height:80px;resize:vertical}
+.inline-price{display:flex!important;justify-content:space-between;align-items:center;gap:12px}.inline-price input{width:130px!important}.toggle-row{display:flex!important;align-items:center;gap:8px}.toggle-row input{width:auto!important}.addon-edit{padding:12px;background:#f7f3f1;border-radius:9px}
+</style>
+<style>
+.buyer-offers-card{width:min(650px,calc(100vw - 30px));max-height:85vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.buyer-offer-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid #eee7e2}.buyer-offer-row small{display:block;color:#8b817b;font-size:8px;margin-top:4px}
+@media(max-width:560px){.buyer-offer-row{align-items:flex-start;flex-direction:column}.buyer-offer-row button{width:100%}}
+</style>
+<style>
+.offer-detail-card{width:min(650px,calc(100vw - 30px));max-height:88vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.offer-description{font-size:10px;line-height:1.6;color:#625b56}.buyer-choice{padding:14px 0;border-top:1px solid #eee7e2}.choice-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.choice-grid label{margin:0}.choice-grid input{display:none}.choice-grid span{display:flex;flex-direction:column;padding:10px;border:1px solid #ddd5d0;border-radius:8px;font-size:9px;cursor:pointer}.choice-grid input:checked+span{border-color:#a31f3a;background:#faf3f4}.choice-grid strong{margin-top:5px}.addon-choice{display:flex!important;align-items:center;gap:8px;margin:9px 0!important}.addon-choice input{width:auto!important}.addon-choice strong{margin-left:auto}.delivery-note{padding:10px;border-radius:8px;background:#f7f3f1;font-size:9px}.delivery-note.digital{background:#f0f5f0}.buyer-total-line{display:flex;justify-content:space-between;padding:18px 0;font-size:12px}
+@media(max-width:600px){.choice-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style>
+.checkout-card{width:min(600px,calc(100vw - 30px));max-height:88vh;overflow:auto;background:#fff;padding:28px;border-radius:16px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.18)}
+.checkout-selected{border:1px solid #eee7e2;border-radius:10px;padding:12px;margin:14px 0}.checkout-selected>div{display:flex;justify-content:space-between;padding:7px 0;font-size:9px}.checkout-total{display:flex;justify-content:space-between;padding:18px 0;font-size:14px}
+</style>
+<style>
+:root{--sl-bg:#e9e5e2;--sl-paper:#fff;--sl-ink:#342e2a;--sl-muted:#817771;--sl-accent:#8f1f38;--sl-border:#ded6d1}
+body{background:var(--sl-bg);color:var(--sl-ink)}
+.site-utility-bar{position:sticky;top:0;z-index:80;background:rgba(255,255,255,.96);border-bottom:1px solid var(--sl-border);backdrop-filter:blur(10px)}
+.site-utility-inner{max-width:1180px;margin:auto;min-height:52px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand-mini{border:0;background:none;font:700 16px Georgia,serif;letter-spacing:.18em;color:var(--sl-accent);cursor:pointer}
+.site-utility-links{display:flex;gap:6px;flex-wrap:wrap}
+.site-utility-links button{border:0;background:transparent;padding:8px 10px;font-size:9px;color:var(--sl-muted);cursor:pointer;border-radius:7px}
+.site-utility-links button:hover{background:#f3efec;color:var(--sl-accent)}
+#siteFooter{margin-top:50px;background:#302a27;color:#eee7e2}
+.footer-inner{max-width:1180px;margin:auto;padding:22px 18px;display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:9px}
+.footer-inner button{border:0;background:none;color:#ddd3cd;font-size:8px;margin-left:12px;cursor:pointer}
+@media(max-width:650px){.site-utility-inner{align-items:flex-start;padding-top:9px;padding-bottom:9px;flex-direction:column}.site-utility-links{width:100%;overflow:auto;flex-wrap:nowrap}.footer-inner{flex-direction:column;align-items:flex-start}}
+</style>
 </head>
 <body>
+<div id="siteUtilityBar" class="site-utility-bar">
+  <div class="site-utility-inner">
+    <button class="brand-mini" type="button" onclick="go('home')">STRINGOLAND</button>
+    <div class="site-utility-links">
+      <button type="button" onclick="go('home')">Strona główna</button>
+      <button type="button" onclick="go('sellers')">Sprzedające</button>
+      <button type="button" onclick="openConversations()">Wiadomości</button>
+      <button type="button" onclick="openNotifications()">Powiadomienia</button>
+    </div>
+  </div>
+</div>
+
+<div id="buyerOrdersPage" class="page" style="display:none">
+  <div class="subhead"><button class="small-btn" onclick="go('buyerPanel')">← Panel kupującego</button><div><div class="eyebrow">Historia</div><h1>Moje zamówienia</h1></div></div>
+  <div id="buyerOrdersContent" class="content-wrap"></div>
+</div>
+
 <div id="sellerPanel" class="page" style="display:none">
   <div id="sellerPanelContent" class="content-wrap">
     <div class="panel-card"><h1>Panel sprzedającej</h1><p class="info">Ładowanie panelu…</p></div>
@@ -959,7 +1066,7 @@ async function tryApiSession(){
     <div><div class="eyebrow">Rozmowa</div><h1 id="conversationTitle">Sprzedająca</h1></div>
   </div>
   <div class="conversation-shell">
-    <div class="chat-policy"><button class="small-btn" style="float:right" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')">Zgłoś</button>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
+    <div class="chat-policy"><button class="small-btn" style="float:right" onclick="reportUser(document.getElementById('conversationTitle')?.textContent||'Sprzedająca','conversation')"><button class="small-btn" onclick="blockCurrentConversationUser()">Zablokuj</button>Zgłoś</button>Dla bezpieczeństwa zakupy i komunikacja odbywają się wyłącznie na Stringoland. Przekazywanie numerów telefonu, adresów e-mail i innych danych kontaktowych jest niedozwolone.</div>
     <div id="conversationMessages" class="conversation-messages"></div>
     <div class="conversation-compose">
       <textarea id="conversationInput" placeholder="Napisz wiadomość…"></textarea>
@@ -1385,6 +1492,65 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent=mode==="signup"?(accountRole==="seller"?"Załóż konto i przejdź do weryfikacji":"Załóż konto"):"Zaloguj się"}
 }
 
+function getLocalOrders(){
+  try{return JSON.parse(localStorage.getItem("stringoland_orders")||"[]")}catch(e){return []}
+}
+
+function openSellerOfferEditor(index=null){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller"){openAuth("login");return}
+  const sellers=getPublicSellers();let me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  if(!me){me={pseudonym:u.pseudonym,offers:[],verified:false};sellers.push(me)}
+  const existing=index!==null?(me.offers||[])[index]:null;
+  let modal=document.getElementById("sellerOfferEditorModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerOfferEditorModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const dp=existing?.durationPrices||{};
+  modal.innerHTML=`<div class="offer-editor-card">
+    <button class="modal-close" onclick="document.getElementById('sellerOfferEditorModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Oferta</div><h2>${existing?"Edytuj ofertę":"Dodaj ofertę"}</h2>
+    <label>Nazwa oferty<input id="offerTitleEdit" value="${escapeHtml(existing?.title||"")}"></label>
+    <label>Typ
+      <select id="offerTypeEdit"><option value="underwear" ${existing?.type==="underwear"?"selected":""}>Bielizna / oferta fizyczna</option><option value="video" ${existing?.type==="video"?"selected":""}>Wideo</option><option value="photo" ${existing?.type==="photo"?"selected":""}>Zdjęcia</option><option value="custom" ${existing?.type==="custom"?"selected":""}>Na życzenie</option></select>
+    </label>
+    <div id="durationPricesEdit"><b>Ceny za czas noszenia</b>
+      ${[1,2,3,4,5,6,7].map(d=>`<label class="inline-price"><span>${d} ${d===1?"dzień":"dni"}</span><input id="dayPrice${d}" type="number" min="0" step="0.01" value="${dp[d]??""}" placeholder="zł"></label>`).join("")}
+    </div>
+    <div class="addon-edit"><b>Usługi dodatkowe</b>
+      <label class="inline-price"><span>Zdjęcia</span><input id="addonPhoto" type="number" min="0" step="0.01" value="${existing?.addons?.photo??""}" placeholder="zł"></label>
+      <label class="inline-price"><span>Wideo</span><input id="addonVideo" type="number" min="0" step="0.01" value="${existing?.addons?.video??""}" placeholder="zł"></label>
+      <label class="inline-price"><span>Pudełko prezentowe</span><input id="addonGift" type="number" min="0" step="0.01" value="${existing?.addons?.gift??""}" placeholder="zł"></label>
+    </div>
+    <label class="toggle-row"><input id="offerDeliveryEdit" type="checkbox" ${existing?.deliveryRequired?"checked":""}> Wymaga dostawy fizycznej (InPost)</label>
+    <label>Opis<textarea id="offerDescriptionEdit">${escapeHtml(existing?.description||"")}</textarea></label>
+    <label>Zdjęcie/wideo oferty<input id="offerMediaEdit" type="file" accept="image/*,video/*" multiple></label>
+    <button class="primary" onclick="saveSellerOffer(${index===null?"null":index})">Zapisz ofertę</button>
+  </div>`;
+  modal.classList.add("show");
+}
+function saveSellerOffer(index){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);if(!me)return;
+  me.offers=Array.isArray(me.offers)?me.offers:[];
+  const durationPrices={};[1,2,3,4,5,6,7].forEach(d=>{const v=document.getElementById("dayPrice"+d)?.value;if(v!=="")durationPrices[d]=Number(v)});
+  const offer={title:document.getElementById("offerTitleEdit").value.trim(),type:document.getElementById("offerTypeEdit").value,durationPrices,addons:{photo:Number(document.getElementById("addonPhoto").value||0),video:Number(document.getElementById("addonVideo").value||0),gift:Number(document.getElementById("addonGift").value||0)},deliveryRequired:document.getElementById("offerDeliveryEdit").checked,description:document.getElementById("offerDescriptionEdit").value.trim(),available:true,updatedAt:new Date().toISOString()};
+  if(!offer.title){alert("Wpisz nazwę oferty.");return}
+  if(index===null)me.offers.push(offer);else me.offers[index]={...me.offers[index],...offer};
+  localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));
+  document.getElementById("sellerOfferEditorModal")?.classList.remove("show");
+  renderSellerPanel();
+}
+function sellerCreateOfferDemo(){
+  openSellerOfferEditor();return;
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller"){alert("Zaloguj się na konto sprzedającej.");return}
+  openAddOffer();
+}
+window.openSellerDashboard=openSellerPanel;
+function closeAllPages(){
+  document.querySelectorAll(".page").forEach(el=>{el.style.display="none";el.classList.remove("active")});
+  document.querySelectorAll(".modal-overlay").forEach(el=>el.classList.remove("show"));
+}
 function openSellerPanel(){
   let u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u){
@@ -1416,7 +1582,7 @@ function renderSellerPanel(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="seller")return;
   const box=document.getElementById("sellerPanelContent"); if(!box)return;
-  const sellers=getPublicSellers();
+  const sellers=(typeof getPublicSellers==="function"?getPublicSellers():[]);
   let me=sellers.find(x=>x.pseudonym===u.pseudonym);
   if(!me){
     me={pseudonym:u.pseudonym,verified:false,active:true,likes:0,rating:null,lastActive:"Aktywna teraz",bio:"",offers:[],reviews:[]};
@@ -1426,14 +1592,51 @@ function renderSellerPanel(){
   const offers=Array.isArray(me.offers)?me.offers:[];
   box.innerHTML=`
     <div class="subhead seller-panel-head"><div><div class="eyebrow">Konto sprzedającej</div><h1>Panel sprzedającej</h1><p>${me.verified?"Profil zweryfikowany":"Profil oczekuje na weryfikację"}</p></div><button class="small-btn" onclick="logout()">Wyloguj się</button></div>
-    <div class="seller-panel-grid">
+    <div class="seller-dashboard-actions"><button class="primary" onclick="sellerCreateOfferDemo()">＋ Dodaj ofertę</button><button class="secondary" onclick="renderSellerOrders()">Zamówienia</button><button class="secondary" onclick="openSellerProfileEditor()">Edytuj profil</button></div><div class="seller-panel-grid">
       <div class="panel-card"><div class="eyebrow">Profil</div><h2>${escapeHtml(me.pseudonym)}</h2><p class="info">${orders.length} zamówień · ${me.likes||0} polubień</p><button class="primary" onclick="openSellerProfileEditor()">Edytuj profil</button></div>
       <div class="panel-card"><div class="eyebrow">Oferty</div><h2>${offers.length}</h2><p class="info">Aktywne i nieaktywne oferty.</p><button class="primary" onclick="openAddOffer()">Dodaj ofertę</button></div>
       <div class="panel-card"><div class="eyebrow">Zamówienia</div><h2>${orders.length}</h2><p class="info">Zarządzaj zamówieniami kupujących.</p><button class="secondary" onclick="renderSellerOrders()">Zobacz zamówienia</button></div>
     </div>
     <div class="panel-card"><div class="eyebrow">Twoje oferty</div><h2>Oferty</h2>
-      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert. Dodaj pierwszą ofertę.</p>"}
+      ${offers.length?offers.map((o,i)=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title)}</b><small>${escapeHtml(o.type||"oferta")} · ${Number(o.price||0).toFixed(2).replace(".",",")} zł</small></div><div class="order-actions"><button class="small-btn" onclick="openSellerOfferEditor(${i})">Edytuj</button><button class="small-btn" onclick="toggleSellerOffer(${i})">${o.available===false?"Włącz":"Wyłącz"}</button></div></div>`).join(""):"<p class=\"info\">Nie masz jeszcze ofert. Dodaj pierwszą ofertę.</p>"}
     </div>`;
+}
+
+function openSellerVerification(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller"){openAuth("login");return}
+  let modal=document.getElementById("sellerVerificationModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerVerificationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="verification-card"><button class="modal-close" onclick="document.getElementById('sellerVerificationModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Bezpieczeństwo</div><h2>Weryfikacja sprzedającej</h2>
+    <p>Weryfikacja pomaga chronić kupujących i budować wiarygodność profilu.</p>
+    <label>Imię i nazwisko<input id="verifyFullName" autocomplete="name"></label>
+    <label>Dokument potwierdzający pełnoletność<input id="verifyDocument" type="file" accept="image/*,.pdf"></label>
+    <p class="verification-note">W prawdziwej wersji dokument nie powinien być przechowywany w przeglądarce. Zostanie przesłany do bezpiecznego systemu weryfikacji zgodnie z zasadami prywatności.</p>
+    <button class="primary" onclick="submitSellerVerification()">Wyślij do weryfikacji</button>
+  </div>`;
+  modal.classList.add("show");
+}
+function submitSellerVerification(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u)return;
+  const sellers=getPublicSellers();const me=sellers.find(x=>x.pseudonym===u.pseudonym);
+  if(me){me.verificationStatus="pending";localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers))}
+  document.getElementById("sellerVerificationModal")?.classList.remove("show");
+  addNotification(u.pseudonym,"Wniosek o weryfikację został wysłany.");
+  alert("Wniosek wysłany do weryfikacji.");
+  renderSellerPanel();
+}
+function blockCurrentConversationUser(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  const target=document.getElementById("conversationTitle")?.textContent||"";
+  if(!u||!target)return;
+  const blocks=JSON.parse(localStorage.getItem("stringoland_blocks")||"[]");
+  if(!blocks.some(x=>x.owner===u.pseudonym&&x.target===target)){
+    blocks.push({owner:u.pseudonym,target,createdAt:new Date().toISOString()});
+    localStorage.setItem("stringoland_blocks",JSON.stringify(blocks));
+  }
+  alert("Użytkownik został zablokowany.");
 }
 function openSellerProfileEditor(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
@@ -1447,22 +1650,68 @@ function toggleSellerOffer(i){
   me.offers[i].available=me.offers[i].available===false;
   localStorage.setItem(STRINGOLAND_PUBLIC_SELLERS_KEY,JSON.stringify(sellers));renderSellerPanel();
 }
+
+function sellerDeclineOrder(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const orders=getLocalOrders();
+  const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
+  if(!o)return;
+  o.status="declined";o.declinedAt=new Date().toISOString();
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  renderSellerOrders();
+}
+
+async function sellerAttachOrderMedia(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const o=getLocalOrders().find(x=>x.id===id&&x.seller===u.pseudonym);
+  if(!o){alert("Nie znaleziono zamówienia.");return}
+  const input=document.createElement("input");input.type="file";input.accept="image/*,video/*";input.multiple=true;
+  input.onchange=async()=>{
+    for(const file of [...input.files]){
+      await savePrivateMedia(file,o.buyer,o.id,file.type.startsWith("video/")?"video":"photo");
+    }
+    o.status="completed";o.completedAt=new Date().toISOString();
+    localStorage.setItem("stringoland_orders",JSON.stringify(getLocalOrders().map(x=>x.id===o.id?o:x)));
+    addNotification(o.buyer,"Materiały do zamówienia są gotowe i zostały dodane do Twojej Kolekcji.",o.id);
+    renderSellerOrders();
+  };
+  input.click();
+}
+function sellerCompleteOrder(id){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="seller")return;
+  const orders=getLocalOrders();
+  const o=orders.find(x=>x.id===id&&x.seller===u.pseudonym);
+  if(!o||!["accepted","in_progress"].includes(o.status))return;
+  o.status="completed";o.completedAt=new Date().toISOString();
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  renderSellerOrders();
+}
 function renderSellerOrders(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   const orders=getLocalOrders().filter(o=>o.seller===u?.pseudonym);
   const box=document.getElementById("sellerPanelContent");if(!box)return;
   box.innerHTML=`<div class="subhead"><button class="small-btn" onclick="renderSellerPanel()">← Panel</button><div><div class="eyebrow">Sprzedaż</div><h1>Zamówienia</h1></div></div><div class="panel-card">
-  ${orders.length?orders.map(o=>`<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · ${escapeHtml(o.status||"nowe")}</small></div>${o.status==="pending_seller"?`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button>`:""}</div>`).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
+  ${orders.length?orders.map(o=>{
+    const deadline=o.deadline?new Date(o.deadline).toLocaleDateString("pl-PL"):"—";
+    let actions="";
+    if(o.status==="pending_seller") actions=`<button class="primary" onclick="acceptLocalOrder('${o.id}')">Akceptuj</button><button class="small-btn danger-btn" onclick="sellerDeclineOrder('${o.id}')">Odrzuć</button>`;
+    if(o.status==="accepted"||o.status==="in_progress") actions=`<button class="primary" onclick="sellerAttachOrderMedia('${o.id}')">Dodaj zdjęcie / wideo</button><button class="small-btn" onclick="sellerCompleteOrder('${o.id}')">Oznacz jako zrealizowane</button>`;
+    return `<div class="seller-admin-row"><div><b>${escapeHtml(o.title||"Zamówienie")}</b><small>Kupujący: ${escapeHtml(o.buyer||"—")} · Status: ${escapeHtml(o.status||"nowe")} · Termin: ${deadline}</small></div><div class="order-actions">${actions}</div></div>`;
+  }).join(""):"<p class='info'>Brak zamówień.</p>"}</div>`;
 }
+
 function renderLocalSession(account){
   if(!account)return;
   const actions=document.getElementById("actions");
   if(!actions)return;
   if(account.role==="buyer"){
-    actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
+    actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Powiadomienia" onclick="openNotifications()">🔔</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
     updateBuyerHeader();
   }else{
-    actions.innerHTML='<button class="btn primary" onclick="openSellerPanel()">💰 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+    actions.innerHTML='<button class="header-icon-btn" onclick="openNotifications()" title="Powiadomienia">🔔</button><button class="btn primary" onclick="openSellerPanel()">💰 Panel sprzedającej</button><button class="btn" onclick="logout()">Wyloguj się</button>';
   }
 }
 
@@ -1579,6 +1828,24 @@ function sendConversationMessage(){
   if(document.getElementById("conversationMedia"))document.getElementById("conversationMedia").value="";
   renderConversationMessages(c);
 }
+
+function refreshOrderLifecycle(){
+  const orders=getLocalOrders();
+  let changed=false;
+  const now=Date.now();
+  orders.forEach(o=>{
+    if(o.status==="accepted"&&!o.startedAt){
+      o.status="in_progress";o.startedAt=new Date().toISOString();changed=true;
+      addNotification(o.buyer,"Sprzedająca zaakceptowała zamówienie: "+o.title,o.id);
+    }
+    if(o.status==="in_progress"&&o.deadline&&now>new Date(o.deadline).getTime()){
+      o.status="expired";o.expiredAt=new Date().toISOString();changed=true;
+      addNotification(o.buyer,"Termin realizacji minął. Zamówienie zostało zakończone jako niewykonane.",o.id);
+      addNotification(o.seller,"Termin realizacji zamówienia minął.",o.id);
+    }
+  });
+  if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+}
 function runOrderDeadlines(){
   const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
   let changed=false;
@@ -1591,6 +1858,8 @@ function runOrderDeadlines(){
   if(changed)localStorage.setItem("stringoland_orders",JSON.stringify(orders));
 }
 setInterval(runOrderDeadlines,60000);
+setInterval(refreshOrderLifecycle,60000);
+refreshOrderLifecycle();
 runOrderDeadlines();
 
 function sellerAcceptOrderAndOpenChat(id){
@@ -2322,43 +2591,241 @@ function placeLocalOrder(offer){
   closeModal?.();go("buyerPanel");refreshBuyerStats?.();
 }
 
-function openTypedOfferCheckout(offer){
+
+function calculateOfferTotal(offer){
+  const duration=Number(offer.selectedDuration||document.getElementById("checkoutDuration")?.value||0);
+  let base=Number(offer.price||0);
+  if(offer.type==="underwear"&&duration){
+    const prices=offer.durationPrices||{};
+    base=Number(prices[duration]??base*duration);
+  }
+  const tip=Number((offer.selectedTip!=null?offer.selectedTip:(document.getElementById("checkoutTip")?.value||0)));
+  const addons=[...document.querySelectorAll("#typedCheckoutModal input[type=checkbox]:checked")];
+  const addonTotal=addons.reduce((sum,x)=>{
+    const key=x.value; const configured=offer.addons?.[key];
+    return sum+Number(configured??x.dataset.price??0);
+  },0);
+  const delivery=offer.deliveryRequired?Number(offer.deliveryPrice||0):0;
+  return {base,addonTotal,tip,delivery,total:base+addonTotal+tip+delivery};
+}
+function openOrderSummary(offer){
+  const t=calculateOfferTotal(offer);
+  let modal=document.getElementById("orderSummaryModal");
+  if(!modal){modal=document.createElement("div");modal.id="orderSummaryModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")||{};
+  modal.innerHTML=`<div class="summary-card">
+    <button class="modal-close" onclick="document.getElementById('orderSummaryModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Podsumowanie zamówienia</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
+    <div class="summary-row"><span>Sprzedająca</span><b>${escapeHtml(offer.seller||offer.sellerName||"—")}</b></div>
+    <div class="summary-row"><span>Cena podstawowa</span><b>${t.base.toFixed(2).replace(".",",")} zł</b></div>
+    ${t.addonTotal?`<div class="summary-row"><span>Usługi dodatkowe</span><b>${t.addonTotal.toFixed(2).replace(".",",")} zł</b></div>`:""}
+    ${t.tip?`<div class="summary-row"><span>Napiwek</span><b>${t.tip.toFixed(2).replace(".",",")} zł</b></div>`:""}
+    ${offer.deliveryRequired ? `<div class="summary-row"><span>Dostawa</span><b>${t.delivery.toFixed(2).replace(".",",")} zł</b></div>` : `<div class="summary-row"><span>Dostawa</span><b>Brak</b></div>`}
+    <div class="summary-total"><span>Do zapłaty</span><b>${t.total.toFixed(2).replace(".",",")} zł</b></div>
+    <div class="payment-box"><b>Sposób płatności</b>
+      <label><input type="radio" name="paymentMethod" value="blik" checked> BLIK</label>
+      <label><input type="radio" name="paymentMethod" value="bank"> Szybki przelew</label>
+    </div>
+    <p class="checkout-note">To jest wersja demonstracyjna. Nie wpisuj tutaj danych karty ani prawdziwych danych płatniczych.</p>
+    <button class="primary" onclick='finalizeDemoOrder(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Potwierdź i złóż zamówienie</button>
+  </div>`;
+  modal.classList.add("show");
+}
+
+function openOrderConfirmation(order){
+  let modal=document.getElementById("orderConfirmationModal");
+  if(!modal){modal=document.createElement("div");modal.id="orderConfirmationModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="confirmation-card">
+    <div class="confirmation-icon">✓</div>
+    <div class="eyebrow">Zamówienie przyjęte</div>
+    <h2>Dziękujemy za zakup</h2>
+    <p>Numer zamówienia: <b>${escapeHtml(order.id)}</b></p>
+    <p>Sprzedająca otrzyma informację o nowym zamówieniu. Aktualny status możesz sprawdzić w „Moje zamówienia”.</p>
+    <div class="status-timeline">
+      <div class="status-step active"><b>1</b><span>Złożone</span></div>
+      <div class="status-step"><b>2</b><span>Akceptacja</span></div>
+      <div class="status-step"><b>3</b><span>Realizacja</span></div>
+      <div class="status-step"><b>4</b><span>Zakończone</span></div>
+    </div>
+    <button class="primary" onclick="document.getElementById('orderConfirmationModal').classList.remove('show');openBuyerOrders()">Zobacz zamówienie</button>
+  </div>`;
+  modal.classList.add("show");
+}
+
+const MEDIA_DB_NAME="stringoland_media_db";
+const MEDIA_STORE="private_media";
+function mediaDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(MEDIA_DB_NAME,1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(MEDIA_STORE))db.createObjectStore(MEDIA_STORE,{keyPath:"id"})};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function savePrivateMedia(file,owner,orderId,type){
+  const db=await mediaDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(MEDIA_STORE,"readwrite");
+    const id="media_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    tx.objectStore(MEDIA_STORE).put({id,owner,orderId,type,name:file.name,mime:file.type,size:file.size,blob:file,createdAt:new Date().toISOString()});
+    tx.oncomplete=()=>resolve(id);tx.onerror=()=>reject(tx.error);
+  });
+}
+async function getPrivateMedia(owner){
+  const db=await mediaDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(MEDIA_STORE,"readonly"), req=tx.objectStore(MEDIA_STORE).getAll();
+    req.onsuccess=()=>resolve(req.result.filter(x=>x.owner===owner));req.onerror=()=>reject(req.error);
+  });
+}
+async function openBuyerCollectionPrivate(){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
   if(!u||u.role!=="buyer"){openAuth("login");return}
-  const type=offer.type||"underwear";
-  let body="";
-  if(type==="underwear"){
-    const prices=offer.durationPrices||{};
-    const opts=[1,2,3,4,5,6,7].map(d=>`<option value="${d}">${d} ${d===1?"dzień":"dni"} — ${Number(prices[d]??(Number(offer.price||0)*d)).toFixed(2).replace(".",",")} zł</option>`).join("");
-    body=`<label>Wybierz czas noszenia<select id="checkoutDuration">${opts}</select></label>
-      <p class="checkout-note">Sprzedająca ustala osobną cenę dla każdego wariantu od 1 do 7 dni.</p>`;
-  }else if(type==="video"){
-    body=`<div class="digital-delivery-box"><b>Materiał wideo</b><p>Gotowy materiał jest przypisany do tej oferty. Po zaksięgowaniu zakupu zostanie udostępniony w Twojej Kolekcji.</p></div>`;
-  }else if(type==="photo"){
-    body=`<div class="digital-delivery-box"><b>Zdjęcia</b><p>Gotowy materiał zdjęciowy zostanie udostępniony po zakupie w Twojej Kolekcji.</p></div>`;
-  }else if(type==="custom_photo"){
-    body=`<div class="digital-delivery-box"><b>Zdjęcia na życzenie</b><p>Po zakupie sprzedająca otrzyma Twoje zamówienie i wykona materiał. Rozmowa oraz przesłanie materiałów odbywają się w czacie.</p></div>`;
-  }else if(type==="chat"){
-    body=`<div class="digital-delivery-box"><b>Usługa cyfrowa</b><p>Ta oferta nie wymaga dostawy fizycznej.</p></div>`;
-  }
-  const html=`<div class="checkout-modal-card">
-    <button class="modal-close" onclick="closeTypedCheckout()">×</button>
-    <div class="eyebrow">Zamówienie</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
-    <p class="checkout-seller">Sprzedająca: <b>${escapeHtml(offer.seller||offer.sellerName||"—")}</b></p>
-    ${body}
-    <div class="checkout-addons"><b>Usługi dodatkowe</b>
-      <label><input type="checkbox" value="photo"> Zdjęcia z realizacji</label>
-      <label><input type="checkbox" value="video"> Wideo z realizacji</label>
-      <label><input type="checkbox" value="gift"> Pudełko prezentowe</label>
-    </div>
-    <label>Napiwek dla sprzedającej <input id="checkoutTip" type="number" min="0" step="1" value="0" placeholder="0 zł"></label>
-    ${offer.deliveryRequired?`<div class="checkout-delivery"><b>Dostawa</b><p>InPost Paczkomat — dane dostawy są przekazywane operatorowi dostawy, nie sprzedającej.</p></div>`:`<div class="checkout-delivery"><b>Bez dostawy fizycznej</b><p>Ta oferta jest cyfrowa lub realizowana w czacie.</p></div>`}
-    <button class="primary checkout-submit" onclick='confirmTypedOrder(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Złóż zamówienie</button>
+  document.querySelectorAll(".page").forEach(el=>el.style.display="none");
+  const page=document.getElementById("collection");if(page)page.style.display="block";
+  const box=document.getElementById("collectionContent");if(!box)return;
+  const items=await getPrivateMedia(u.pseudonym);
+  box.innerHTML=`<div class="panel-card"><div class="eyebrow">Prywatna kolekcja</div><h2>Moje multimedia</h2>
+    ${items.length?`<div class="private-media-grid">${items.map((m,i)=>`<article class="private-media-item" data-media="${i}"><div class="private-media-preview" id="mediaPreview${i}"></div><b>${escapeHtml(m.name)}</b><small>${m.type==="video"?"Wideo":"Zdjęcie"} · ${new Date(m.createdAt).toLocaleDateString("pl-PL")}</small></article>`).join("")}</div>`:"<p class='info'>Nie masz jeszcze zakupionych multimediów.</p>"}
   </div>`;
+  items.forEach((m,i)=>{
+    const el=document.getElementById("mediaPreview"+i);if(!el)return;
+    const url=URL.createObjectURL(m.blob);
+    if(m.type==="video"){el.innerHTML=`<video controls preload="metadata" src="${url}"></video>`}
+    else {el.innerHTML=`<img alt="" src="${url}">`}
+  });
+}
+function getNotifications(){return JSON.parse(localStorage.getItem("stringoland_notifications")||"[]")}
+function addNotification(user, text, orderId=null){
+  const n=getNotifications();n.push({id:"ntf_"+Date.now()+Math.random(),user,text,orderId,read:false,createdAt:new Date().toISOString()});
+  localStorage.setItem("stringoland_notifications",JSON.stringify(n));
+}
+function getUserNotifications(){
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  return getNotifications().filter(n=>n.user===u?.pseudonym).reverse();
+}
+function openNotifications(){
+  const items=getUserNotifications();
+  let modal=document.getElementById("notificationsModal");
+  if(!modal){modal=document.createElement("div");modal.id="notificationsModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="notifications-card"><button class="modal-close" onclick="document.getElementById('notificationsModal').classList.remove('show')">×</button><div class="eyebrow">Powiadomienia</div><h2>Centrum powiadomień</h2>${items.length?items.map(n=>`<div class="notification-item"><b>${escapeHtml(n.text)}</b><small>${new Date(n.createdAt).toLocaleString("pl-PL")}</small></div>`).join(""):"<p class='info'>Brak nowych powiadomień.</p>"}</div>`;
+  modal.classList.add("show");
+  const all=getNotifications().map(n=>n.user===JSON.parse(localStorage.getItem("stringoland_test_user")||"{}").pseudonym?{...n,read:true}:n);
+  localStorage.setItem("stringoland_notifications",JSON.stringify(all));
+}
+function finalizeDemoOrder(offer){
+  if(!offer||!offer.title){alert("Nie można utworzyć zamówienia.");return}
+  const method=document.querySelector('input[name="paymentMethod"]:checked')?.value||"blik";
+  const t=calculateOfferTotal(offer);
+  const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
+  if(!u||u.role!=="buyer"){openAuth("login");return}
+  const orders=getLocalOrders();
+  orders.push({id:"ord_"+Date.now(),buyer:u.pseudonym,buyerEmail:u.email||"",seller:offer.seller||offer.sellerName||"Sprzedająca",title:offer.title,type:offer.type,price:t.base,selectedDuration:offer.selectedDuration||null,addons:offer.selectedAddons||[],tip:t.tip,total:t.total,paymentMethod:method,status:"pending_seller",deliveryRequired:!!offer.deliveryRequired,createdAt:new Date().toISOString()});
+  localStorage.setItem("stringoland_orders",JSON.stringify(orders));
+  addNotification(order.seller,"Nowe zamówienie: "+order.title,order.id);
+  document.getElementById("orderSummaryModal")?.classList.remove("show");
+  document.getElementById("typedCheckoutModal")?.classList.remove("show");
+  openOrderConfirmation(order);
+}
+
+function getBuyerOfferBySeller(sellerName,index){
+  const sellers=getPublicSellers();
+  const seller=sellers.find(x=>x.pseudonym===sellerName);
+  if(!seller||!seller.offers||!seller.offers[index])return null;
+  const o=seller.offers[index];
+  return {...o,seller:seller.pseudonym,sellerName:seller.pseudonym,
+    price:Number(o.price||Object.values(o.durationPrices||{})[0]||0),
+    deliveryPrice:Number(o.deliveryPrice||0)};
+}
+
+function buildBuyerOfferConfigurator(offer){
+  const durations=offer.durationPrices||{};
+  const durationKeys=Object.keys(durations).map(Number).filter(Boolean).sort((a,b)=>a-b);
+  const durationHtml=offer.type==="underwear"&&durationKeys.length
+    ?`<div class="buyer-choice"><b>Wybierz czas noszenia</b><div class="choice-grid">${durationKeys.map(d=>`<label><input type="radio" name="checkoutDuration" value="${d}" ${d===durationKeys[0]?"checked":""}><span>${d} ${d===1?"dzień":"dni"}<strong>${Number(durations[d]).toFixed(2).replace(".",",")} zł</strong></span></label>`).join("")}</div></div>`:"";
+  const addons=offer.addons||{};
+  const addonHtml=Object.entries({photo:["Zdjęcia",addons.photo],video:["Wideo",addons.video],gift:["Pudełko prezentowe",addons.gift]}).filter(([,v])=>Number(v[1])>0)
+    .map(([k,v])=>`<label class="addon-choice"><input type="checkbox" value="${k}" data-price="${Number(v[1])}"><span>${v[0]}</span><strong>+${Number(v[1]).toFixed(2).replace(".",",")} zł</strong></label>`).join("");
+  return `<div id="buyerOfferConfigurator">
+    ${durationHtml}
+    ${addonHtml?`<div class="buyer-choice"><b>Usługi dodatkowe</b>${addonHtml}</div>`:""}
+    <div class="buyer-choice"><label>Napiwek dla sprzedającej<input id="checkoutTip" type="number" min="0" step="1" value="0" placeholder="0 zł"></label></div>
+    ${offer.deliveryRequired?`<div class="delivery-note">📦 Ta oferta wymaga dostawy InPost Paczkomat.</div>`:`<div class="delivery-note digital">✓ Oferta cyfrowa/usługa — bez dostawy InPost.</div>`}
+  </div>`;
+}
+function openBuyerOfferFromSeller(sellerName,index){
+  const offer=getBuyerOfferBySeller(sellerName,index);
+  if(!offer){alert("Ta oferta nie jest już dostępna.");return}
+  if(offer.available===false){alert("Ta oferta jest obecnie niedostępna.");return}
+  let modal=document.getElementById("buyerOfferDetailModal");
+  if(!modal){modal=document.createElement("div");modal.id="buyerOfferDetailModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="offer-detail-card"><button class="modal-close" onclick="document.getElementById('buyerOfferDetailModal').classList.remove('show')">×</button>
+    <div class="eyebrow">${escapeHtml(offer.type||"Oferta")}</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
+    <p class="offer-description">${escapeHtml(offer.description||"")}</p>
+    ${buildBuyerOfferConfigurator(offer)}
+    <div class="buyer-total-line"><span>Razem przed danymi dostawy</span><strong id="buyerLiveTotal">0,00 zł</strong></div>
+    <button class="primary" onclick='startBuyerCheckoutFromDetail(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Przejdź do zamówienia</button>
+  </div>`;
+  modal.classList.add("show");
+  updateBuyerLiveTotal(offer);
+  modal.querySelectorAll("input").forEach(x=>x.addEventListener("input",()=>updateBuyerLiveTotal(offer)));
+}
+function updateBuyerLiveTotal(offer){
+  const d=Number(document.querySelector("#buyerOfferDetailModal input[name=checkoutDuration]:checked")?.value||0);
+  const base=d&&offer.durationPrices?.[d]!=null?Number(offer.durationPrices[d]):Number(offer.price||0);
+  const addons=[...document.querySelectorAll("#buyerOfferDetailModal input[type=checkbox]:checked")].reduce((a,x)=>a+Number(x.dataset.price||0),0);
+  const tip=Number(document.querySelector("#buyerOfferDetailModal #checkoutTip")?.value||0);
+  const el=document.getElementById("buyerLiveTotal");if(el)el.textContent=(base+addons+tip+Number(offer.deliveryRequired?offer.deliveryPrice||0:0)).toFixed(2).replace(".",",")+" zł";
+}
+function startBuyerCheckoutFromDetail(offer){
+  const modal=document.getElementById("buyerOfferDetailModal");
+  if(!modal)return;
+  const d=Number(modal.querySelector("input[name=checkoutDuration]:checked")?.value||0);
+  const addons=[...modal.querySelectorAll("input[type=checkbox]:checked")].map(x=>({key:x.value,price:Number(x.dataset.price||0)}));
+  const tip=Number(modal.querySelector("#checkoutTip")?.value||0);
+  offer.selectedDuration=d;offer.selectedAddons=addons;offer.selectedTip=tip;
+  modal.classList.remove("show");
+  openTypedOfferCheckout(offer);
+}
+
+function renderSellerOffersForBuyer(sellerName){
+  const sellers=getPublicSellers();
+  const seller=sellers.find(x=>x.pseudonym===sellerName);
+  if(!seller)return;
+  const offers=(seller.offers||[]).filter(o=>o.available!==false);
+  let modal=document.getElementById("sellerOffersBuyerModal");
+  if(!modal){modal=document.createElement("div");modal.id="sellerOffersBuyerModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="buyer-offers-card"><button class="modal-close" onclick="document.getElementById('sellerOffersBuyerModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Oferty</div><h2>${escapeHtml(seller.pseudonym)}</h2>
+    ${offers.length?offers.map((o,i)=>`<article class="buyer-offer-row"><div><b>${escapeHtml(o.title||"Oferta")}</b><small>${escapeHtml(o.type||"oferta")} · ${o.deliveryRequired?"Dostawa fizyczna":"Produkt cyfrowy / usługa"}</small></div><button class="primary" onclick="openBuyerOfferFromSeller('${String(seller.pseudonym).replace(/'/g,"\\'")}',${seller.offers.indexOf(o)})">Zobacz / kup</button></article>`).join(""):"<p class='info'>Brak aktywnych ofert.</p>"}
+  </div>`;
+  modal.classList.add("show");
+}
+function openTypedOfferCheckout(offer){
   let modal=document.getElementById("typedCheckoutModal");
   if(!modal){modal=document.createElement("div");modal.id="typedCheckoutModal";modal.className="modal-overlay";document.body.appendChild(modal)}
-  modal.innerHTML=html;modal.classList.add("show");
+  const selected=calculateOfferTotal(offer);
+  const addons=(offer.selectedAddons||[]);
+  modal.innerHTML=`<div class="checkout-card">
+    <button class="modal-close" onclick="document.getElementById('typedCheckoutModal').classList.remove('show')">×</button>
+    <div class="eyebrow">Zamówienie</div><h2>${escapeHtml(offer.title||"Oferta")}</h2>
+    <div class="checkout-selected">
+      ${offer.selectedDuration?`<div><span>Czas noszenia</span><b>${offer.selectedDuration} ${offer.selectedDuration===1?"dzień":"dni"}</b></div>`:""}
+      ${addons.length?`<div><span>Dodatki</span><b>${addons.map(a=>escapeHtml(a.key)).join(", ")}</b></div>`:""}
+      ${offer.selectedTip?`<div><span>Napiwek</span><b>${Number(offer.selectedTip).toFixed(2).replace(".",",")} zł</b></div>`:""}
+    </div>
+    ${offer.deliveryRequired?`<div id="buyerDeliveryData" class="buyer-data-block">
+      <button type="button" class="privacy-link" onclick="openBuyerDataInfo()">ⓘ Dlaczego potrzebujemy tych danych?</button>
+      <label>Imię <input id="buyerFirstName" autocomplete="given-name"></label>
+      <label>Nazwisko <input id="buyerLastName" autocomplete="family-name"></label>
+      <label>Numer telefonu <input id="buyerPhone" inputmode="tel" autocomplete="tel"></label>
+      <label>Paczkomat InPost <input id="buyerLocker" placeholder="np. WAW01A"></label>
+    </div>`:`<div class="delivery-note digital">✓ Oferta cyfrowa/usługa — bez dostawy InPost.</div>`}
+    <div class="checkout-total"><span>Razem</span><strong>${selected.total.toFixed(2).replace(".",",")} zł</strong></div>
+    <button class="primary" onclick='openOrderSummary(${JSON.stringify(offer).replace(/'/g,"&#39;")})'>Przejdź do podsumowania</button>
+  </div>`;
+  modal.classList.add("show");
 }
+
 function closeTypedCheckout(){document.getElementById("typedCheckoutModal")?.classList.remove("show")}
 function confirmTypedOrder(offer){
   const u=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
@@ -2366,8 +2833,20 @@ function confirmTypedOrder(offer){
   const duration=Number(document.getElementById("checkoutDuration")?.value||0)||null;
   const tip=Number(document.getElementById("checkoutTip")?.value||0);
   const addons=[...document.querySelectorAll("#typedCheckoutModal input[type=checkbox]:checked")].map(x=>x.value);
+  if(offer.deliveryRequired){
+    const d={firstName:document.getElementById("buyerFirstName")?.value.trim(),lastName:document.getElementById("buyerLastName")?.value.trim(),phone:document.getElementById("buyerPhone")?.value.trim(),locker:document.getElementById("buyerLocker")?.value.trim()};
+    if(!d.firstName||!d.lastName||!d.phone||!d.locker){alert("Uzupełnij dane potrzebne do dostawy.");return}
+  }
   const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
-  const order={id:"ord_"+Date.now(),buyer:u.pseudonym,seller:offer.seller||offer.sellerName||"Sprzedająca",title:offer.title,type:offer.type,price:Number(offer.price||0),durationDays:duration,addons,tip,status:"pending_seller",deliveryRequired:!!offer.deliveryRequired,createdAt:new Date().toISOString()};
+  const order={id:"ord_"+Date.now(),buyer:u.pseudonym,seller:offer.seller||offer.sellerName||"Sprzedająca",title:offer.title,type:offer.type,price:Number(offer.price||0),durationDays:duration,addons,tip,status:"pending_seller",deliveryRequired:!!offer.deliveryRequired,
+    deliveryData:offer.deliveryRequired?{
+      firstName:document.getElementById("buyerFirstName")?.value.trim()||"",
+      lastName:document.getElementById("buyerLastName")?.value.trim()||"",
+      phone:document.getElementById("buyerPhone")?.value.trim()||"",
+      locker:document.getElementById("buyerLocker")?.value.trim()||""
+    }:null,
+    buyerEmail:u.email||"",
+    createdAt:new Date().toISOString()};
   orders.push(order);localStorage.setItem("stringoland_orders",JSON.stringify(orders));
   closeTypedCheckout();alert("Zamówienie zostało złożone. Sprzedająca musi je zaakceptować.");
 }
@@ -2497,6 +2976,19 @@ function getLoggedInBuyerEmail(){
     const saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null");
     return active && saved && saved.role==="buyer" ? (saved.email||"") : "";
   }catch(e){return "";}
+}
+
+function openTermsInfo(){
+  let modal=document.getElementById("termsInfoModal");
+  if(!modal){modal=document.createElement("div");modal.id="termsInfoModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('termsInfoModal').classList.remove('show')">×</button><div class="eyebrow">Informacje</div><h2>Regulamin</h2><p>Wersja demonstracyjna serwisu. Zamówienia, płatności, wiadomości i multimedia działają tutaj jako prototyp interfejsu.</p><p>W produkcji regulamin powinien zostać przygotowany i zaakceptowany przed uruchomieniem sprzedaży.</p></div>`;
+  modal.classList.add("show");
+}
+function openHelpInfo(){
+  let modal=document.getElementById("helpInfoModal");
+  if(!modal){modal=document.createElement("div");modal.id="helpInfoModal";modal.className="modal-overlay";document.body.appendChild(modal)}
+  modal.innerHTML=`<div class="privacy-card"><button class="modal-close" onclick="document.getElementById('helpInfoModal').classList.remove('show')">×</button><div class="eyebrow">Pomoc</div><h2>Centrum pomocy</h2><p>Wybierz sprzedającą, otwórz ofertę, wybierz wariant i przejdź do zamówienia. Po zakupie status znajdziesz w „Moje zamówienia”.</p><p>Kontakt z użytkownikami odbywa się wyłącznie przez wiadomości na portalu.</p></div>`;
+  modal.classList.add("show");
 }
 function openBuyerDataInfo(){
   document.getElementById("buyerDataInfoModal").classList.add("show");
@@ -2834,5 +3326,12 @@ window.addEventListener("storage",renderDiscover);
 function openRegulation(){document.getElementById("regulationModal")?.classList.add("show")}
 function closeRegulation(){document.getElementById("regulationModal")?.classList.remove("show")}
 </script>
+
+<footer id="siteFooter">
+  <div class="footer-inner">
+    <span>STRINGOLAND</span>
+    <div><button onclick="openBuyerDataInfo()">Prywatność</button><button onclick="openTermsInfo()">Regulamin</button><button onclick="openHelpInfo()">Pomoc</button></div>
+  </div>
+</footer>
 </body>
 </html>
