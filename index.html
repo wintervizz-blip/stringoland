@@ -724,6 +724,24 @@ header .menu-btn.account-menu-visible,
 .conversation-attachment img,.conversation-attachment video{display:block;max-width:220px;max-height:220px;border-radius:8px;margin-bottom:5px}
 
 .reviews-review-rule{max-width:760px;margin:18px auto 0;padding:10px 12px;background:#faf7f5;border-radius:7px;color:#8b817b;font-size:10px;line-height:1.45;text-align:center}
+
+.header-icon-btn{width:38px;height:38px;border:1px solid #e5ddd7;border-radius:50%;background:#fff;color:#8f1730;font-size:17px;display:flex;align-items:center;justify-content:center}
+.buyer-conversations-page,.buyer-section-page{display:none;position:fixed;inset:0;background:#fff;z-index:220;overflow:auto}
+.buyer-conversations-page.show,.buyer-section-page.show{display:block}
+.buyer-overlay-header{height:72px;border-bottom:1px solid #eee6df;display:flex;align-items:center;gap:14px;padding:0 18px}
+.buyer-overlay-header button{border:0;background:none;color:#8f1730;font-size:22px;cursor:pointer}
+.buyer-overlay-header strong{display:block;font-size:15px}.buyer-overlay-header span{display:block;color:#918982;font-size:10px;margin-top:3px}
+.conversation-list{max-width:760px;margin:auto;padding:12px 18px}
+.conversation-list-item{display:flex;gap:12px;align-items:center;width:100%;padding:14px 4px;border:0;border-bottom:1px solid #eee6df;background:#fff;text-align:left;cursor:pointer}
+.conversation-avatar{width:44px;height:44px;border-radius:50%;background:#f2ebe6;display:flex;align-items:center;justify-content:center;color:#8f1730;font-family:Georgia,serif;font-size:16px;flex:0 0 44px}
+.conversation-list-main{flex:1;min-width:0}.conversation-list-name{font-size:12px;font-weight:600}.conversation-list-preview{font-size:10px;color:#918982;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.conversation-list-time{font-size:9px;color:#aaa19b}
+.buyer-profile-menu{display:none;position:fixed;inset:0;background:rgba(25,18,15,.28);z-index:230;justify-content:flex-end}
+.buyer-profile-menu.show{display:flex}
+.buyer-profile-menu-card{width:min(320px,88vw);height:100%;background:#fff;padding:28px 20px;box-sizing:border-box;box-shadow:-8px 0 25px rgba(0,0,0,.08)}
+.buyer-menu-close{float:right;border:0;background:none;font-size:25px}.buyer-menu-name{clear:both;padding-top:24px;font-family:Georgia,serif;font-size:22px}.buyer-menu-sub{font-size:10px;color:#918982;margin:5px 0 25px}
+.buyer-profile-menu-card>button:not(.buyer-menu-close){display:block;width:100%;padding:13px 0;border:0;border-bottom:1px solid #eee6df;background:#fff;text-align:left;font-size:12px;color:#39332f;cursor:pointer}
+.buyer-section-content{max-width:760px;margin:auto;padding:30px 18px}.buyer-section-content h2{font-weight:500}.buyer-section-content p{font-size:12px;line-height:1.6;color:#6e6660}
+.credibility-score{font-size:48px;color:#8f1730;font-weight:500;margin:15px 0}.credibility-breakdown{padding:15px;background:#faf7f5;border-radius:9px;font-size:11px;color:#706762}
 </style>
 </head>
 <body>
@@ -1164,11 +1182,70 @@ function togglePassword(){
   const el=document.getElementById("password");
   el.type=el.type==="password"?"text":"password";
 }
+
+function getBuyerAccount(){
+  try{return JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){return null}
+}
+function updateBuyerHeader(){
+  const saved=getBuyerAccount();
+  const name=document.getElementById("buyerMenuName");
+  if(name) name.textContent=saved?.pseudonym||"Twój pseudonim";
+}
+function openBuyerProfileMenu(){updateBuyerHeader();document.getElementById("buyerProfileMenu").classList.add("show")}
+function closeBuyerProfileMenu(){document.getElementById("buyerProfileMenu").classList.remove("show")}
+function openBuyerDashboard(){closeBuyerProfileMenu();closeBuyerSection();document.getElementById("buyerDashboardPage").classList.add("show")}
+function openBuyerCollection(){
+  closeBuyerProfileMenu();closeBuyerSection();
+  const box=document.getElementById("buyerCollectionContent");
+  const orders=JSON.parse(localStorage.getItem("stringoland_orders")||"[]");
+  const media=orders.filter(o=>["video","photo","custom_photo"].includes(o.type)&&o.status==="completed");
+  box.innerHTML=media.length?media.map(o=>'<div class="collection-item"><strong>'+escapeHtml(o.offerTitle||"Materiał")+'</strong><span>'+escapeHtml(o.seller||"Sprzedająca")+'</span></div>').join(""):'<h2>Twoja kolekcja</h2><p>Po zakupie i otrzymaniu zdjęć lub filmów będą pojawiały się tutaj.</p>';
+  document.getElementById("buyerCollectionPage").classList.add("show");
+}
+function openBuyerCredibility(){
+  closeBuyerProfileMenu();closeBuyerSection();
+  const saved=getBuyerAccount();
+  const reviews=JSON.parse(localStorage.getItem("stringoland_buyer_reviews")||"[]").filter(r=>r.buyer===saved?.pseudonym);
+  const score=reviews.length?Math.round(reviews.reduce((a,r)=>a+Number(r.score||0),0)/reviews.length):null;
+  document.getElementById("buyerCredibilityScore").textContent=score===null?"—%":score+"%";
+  document.getElementById("buyerCredibilityBreakdown").textContent=reviews.length?("Na wynik składa się "+reviews.length+" ocen od sprzedających."):"Na razie nie masz ocen od sprzedających.";
+  document.getElementById("buyerCredibilityPage").classList.add("show");
+}
+function closeBuyerSection(){
+  document.querySelectorAll(".buyer-section-page").forEach(el=>el.classList.remove("show"));
+}
+function openConversations(){
+  const page=document.getElementById("buyerConversationsPage"), list=document.getElementById("buyerConversationList");
+  const saved=getBuyerAccount();
+  const conversations=JSON.parse(localStorage.getItem("stringoland_conversations")||"[]").filter(c=>c.buyer===saved?.pseudonym);
+  list.innerHTML="";
+  const demo=conversations.length?conversations:[{seller:"Luna",preview:"Cześć! Jeśli masz pytania dotyczące moich ofert, napisz śmiało.",time:"19:24"}];
+  demo.forEach(c=>{
+    const item=document.createElement("button");item.className="conversation-list-item";
+    item.innerHTML='<div class="conversation-avatar"></div><div class="conversation-list-main"><div class="conversation-list-name"></div><div class="conversation-list-preview"></div></div><div class="conversation-list-time"></div>';
+    item.querySelector(".conversation-avatar").textContent=(c.seller||"S").charAt(0).toUpperCase();
+    item.querySelector(".conversation-list-name").textContent=c.seller||"Sprzedająca";
+    item.querySelector(".conversation-list-preview").textContent=c.preview||"Rozmowa";
+    item.querySelector(".conversation-list-time").textContent=c.time||"";
+    item.onclick=()=>{closeConversations();document.getElementById("publicProfileName").textContent=c.seller||"Sprzedająca";activeConversationSeller=c.seller||"Sprzedająca";document.getElementById("conversationSellerName").textContent=activeConversationSeller;renderConversation();document.getElementById("conversationPage").classList.add("show")};
+    list.appendChild(item);
+  });
+  page.classList.add("show");
+}
+function closeConversations(){document.getElementById("buyerConversationsPage").classList.remove("show")}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
 async function renderSession(user){
   const actions=document.getElementById("actions");if(!user)return;
   const meta=user.user_metadata||{};
-  actions.innerHTML='<button class="btn" onclick="openProfile()">👤 Mój profil</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+  let saved=null; try{saved=JSON.parse(localStorage.getItem("stringoland_test_user")||"null")}catch(e){}
+  const role=saved?.role||"seller";
+  if(role==="buyer"){
+    actions.innerHTML='<button class="header-icon-btn" type="button" title="Wiadomości" onclick="openConversations()">💬</button><button class="header-icon-btn" type="button" title="Mój profil" onclick="openBuyerProfileMenu()">◉</button>';
+  }else{
+    actions.innerHTML='<button class="btn" onclick="openProfile()">👤 Mój profil</button><button class="btn" onclick="logout()">Wyloguj się</button>';
+  }
   fillProfile(user);
+  if(role==="buyer") updateBuyerHeader();
 }
 function fillProfile(user){
   const meta=user.user_metadata||{};
@@ -1192,6 +1269,47 @@ async function saveProfile(){
 async function logout(){localStorage.removeItem("stringoland_active_session");await supabaseClient.auth.signOut();location.reload()}
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)renderSession(data.session.user)})
 </script>
+
+
+<div class="buyer-conversations-page" id="buyerConversationsPage">
+  <div class="buyer-overlay-header">
+    <button type="button" onclick="closeConversations()">←</button>
+    <div><strong>Wiadomości</strong><span>Twoje rozmowy ze sprzedającymi</span></div>
+  </div>
+  <div class="conversation-list" id="buyerConversationList"></div>
+</div>
+
+<div class="buyer-profile-menu" id="buyerProfileMenu">
+  <div class="buyer-profile-menu-card">
+    <button class="buyer-menu-close" onclick="closeBuyerProfileMenu()">×</button>
+    <div class="buyer-menu-name" id="buyerMenuName">Twój pseudonim</div>
+    <div class="buyer-menu-sub">Profil kupującego</div>
+    <button onclick="openBuyerDashboard()">Panel kupującego</button>
+    <button onclick="openBuyerCollection()">Kolekcja</button>
+    <button onclick="openBuyerCredibility()">Moja wiarygodność</button>
+    <button onclick="logout()">Wyloguj się</button>
+  </div>
+</div>
+
+<div class="buyer-section-page" id="buyerDashboardPage">
+  <div class="buyer-overlay-header"><button onclick="closeBuyerSection()">←</button><div><strong>Panel kupującego</strong><span>Twoje konto</span></div></div>
+  <div class="buyer-section-content"><h2>Panel kupującego</h2><p>Tutaj później zbierzemy najważniejsze informacje o Twoim koncie, zamówieniach i aktywności.</p></div>
+</div>
+
+<div class="buyer-section-page" id="buyerCollectionPage">
+  <div class="buyer-overlay-header"><button onclick="closeBuyerSection()">←</button><div><strong>Kolekcja</strong><span>Twoje zakupione multimedia</span></div></div>
+  <div class="buyer-section-content" id="buyerCollectionContent"></div>
+</div>
+
+<div class="buyer-section-page" id="buyerCredibilityPage">
+  <div class="buyer-overlay-header"><button onclick="closeBuyerSection()">←</button><div><strong>Moja wiarygodność</strong><span>Oceny od sprzedających</span></div></div>
+  <div class="buyer-section-content">
+    <div class="credibility-score" id="buyerCredibilityScore">—%</div>
+    <h2>Wiarygodność kupującego</h2>
+    <p>Wynik będzie budowany na podstawie ocen sprzedających po zakończonych rozmowach i zamówieniach.</p>
+    <div class="credibility-breakdown" id="buyerCredibilityBreakdown"></div>
+  </div>
+</div>
 
 <div class="privacy-modal" id="privacyModal">
   <div class="privacy-box">
